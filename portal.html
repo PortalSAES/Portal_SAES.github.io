@@ -1007,33 +1007,70 @@
     });
   };
 
-  function guardarTipi() {
-    const cat    = document.getElementById('ft-categoria').value.trim();
-    const mod    = document.getElementById('ft-modalidad').value.trim();
-    const sub    = document.getElementById('ft-subproceso').value.trim();
-    const asunto = document.getElementById('ft-asunto').value.trim();
-    if (!cat || !mod || !sub || !asunto) { showToast('Completa los campos obligatorios (*)', 'error'); return; }
-    const payload = {
-      categoria:    cat,
-      modalidad:    mod,
-      proceso:      cat,
-      subProceso:   sub,
-      asunto:       asunto,
-      aplica:       document.getElementById('ft-aplica').value.trim(),
-      tipoAtencion: document.getElementById('ft-tipo').value,
-      plazo:        document.getElementById('ft-plazo').value.trim(),
-    };
+  async function guardarTipi() {
+
+  const cat = document.getElementById('ft-categoria').value.trim();
+  const mod = document.getElementById('ft-modalidad').value.trim();
+  const sub = document.getElementById('ft-subproceso').value.trim();
+  const asunto = document.getElementById('ft-asunto').value.trim();
+
+  if (!cat || !mod || !sub || !asunto) {
+    showToast('Completa los campos obligatorios (*)', 'error');
+    return;
+  }
+
+  const payload = {
+    categoria: cat,
+    modalidad: mod,
+    proceso: cat,
+    subProceso: sub,
+    asunto: asunto,
+    aplica: document.getElementById('ft-aplica').value.trim(),
+    tipoAtencion: document.getElementById('ft-tipo').value,
+    plazo: document.getElementById('ft-plazo').value.trim()
+  };
+
+  try {
+
     if (_tipiEditId !== null) {
-      const idx = TIPIFICACIONES.findIndex(t => t.id === _tipiEditId);
-      if (idx !== -1) TIPIFICACIONES[idx] = { ...TIPIFICACIONES[idx], ...payload };
+
+      const registro = TIPIFICACIONES.find(
+        x => x.id === _tipiEditId
+      );
+
+      if (registro?.firebaseId) {
+
+        await updateDoc(
+          doc(db, "tipificaciones", registro.firebaseId),
+          payload
+        );
+
+      }
+
       showToast('Tipificación actualizada');
+
     } else {
-      TIPIFICACIONES.push({ id: _tipiNextId++, ...payload });
+
+      await addDoc(
+        collection(db, "tipificaciones"),
+        {
+          id: Date.now(),
+          ...payload
+        }
+      );
+
       showToast('Tipificación añadida');
     }
+
     cerrarModalTipi();
-    refreshTipi();
+
+  } catch (e) {
+
+    console.error(e);
+    showToast('Error al guardar', 'error');
+
   }
+}
 
   // ── Modal categoría ──
   function abrirModalCat(oldName) {
@@ -1049,23 +1086,39 @@
     _catEditOld = null;
   }
 
-  function guardarCategoria() {
-    const nombre = document.getElementById('fc-nombre').value.trim().toUpperCase();
-    if (!nombre) { showToast('Escribe un nombre para la categoría', 'error'); return; }
-    if (_catEditOld) {
-      // Renombrar: actualizar todas las tipis que pertenecen a esa categoría
-      TIPIFICACIONES.forEach(t => { if (t.categoria === _catEditOld) { t.categoria = nombre; t.proceso = nombre; } });
-      const idx = CATEGORIAS_EXTRA.indexOf(_catEditOld);
-      if (idx !== -1) CATEGORIAS_EXTRA[idx] = nombre;
-      showToast(`Categoría renombrada a "${nombre}"`);
-    } else {
-      if (getCategoriasUnicas().includes(nombre)) { showToast('Esa categoría ya existe', 'error'); return; }
-      CATEGORIAS_EXTRA.push(nombre);
-      showToast(`Categoría "${nombre}" creada`);
-    }
-    cerrarModalCat();
-    refreshTipi();
+  async function guardarCategoria() {
+
+  const nombre = document
+    .getElementById('fc-nombre')
+    .value
+    .trim()
+    .toUpperCase();
+
+  if (!nombre) {
+    showToast('Escribe un nombre para la categoría', 'error');
+    return;
   }
+
+  try {
+
+    await addDoc(
+      categoriasRef,
+      {
+        nombre: nombre
+      }
+    );
+
+    cerrarModalCat();
+
+    showToast(`Categoría "${nombre}" creada`);
+
+  } catch (e) {
+
+    console.error(e);
+    showToast('Error al crear categoría', 'error');
+
+  }
+}
 
   // ── Eliminar categoría (con todas sus tipis) ──
   window.eliminarCategoria = function(cat) {
@@ -1086,14 +1139,31 @@
     if (t) abrirModalTipi(t);
   };
 
-  window.eliminarTipi = function(id) {
-    const t = TIPIFICACIONES.find(x => x.id === id);
-    if (!t) return;
-    if (!confirm(`¿Eliminar la tipificación "${t.asunto}"?`)) return;
-    TIPIFICACIONES = TIPIFICACIONES.filter(x => x.id !== id);
-    showToast('Tipificación eliminada', 'error');
-    refreshTipi();
-  };
+  window.eliminarTipi = async function(id) {
+
+  const t = TIPIFICACIONES.find(
+    x => x.id === id
+  );
+
+  if (!t) return;
+
+  if (!confirm(`¿Eliminar la tipificación "${t.asunto}"?`))
+    return;
+
+  try {
+
+    await deleteDoc(
+      doc(db, "tipificaciones", t.firebaseId)
+    );
+
+    showToast('Tipificación eliminada');
+
+  } catch (e) {
+
+    console.error(e);
+
+  }
+};
 
   // ── Edición inline de celda ──
   window.editarCelda = function(id, campo, el) {
