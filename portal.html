@@ -872,7 +872,7 @@
     from "https://www.gstatic.com/firebasejs/11.8.1/firebase-auth.js";
   import {
     getFirestore, collection, addDoc, updateDoc, deleteDoc,
-    doc, query, orderBy, serverTimestamp, onSnapshot, getDoc, setDoc
+    doc, query, orderBy, serverTimestamp, onSnapshot, getDoc, setDoc, getDocs, where
   } from "https://www.gstatic.com/firebasejs/11.8.1/firebase-firestore.js";
 
   const app  = initializeApp({
@@ -899,27 +899,57 @@
   const MESES = ['Enero','Febrero','Marzo','Abril','Mayo','Junio',
                  'Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
 
-  // ── TIPIFICACIONES DATA (primeras 10) ──
-  let TIPIFICACIONES = [
-    { id: 1,  categoria: 'ACCESOS', modalidad: 'TODAS', proceso: 'ACCESOS', subProceso: 'MFA',                    asunto: 'Restablecimiento MFA por cambio de celular',                                        aplica: 'Si es un estudiante antiguo que debemos mandar activar su código para que pague su trámite (FECHA NACIMIENTO + DIRECCIÓN + DNI) COLA DE PROCESOS', tipoAtencion: 'Requerimiento', plazo: '' },
-    { id: 2,  categoria: 'ACCESOS', modalidad: 'TODAS', proceso: 'ACCESOS', subProceso: 'MFA',                    asunto: 'Desinstalación de app Authenticator',                                                aplica: 'Cuando un estudiante ingresa a la cola de accesos, matrícula o reincorporaciones para consultas generales',                                         tipoAtencion: 'Consulta',      plazo: '' },
-    { id: 3,  categoria: 'ACCESOS', modalidad: 'TODAS', proceso: 'ACCESOS', subProceso: 'MFA',                    asunto: 'Desinstalación de app Authenticator para restablecimiento de contraseña',             aplica: '',                                                                                                                                               tipoAtencion: 'Consulta',      plazo: '' },
-    { id: 4,  categoria: 'ACCESOS', modalidad: 'TODAS', proceso: 'ACCESOS', subProceso: 'MFA',                    asunto: 'Proceso MFA',                                                                       aplica: 'Cuando se le brinda la información del proceso de autenticación.',                                                                                  tipoAtencion: 'Consulta',      plazo: '' },
-    { id: 5,  categoria: 'ACCESOS', modalidad: 'TODAS', proceso: 'ACCESOS', subProceso: 'No le llegan sus accesos', asunto: 'No tiene correo institucional',                                                   aplica: '',                                                                                                                                               tipoAtencion: 'Requerimiento', plazo: '' },
-    { id: 6,  categoria: 'ACCESOS', modalidad: 'TODAS', proceso: 'ACCESOS', subProceso: 'No le llegan sus accesos', asunto: 'Venta nueva aún no tiene matrícula',                                             aplica: 'datos',                                                                                                                                          tipoAtencion: 'Requerimiento', plazo: '' },
-    { id: 7,  categoria: 'ACCESOS', modalidad: 'TODAS', proceso: 'ACCESOS', subProceso: 'No le llegan sus accesos', asunto: 'No le llegan sus accesos a su correo personal',                                  aplica: 'Cuando le brindamos la información de sus accesos correctos.',                                                                                      tipoAtencion: 'Consulta',      plazo: '' },
-    { id: 8,  categoria: 'ACCESOS', modalidad: 'TODAS', proceso: 'ACCESOS', subProceso: 'No le llegan sus accesos', asunto: 'Error de correo personal',                                                      aplica: 'Cuando el área de ventas crea con el DNI el ID (Código), derivar al back',                                                                          tipoAtencion: 'Queja',         plazo: '' },
-    { id: 9,  categoria: 'ACCESOS', modalidad: 'TODAS', proceso: 'ACCESOS', subProceso: 'No le llegan sus accesos', asunto: 'Estudiante antiguo quiere saber su acceso',                                      aplica: 'Cuando a pesar de tener el correo correcto y tiene matrícula indica que no llegó sus accesos. Lo cierra el CONTACT',                               tipoAtencion: 'Queja',         plazo: '' },
-    { id: 10, categoria: 'ACCESOS', modalidad: 'TODAS', proceso: 'ACCESOS', subProceso: 'No le llegan sus accesos', asunto: 'e',                                                                             aplica: 'Cuando no le figura correo institucional a pesar de que ya tiene matrícula (EVIDENCIA) - COLA DE BACK',                                            tipoAtencion: 'Queja',         plazo: '' },
+  // ── TIPIFICACIONES DATA — ahora viene de Firestore en tiempo real ──
+  let TIPIFICACIONES    = [];
+  let CATEGORIAS_EXTRA  = [];   // categorías vacías (sin tipis) en Firestore
+  let _tipiActiveCat    = null;
+  let _tipiEditId       = null;   // null = crear, string docId = editar
+  let _catEditOld       = null;   // null = crear, string = renombrar
+
+  // ── Semilla inicial si Firestore está vacío ──
+  const TIPI_SEMILLA = [
+    { categoria: 'ACCESOS', modalidad: 'TODAS', proceso: 'ACCESOS', subProceso: 'MFA',                      asunto: 'Restablecimiento MFA por cambio de celular',                                        aplica: 'Si es un estudiante antiguo que debemos mandar activar su código para que pague su trámite (FECHA NACIMIENTO + DIRECCIÓN + DNI) COLA DE PROCESOS', tipoAtencion: 'Requerimiento', plazo: '' },
+    { categoria: 'ACCESOS', modalidad: 'TODAS', proceso: 'ACCESOS', subProceso: 'MFA',                      asunto: 'Desinstalación de app Authenticator',                                                aplica: 'Cuando un estudiante ingresa a la cola de accesos, matrícula o reincorporaciones para consultas generales',                                         tipoAtencion: 'Consulta',      plazo: '' },
+    { categoria: 'ACCESOS', modalidad: 'TODAS', proceso: 'ACCESOS', subProceso: 'MFA',                      asunto: 'Desinstalación de app Authenticator para restablecimiento de contraseña',             aplica: '',                                                                                                                                               tipoAtencion: 'Consulta',      plazo: '' },
+    { categoria: 'ACCESOS', modalidad: 'TODAS', proceso: 'ACCESOS', subProceso: 'MFA',                      asunto: 'Proceso MFA',                                                                       aplica: 'Cuando se le brinda la información del proceso de autenticación.',                                                                                  tipoAtencion: 'Consulta',      plazo: '' },
+    { categoria: 'ACCESOS', modalidad: 'TODAS', proceso: 'ACCESOS', subProceso: 'No le llegan sus accesos', asunto: 'No tiene correo institucional',                                                      aplica: '',                                                                                                                                               tipoAtencion: 'Requerimiento', plazo: '' },
+    { categoria: 'ACCESOS', modalidad: 'TODAS', proceso: 'ACCESOS', subProceso: 'No le llegan sus accesos', asunto: 'Venta nueva aún no tiene matrícula',                                                  aplica: 'datos',                                                                                                                                          tipoAtencion: 'Requerimiento', plazo: '' },
+    { categoria: 'ACCESOS', modalidad: 'TODAS', proceso: 'ACCESOS', subProceso: 'No le llegan sus accesos', asunto: 'No le llegan sus accesos a su correo personal',                                       aplica: 'Cuando le brindamos la información de sus accesos correctos.',                                                                                      tipoAtencion: 'Consulta',      plazo: '' },
+    { categoria: 'ACCESOS', modalidad: 'TODAS', proceso: 'ACCESOS', subProceso: 'No le llegan sus accesos', asunto: 'Error de correo personal',                                                           aplica: 'Cuando el área de ventas crea con el DNI el ID (Código), derivar al back',                                                                          tipoAtencion: 'Queja',         plazo: '' },
+    { categoria: 'ACCESOS', modalidad: 'TODAS', proceso: 'ACCESOS', subProceso: 'No le llegan sus accesos', asunto: 'Estudiante antiguo quiere saber su acceso',                                           aplica: 'Cuando a pesar de tener el correo correcto y tiene matrícula indica que no llegó sus accesos. Lo cierra el CONTACT',                               tipoAtencion: 'Queja',         plazo: '' },
+    { categoria: 'ACCESOS', modalidad: 'TODAS', proceso: 'ACCESOS', subProceso: 'No le llegan sus accesos', asunto: 'No le figura correo institucional con matrícula',                                     aplica: 'Cuando no le figura correo institucional a pesar de que ya tiene matrícula (EVIDENCIA) - COLA DE BACK',                                            tipoAtencion: 'Queja',         plazo: '' },
   ];
 
-  // Categorías extra (sin tipis aún, creadas por Formador)
-  let CATEGORIAS_EXTRA = [];
+  // ── Iniciar listeners Firestore de tipificaciones ──
+  async function iniciarListenersTipi() {
+    // — Semilla: si colección tipificaciones está vacía, poblar con datos iniciales —
+    const snap0 = await getDocs(collection(db, 'tipificaciones'));
+    if (snap0.empty) {
+      await Promise.all(TIPI_SEMILLA.map(t =>
+        addDoc(collection(db, 'tipificaciones'), { ...t, creadoEn: serverTimestamp() })
+      ));
+    }
 
-  let _tipiNextId     = 11;
-  let _tipiActiveCat  = null;
-  let _tipiEditId     = null;   // null = crear, number = editar
-  let _catEditOld     = null;   // null = crear, string = renombrar
+    // — Listener tipificaciones en tiempo real —
+    onSnapshot(
+      query(collection(db, 'tipificaciones'), orderBy('creadoEn', 'asc')),
+      snap => {
+        TIPIFICACIONES = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+        refreshTipi();
+      },
+      err => console.error('onSnapshot tipificaciones:', err)
+    );
+
+    // — Listener categorías en tiempo real —
+    onSnapshot(
+      collection(db, 'categorias'),
+      snap => {
+        CATEGORIAS_EXTRA = snap.docs.map(d => d.data().nombre);
+        refreshTipi();
+      },
+      err => console.error('onSnapshot categorias:', err)
+    );
+  }
 
   function escH(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 
@@ -1008,69 +1038,39 @@
   };
 
   async function guardarTipi() {
-
-  const cat = document.getElementById('ft-categoria').value.trim();
-  const mod = document.getElementById('ft-modalidad').value.trim();
-  const sub = document.getElementById('ft-subproceso').value.trim();
-  const asunto = document.getElementById('ft-asunto').value.trim();
-
-  if (!cat || !mod || !sub || !asunto) {
-    showToast('Completa los campos obligatorios (*)', 'error');
-    return;
-  }
-
-  const payload = {
-    categoria: cat,
-    modalidad: mod,
-    proceso: cat,
-    subProceso: sub,
-    asunto: asunto,
-    aplica: document.getElementById('ft-aplica').value.trim(),
-    tipoAtencion: document.getElementById('ft-tipo').value,
-    plazo: document.getElementById('ft-plazo').value.trim()
-  };
-
-  try {
-
-    if (_tipiEditId !== null) {
-
-      const registro = TIPIFICACIONES.find(
-        x => x.id === _tipiEditId
-      );
-
-      if (registro?.firebaseId) {
-
-        await updateDoc(
-          doc(db, "tipificaciones", registro.firebaseId),
-          payload
-        );
-
+    const cat    = document.getElementById('ft-categoria').value.trim();
+    const mod    = document.getElementById('ft-modalidad').value.trim();
+    const sub    = document.getElementById('ft-subproceso').value.trim();
+    const asunto = document.getElementById('ft-asunto').value.trim();
+    if (!cat || !mod || !sub || !asunto) { showToast('Completa los campos obligatorios (*)', 'error'); return; }
+    const btn = document.getElementById('btn-tipi-save');
+    btn.disabled = true;
+    const payload = {
+      categoria:    cat,
+      modalidad:    mod,
+      proceso:      cat,
+      subProceso:   sub,
+      asunto:       asunto,
+      aplica:       document.getElementById('ft-aplica').value.trim(),
+      tipoAtencion: document.getElementById('ft-tipo').value,
+      plazo:        document.getElementById('ft-plazo').value.trim(),
+    };
+    try {
+      if (_tipiEditId !== null) {
+        await updateDoc(doc(db, 'tipificaciones', _tipiEditId), payload);
+        showToast('Tipificación actualizada');
+      } else {
+        await addDoc(collection(db, 'tipificaciones'), { ...payload, creadoEn: serverTimestamp() });
+        showToast('Tipificación añadida');
       }
-
-      showToast('Tipificación actualizada');
-
-    } else {
-
-      await addDoc(
-        collection(db, "tipificaciones"),
-        {
-          id: Date.now(),
-          ...payload
-        }
-      );
-
-      showToast('Tipificación añadida');
+      cerrarModalTipi();
+    } catch (e) {
+      console.error(e);
+      showToast('Error al guardar: ' + e.message, 'error');
+    } finally {
+      btn.disabled = false;
     }
-
-    cerrarModalTipi();
-
-  } catch (e) {
-
-    console.error(e);
-    showToast('Error al guardar', 'error');
-
   }
-}
 
   // ── Modal categoría ──
   function abrirModalCat(oldName) {
@@ -1087,83 +1087,73 @@
   }
 
   async function guardarCategoria() {
-
-  const nombre = document
-    .getElementById('fc-nombre')
-    .value
-    .trim()
-    .toUpperCase();
-
-  if (!nombre) {
-    showToast('Escribe un nombre para la categoría', 'error');
-    return;
-  }
-
-  try {
-
-    await addDoc(
-      categoriasRef,
-      {
-        nombre: nombre
+    const nombre = document.getElementById('fc-nombre').value.trim().toUpperCase();
+    if (!nombre) { showToast('Escribe un nombre para la categoría', 'error'); return; }
+    const btn = document.getElementById('btn-cat-save');
+    btn.disabled = true;
+    try {
+      if (_catEditOld) {
+        // Renombrar: actualizar todas las tipis que pertenecen a esa categoría
+        const batch = TIPIFICACIONES
+          .filter(t => t.categoria === _catEditOld)
+          .map(t => updateDoc(doc(db, 'tipificaciones', t.id), { categoria: nombre, proceso: nombre }));
+        // Renombrar doc de categoria_extra si existe
+        const catSnap = await getDocs(query(collection(db, 'categorias'), where('nombre', '==', _catEditOld)));
+        catSnap.docs.forEach(d => batch.push(updateDoc(doc(db, 'categorias', d.id), { nombre })));
+        await Promise.all(batch);
+        showToast(`Categoría renombrada a "${nombre}"`);
+      } else {
+        if (getCategoriasUnicas().includes(nombre)) { showToast('Esa categoría ya existe', 'error'); btn.disabled = false; return; }
+        await addDoc(collection(db, 'categorias'), { nombre, creadoEn: serverTimestamp() });
+        showToast(`Categoría "${nombre}" creada`);
       }
-    );
-
-    cerrarModalCat();
-
-    showToast(`Categoría "${nombre}" creada`);
-
-  } catch (e) {
-
-    console.error(e);
-    showToast('Error al crear categoría', 'error');
-
+      cerrarModalCat();
+    } catch (e) {
+      console.error(e);
+      showToast('Error al guardar categoría: ' + e.message, 'error');
+    } finally {
+      btn.disabled = false;
+    }
   }
-}
 
   // ── Eliminar categoría (con todas sus tipis) ──
-  window.eliminarCategoria = function(cat) {
+  window.eliminarCategoria = async function(cat) {
     const n = TIPIFICACIONES.filter(t => t.categoria === cat).length;
     const msg = n > 0
       ? `¿Eliminar la categoría "${cat}" y sus ${n} tipificación${n!==1?'es':''}? Esta acción no se puede deshacer.`
       : `¿Eliminar la categoría vacía "${cat}"?`;
     if (!confirm(msg)) return;
-    TIPIFICACIONES = TIPIFICACIONES.filter(t => t.categoria !== cat);
-    CATEGORIAS_EXTRA = CATEGORIAS_EXTRA.filter(c => c !== cat);
-    showToast(`Categoría "${cat}" eliminada`, 'error');
-    refreshTipi();
+    try {
+      const batch = TIPIFICACIONES
+        .filter(t => t.categoria === cat)
+        .map(t => deleteDoc(doc(db, 'tipificaciones', t.id)));
+      const catSnap = await getDocs(query(collection(db, 'categorias'), where('nombre', '==', cat)));
+      catSnap.docs.forEach(d => batch.push(deleteDoc(doc(db, 'categorias', d.id))));
+      await Promise.all(batch);
+      showToast(`Categoría "${cat}" eliminada`, 'error');
+    } catch(e) {
+      console.error(e);
+      showToast('Error al eliminar categoría: ' + e.message, 'error');
+    }
   };
 
-  // ── Editar / borrar fila ──
   window.editarTipi = function(id) {
     const t = TIPIFICACIONES.find(x => x.id === id);
     if (t) abrirModalTipi(t);
   };
 
   window.eliminarTipi = async function(id) {
-
-  const t = TIPIFICACIONES.find(
-    x => x.id === id
-  );
-
-  if (!t) return;
-
-  if (!confirm(`¿Eliminar la tipificación "${t.asunto}"?`))
-    return;
-
-  try {
-
-    await deleteDoc(
-      doc(db, "tipificaciones", t.firebaseId)
-    );
-
-    showToast('Tipificación eliminada');
-
-  } catch (e) {
-
-    console.error(e);
-
-  }
-};
+    const t = TIPIFICACIONES.find(x => x.id === id);
+    if (!t) return;
+    if (!confirm(`¿Eliminar la tipificación "${t.asunto}"?`)) return;
+    try {
+      await deleteDoc(doc(db, 'tipificaciones', id));
+      showToast('Tipificación eliminada', 'error');
+    } catch(e) {
+      console.error(e);
+      showToast('Error al eliminar: ' + e.message, 'error');
+    }
+  };
 
   // ── Edición inline de celda ──
   window.editarCelda = function(id, campo, el) {
@@ -1175,20 +1165,22 @@
     el.style.outline = '2px solid var(--orange)';
     el.style.borderRadius = '4px';
     el.focus();
-    // Select all text
     const range = document.createRange(); range.selectNodeContents(el);
     window.getSelection().removeAllRanges(); window.getSelection().addRange(range);
 
-    function guardar() {
+    async function guardar() {
       el.contentEditable = 'false';
       el.style.outline = '';
       el.style.borderRadius = '';
       const newVal = el.textContent.trim();
       if (newVal !== oldVal) {
-        t[campo] = newVal;
-        showToast('Celda actualizada ✓');
-        // Si cambia tipoAtencion necesitamos re-render para actualizar badge
-        if (campo === 'tipoAtencion') refreshTipi();
+        try {
+          await updateDoc(doc(db, 'tipificaciones', id), { [campo]: newVal });
+          showToast('Celda actualizada ✓');
+        } catch(e) {
+          el.textContent = oldVal;
+          showToast('Error al guardar celda: ' + e.message, 'error');
+        }
       }
     }
     el.addEventListener('blur',    guardar, { once: true });
@@ -1356,9 +1348,8 @@
     renderTipiAcordeones(_tipiActiveCat, document.getElementById('search-tipi').value);
   }
 
-  // Inicializar módulo tipificaciones (solo UI base, sin features de formador aún)
-  renderTipiChips(null);
-  renderTipiAcordeones(null, '');
+  // Inicializar módulo tipificaciones con Firestore en tiempo real
+  iniciarListenersTipi();
   document.getElementById('search-tipi').addEventListener('input', function() {
     renderTipiAcordeones(_tipiActiveCat, this.value);
   });
