@@ -41,18 +41,18 @@
     .content { flex: 1; overflow-y: auto; }
 
     /* TOPBAR */
-    .topbar { height: 52px; background: var(--black); display: flex; align-items: center; justify-content: space-between; padding: 0 20px; flex-shrink: 0; z-index: 50; }
-    .topbar-left { display: flex; align-items: center; gap: 10px; }
-    .logo-img { width: 30px; height: 30px; object-fit: contain; border-radius: 6px; }
-    .brand-name { font-size: 13px; font-weight: 700; color: #fff; }
-    .brand-sub  { font-size: 10px; color: #666; margin-top: 1px; }
-    .topbar-right { display: flex; align-items: center; gap: 8px; }
-    .chip { display: flex; align-items: center; gap: 6px; background: #1c1c1c; border: 1px solid #2c2c2c; border-radius: 99px; padding: 4px 12px; font-size: 11px; color: #aaa; }
-    .dot { width: 6px; height: 6px; border-radius: 50%; background: #3DBD72; }
-    .avatar-chip { display: flex; align-items: center; gap: 8px; background: #1c1c1c; border: 1px solid #2c2c2c; border-radius: 99px; padding: 3px 12px 3px 4px; }
-    .av { width: 24px; height: 24px; border-radius: 50%; background: var(--orange); color: #fff; font-size: 10px; font-weight: 700; display: flex; align-items: center; justify-content: center; }
-    .av-name { font-size: 11px; color: #ccc; font-weight: 500; }
-    .btn-logout { display: flex; align-items: center; gap: 6px; background: transparent; border: 1px solid #2c2c2c; border-radius: 99px; padding: 5px 12px; font-size: 11px; color: #888; cursor: pointer; font-family: var(--font); transition: all 0.15s; }
+    .topbar { height: 52px; background: var(--black); display: flex; align-items: center; justify-content: space-between; padding: 0 20px; flex-shrink: 0; z-index: 50; min-width: 0; }
+    .topbar-left { display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
+    .logo-img { width: 30px; height: 30px; object-fit: contain; border-radius: 6px; flex-shrink: 0; }
+    .brand-name { font-size: 13px; font-weight: 700; color: #fff; white-space: nowrap; }
+    .brand-sub  { font-size: 10px; color: #666; margin-top: 1px; white-space: nowrap; }
+    .topbar-right { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+    .chip { display: flex; align-items: center; gap: 6px; background: #1c1c1c; border: 1px solid #2c2c2c; border-radius: 99px; padding: 4px 12px; font-size: 11px; color: #aaa; white-space: nowrap; }
+    .dot { width: 6px; height: 6px; border-radius: 50%; background: #3DBD72; flex-shrink: 0; }
+    .avatar-chip { display: flex; align-items: center; gap: 8px; background: #1c1c1c; border: 1px solid #2c2c2c; border-radius: 99px; padding: 3px 12px 3px 4px; white-space: nowrap; }
+    .av { width: 24px; height: 24px; border-radius: 50%; background: var(--orange); color: #fff; font-size: 10px; font-weight: 700; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+    .av-name { font-size: 11px; color: #ccc; font-weight: 500; max-width: 120px; overflow: hidden; text-overflow: ellipsis; }
+    .btn-logout { display: flex; align-items: center; gap: 6px; background: transparent; border: 1px solid #2c2c2c; border-radius: 99px; padding: 5px 12px; font-size: 11px; color: #888; cursor: pointer; font-family: var(--font); transition: all 0.15s; white-space: nowrap; }
     .btn-logout:hover { border-color: var(--danger); color: var(--danger); }
 
     /* SIDEBAR */
@@ -326,29 +326,31 @@
 
     /* tabla dentro de cada acordeón */
     .tipi-table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
-    .tipi-table { width: 100%; border-collapse: collapse; min-width: 900px; table-layout: fixed; }
+    .tipi-table { width: 100%; border-collapse: collapse; min-width: 1500px; table-layout: fixed; }
 
-    /* anchos de columna fijos para que aplica tenga espacio cómodo */
     .tipi-table colgroup col.col-num      { width: 36px; }
-    .tipi-table colgroup col.col-modal    { width: 165px; }
-    .tipi-table colgroup col.col-sub      { width: 165px; }
+    .tipi-table colgroup col.col-modal    { width: 200px; }
+    .tipi-table colgroup col.col-sub      { width: 160px; }
     .tipi-table colgroup col.col-asunto   { width: 175px; }
-    .tipi-table colgroup col.col-aplica   { width: auto; }
-    .tipi-table colgroup col.col-tipo     { width: 125px; }
-    .tipi-table colgroup col.col-plazo    { width: 115px; }
+    .tipi-table colgroup col.col-aplica   { width: 240px; }
+    .tipi-table colgroup col.col-tipo     { width: 145px; }
+    .tipi-table colgroup col.col-plazo    { width: 105px; }
+    .tipi-table colgroup col.col-plazo-web    { width: 130px; }
+    .tipi-table colgroup col.col-plazo-manual { width: 130px; }
+    .tipi-table colgroup col.col-cola     { width: 200px; }
     .tipi-table colgroup col.col-acc      { width: 70px; }
 
     .tipi-table thead th {
       background: #1C1C1A; color: #fff; font-size: 10px; font-weight: 600;
       text-transform: uppercase; letter-spacing: 0.07em; padding: 10px 12px;
-      text-align: left; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+      text-align: left; white-space: nowrap;
     }
     .tipi-table tbody tr { border-bottom: 1px solid #F0EEE9; transition: background 0.1s; background: var(--white); }
     .tipi-table tbody tr:last-child { border-bottom: none; }
     .tipi-table tbody tr:hover { background: var(--orange-light); }
-    .tipi-table tbody td { padding: 10px 12px; font-size: 12px; color: var(--text); vertical-align: top; overflow: hidden; }
+    .tipi-table tbody td { padding: 10px 12px; font-size: 12px; color: var(--text); vertical-align: top; word-break: break-word; overflow-wrap: break-word; }
 
-    .tipi-badge { display: inline-flex; align-items: center; gap: 4px; border-radius: 99px; padding: 3px 10px; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
+    .tipi-badge { display: inline-flex; align-items: center; gap: 4px; border-radius: 99px; padding: 3px 10px; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; white-space: nowrap; max-width: 100%; }
     .tipi-badge.modalidad     { background: var(--info-bg); color: var(--info); }
     .tipi-badge.proceso       { background: var(--orange-light); color: var(--orange-dark); }
     .tipi-badge.sub           { background: var(--surface); color: var(--muted); border: 1px solid var(--border); }
@@ -358,19 +360,33 @@
     .tipi-badge.mixto         { background: var(--pending-bg); color: var(--pending); }
     .tipi-badge.plazo         { background: #E8FAF0; color: #1A7A45; font-size: 10px; }
 
-    /* columna "En qué casos aplica" — texto cómodo, con límite de líneas y tooltip al pasar */
+    /* columna "En qué casos se deriva" — texto legible con scroll al hover */
     .tipi-aplica {
-      font-size: 11px; color: #555; line-height: 1.6;
+      font-size: 11px; color: #444; line-height: 1.65;
       word-break: break-word; overflow-wrap: break-word;
-      display: -webkit-box; -webkit-line-clamp: 4; -webkit-box-orient: vertical;
-      overflow: hidden; cursor: default;
-      transition: -webkit-line-clamp 0s;
+      white-space: normal;
+      max-height: 72px; overflow: hidden;
+      position: relative;
     }
     /* Al hacer hover en la fila, el texto se expande por completo */
     .tipi-table tbody tr:hover .tipi-aplica {
-      -webkit-line-clamp: unset;
+      max-height: none;
       overflow: visible;
     }
+    /* Cola de derivación - chips dentro de la tabla */
+    .cola-chip { display: inline-flex; align-items: center; gap: 3px; background: var(--info-bg); color: var(--info); border-radius: 6px; padding: 2px 8px; font-size: 10px; font-weight: 600; margin: 2px 2px 2px 0; white-space: nowrap; line-height: 1.4; }
+
+    /* Checkboxes de cola en el modal */
+    .cola-checkboxes-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 7px; margin-top: 4px; }
+    .cola-checkbox-item { display: flex; align-items: center; gap: 8px; background: var(--surface); border: 1.5px solid var(--border); border-radius: 8px; padding: 8px 12px; cursor: pointer; transition: all 0.14s; font-size: 12px; font-weight: 500; color: var(--text); user-select: none; }
+    .cola-checkbox-item:hover { border-color: var(--info); background: var(--info-bg); color: var(--info); }
+    .cola-checkbox-item.selected { border-color: var(--info); background: var(--info-bg); color: var(--info); }
+    .cola-checkbox-item input[type=checkbox] { width: 15px; height: 15px; accent-color: var(--info); flex-shrink: 0; cursor: pointer; }
+    .cola-add-custom { display: flex; align-items: center; gap: 8px; margin-top: 8px; }
+    .cola-add-custom input { flex: 1; height: 34px; border: 1px solid var(--border); border-radius: 8px; padding: 0 10px; font-family: var(--font); font-size: 12px; color: var(--text); outline: none; }
+    .cola-add-custom input:focus { border-color: var(--orange); }
+    .cola-add-custom button { height: 34px; padding: 0 14px; border-radius: 8px; border: none; background: var(--black); color: #fff; font-family: var(--font); font-size: 12px; font-weight: 700; cursor: pointer; white-space: nowrap; transition: background 0.14s; }
+    .cola-add-custom button:hover { background: #333; }
 
     .tipi-num { font-size: 10px; font-weight: 700; color: var(--muted); }
 
@@ -845,9 +861,51 @@
         </div>
         <input type="hidden" id="ft-tipo" value=""/>
       </div>
+      <div class="form-group span2">
+        <label>Cola de derivación</label>
+        <div class="cola-checkboxes-grid" id="ft-cola-grid">
+          <label class="cola-checkbox-item" onclick="toggleColaItem(this)">
+            <input type="checkbox" value="SISE Sedes" onclick="event.stopPropagation()"/> SISE Sedes
+          </label>
+          <label class="cola-checkbox-item" onclick="toggleColaItem(this)">
+            <input type="checkbox" value="SISE Reclamos" onclick="event.stopPropagation()"/> SISE Reclamos
+          </label>
+          <label class="cola-checkbox-item" onclick="toggleColaItem(this)">
+            <input type="checkbox" value="SISE Retención" onclick="event.stopPropagation()"/> SISE Retención
+          </label>
+          <label class="cola-checkbox-item" onclick="toggleColaItem(this)">
+            <input type="checkbox" value="SISE Procesos, Proyectos y Registros" onclick="event.stopPropagation()"/> SISE Procesos, Proyectos y Registros
+          </label>
+          <label class="cola-checkbox-item" onclick="toggleColaItem(this)">
+            <input type="checkbox" value="SISE Contact Center Back Office" onclick="event.stopPropagation()"/> SISE Contact Center Back Office
+          </label>
+          <label class="cola-checkbox-item" onclick="toggleColaItem(this)">
+            <input type="checkbox" value="SISE Cobranzas" onclick="event.stopPropagation()"/> SISE Cobranzas
+          </label>
+          <label class="cola-checkbox-item" onclick="toggleColaItem(this)">
+            <input type="checkbox" value="SISE Empleabilidad" onclick="event.stopPropagation()"/> SISE Empleabilidad
+          </label>
+          <label class="cola-checkbox-item" onclick="toggleColaItem(this)">
+            <input type="checkbox" value="SISE Prog y Matrícula FCI y Tit" onclick="event.stopPropagation()"/> SISE Prog y Matrícula FCI y Tit
+          </label>
+        </div>
+        <div class="cola-add-custom">
+          <input type="text" id="ft-cola-nueva" placeholder="Añadir nueva cola personalizada…"/>
+          <button type="button" onclick="agregarColaNueva()"><i class="ti ti-plus"></i> Añadir</button>
+        </div>
+        <input type="hidden" id="ft-cola" value="[]"/>
+      </div>
       <div class="form-group">
         <label>Plazo de atención</label>
         <input type="text" class="form-control" id="ft-plazo" placeholder="Ej: 24h, Inmediato…"/>
+      </div>
+      <div class="form-group">
+        <label>Plazo — Trámite web</label>
+        <input type="text" class="form-control" id="ft-plazo-web" placeholder="Ej: 48h, 3 días hábiles…"/>
+      </div>
+      <div class="form-group">
+        <label>Plazo — Caso manual</label>
+        <input type="text" class="form-control" id="ft-plazo-manual" placeholder="Ej: Inmediato, 24h…"/>
       </div>
     </div>
     <div class="form-actions">
@@ -1040,7 +1098,9 @@
     document.getElementById('ft-subproceso').value = tipi ? (tipi.subProceso || '') : '';
     document.getElementById('ft-asunto').value     = tipi ? (tipi.asunto     || '') : '';
     document.getElementById('ft-aplica').value     = tipi ? (tipi.aplica     || '') : '';
-    document.getElementById('ft-plazo').value      = tipi ? (tipi.plazo      || '') : '';
+    document.getElementById('ft-plazo').value        = tipi ? (tipi.plazo       || '') : '';
+    document.getElementById('ft-plazo-web').value    = tipi ? (tipi.plazoWeb    || '') : '';
+    document.getElementById('ft-plazo-manual').value = tipi ? (tipi.plazoManual || '') : '';
     document.getElementById('ft-tipo').value       = tipi ? (tipi.tipoAtencion || '') : '';
     // Highlight tipo button
     document.querySelectorAll('.tipi-tipo-btn').forEach(b => {
@@ -1049,6 +1109,9 @@
         b.classList.add('sel-' + tipi.tipoAtencion.toLowerCase());
       }
     });
+    // Cola de derivación
+    resetColaCheckboxes(tipi ? (tipi.colaDer || []) : []);
+    document.getElementById('ft-cola-nueva').value = '';
     document.getElementById('modal-tipi-overlay').classList.add('open');
   }
 
@@ -1064,6 +1127,79 @@
       if (b.dataset.tipo === tipo) b.classList.add('sel-' + tipo.toLowerCase());
     });
   };
+
+  // ── Cola de derivación helpers ──
+  window.toggleColaItem = function(label) {
+    const cb = label.querySelector('input[type=checkbox]');
+    cb.checked = !cb.checked;
+    label.classList.toggle('selected', cb.checked);
+    syncColaHidden();
+  };
+
+  function syncColaHidden() {
+    const vals = [];
+    document.querySelectorAll('#ft-cola-grid input[type=checkbox]').forEach(cb => {
+      if (cb.checked) vals.push(cb.value);
+    });
+    document.getElementById('ft-cola').value = JSON.stringify(vals);
+  }
+
+  window.agregarColaNueva = function() {
+    const inp = document.getElementById('ft-cola-nueva');
+    const val = inp.value.trim();
+    if (!val) return;
+    // Check if already exists
+    const existing = [...document.querySelectorAll('#ft-cola-grid input[type=checkbox]')].find(cb => cb.value === val);
+    if (existing) {
+      existing.checked = true;
+      existing.closest('.cola-checkbox-item').classList.add('selected');
+      syncColaHidden();
+      inp.value = '';
+      return;
+    }
+    const grid = document.getElementById('ft-cola-grid');
+    const label = document.createElement('label');
+    label.className = 'cola-checkbox-item selected';
+    label.setAttribute('onclick', 'toggleColaItem(this)');
+    label.innerHTML = `<input type="checkbox" value="${val.replace(/"/g,'&quot;')}" onclick="event.stopPropagation()" checked/> ${val}`;
+    grid.appendChild(label);
+    syncColaHidden();
+    inp.value = '';
+  };
+
+  function resetColaCheckboxes(selected) {
+    // Reset all built-in checkboxes
+    document.querySelectorAll('#ft-cola-grid input[type=checkbox]').forEach(cb => {
+      cb.checked = false;
+      cb.closest('.cola-checkbox-item').classList.remove('selected');
+    });
+    // Remove custom added ones (beyond the original 8)
+    const grid = document.getElementById('ft-cola-grid');
+    const allItems = [...grid.querySelectorAll('.cola-checkbox-item')];
+    const builtIn = ['SISE Sedes','SISE Reclamos','SISE Retención','SISE Procesos, Proyectos y Registros','SISE Contact Center Back Office','SISE Cobranzas','SISE Empleabilidad','SISE Prog y Matrícula FCI y Tit'];
+    allItems.forEach(item => {
+      const cb = item.querySelector('input');
+      if (!builtIn.includes(cb.value)) item.remove();
+    });
+    // Apply selected values
+    if (selected && Array.isArray(selected)) {
+      selected.forEach(val => {
+        const cb = grid.querySelector(`input[value="${val}"]`);
+        if (cb) {
+          cb.checked = true;
+          cb.closest('.cola-checkbox-item').classList.add('selected');
+        } else {
+          // Custom value: add it
+          const label = document.createElement('label');
+          label.className = 'cola-checkbox-item selected';
+          label.setAttribute('onclick', 'toggleColaItem(this)');
+          label.innerHTML = `<input type="checkbox" value="${val}" onclick="event.stopPropagation()" checked/> ${val}`;
+          grid.appendChild(label);
+        }
+      });
+    }
+    document.getElementById('ft-cola').value = JSON.stringify(selected || []);
+  }
 
   async function guardarTipi() {
     const cat    = document.getElementById('ft-categoria').value.trim();
@@ -1082,6 +1218,9 @@
       aplica:       document.getElementById('ft-aplica').value.trim(),
       tipoAtencion: document.getElementById('ft-tipo').value,
       plazo:        document.getElementById('ft-plazo').value.trim(),
+      plazoWeb:     document.getElementById('ft-plazo-web').value.trim(),
+      plazoManual:  document.getElementById('ft-plazo-manual').value.trim(),
+      colaDer:      JSON.parse(document.getElementById('ft-cola').value || '[]'),
     };
     try {
       if (_tipiEditId !== null) {
@@ -1300,12 +1439,23 @@
           <td>${t.plazo
             ? `<span class="tipi-badge plazo" ${editAttr('plazo')}><i class="ti ti-clock" style="font-size:10px"></i> ${escH(t.plazo)}</span>`
             : `<span style="color:#ccc;font-size:11px" ${editAttr('plazo')}>—</span>`}</td>
+          <td>${t.plazoWeb
+            ? `<span class="tipi-badge plazo" style="background:#EBF2FF;color:#1D5FBD" ${editAttr('plazoWeb')}><i class="ti ti-world" style="font-size:10px"></i> ${escH(t.plazoWeb)}</span>`
+            : `<span style="color:#ccc;font-size:11px" ${editAttr('plazoWeb')}>—</span>`}</td>
+          <td>${t.plazoManual
+            ? `<span class="tipi-badge plazo" style="background:#F5F0FF;color:#5B21B6" ${editAttr('plazoManual')}><i class="ti ti-user" style="font-size:10px"></i> ${escH(t.plazoManual)}</span>`
+            : `<span style="color:#ccc;font-size:11px" ${editAttr('plazoManual')}>—</span>`}</td>
+          <td style="vertical-align:top;padding:8px 10px">${
+            (t.colaDer && Array.isArray(t.colaDer) && t.colaDer.length)
+              ? t.colaDer.map(c => `<span class="cola-chip"><i class="ti ti-arrow-right" style="font-size:9px"></i>${escH(c)}</span>`).join('')
+              : `<span style="color:#ccc;font-size:11px">—</span>`
+          }</td>
           ${tdAcciones}
         </tr>`;
       }).join('');
 
       const emptyRow = formador && !items.length
-        ? `<tr><td colspan="${formador ? 8 : 7}" style="padding:20px;text-align:center;color:var(--muted);font-size:12px">
+        ? `<tr><td colspan="${formador ? 11 : 10}" style="padding:20px;text-align:center;color:var(--muted);font-size:12px">
             <i class="ti ti-plus-circle" style="margin-right:5px"></i>Categoría vacía — usa "Nueva tipificación" para añadir.
            </td></tr>` : '';
 
@@ -1333,6 +1483,9 @@
                   <col class="col-aplica"/>
                   <col class="col-tipo"/>
                   <col class="col-plazo"/>
+                  <col class="col-plazo-web"/>
+                  <col class="col-plazo-manual"/>
+                  <col class="col-cola"/>
                   ${formador ? '<col class="col-acc"/>' : ''}
                 </colgroup>
                 <thead>
@@ -1344,6 +1497,9 @@
                     <th>En qué casos aplica</th>
                     <th>Tipo de atención</th>
                     <th>Plazo</th>
+                    <th>Plazo Web</th>
+                    <th>Plazo Manual</th>
+                    <th>Cola de derivación</th>
                     ${thAcciones}
                   </tr>
                 </thead>
