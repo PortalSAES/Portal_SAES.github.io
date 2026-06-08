@@ -62,7 +62,7 @@
     .nav-item i { font-size: 16px; flex-shrink: 0; }
     .nav-item:hover { background: var(--surface); color: var(--text); }
     .nav-item.active { background: var(--orange-light); color: var(--orange-dark); border-left: 3px solid var(--orange); font-weight: 600; }
-    .nav-badge { margin-left: auto; background: var(--orange); color: #fff; font-size: 10px; font-weight: 700; border-radius: 10px; padding: 1px 7px; }
+    .nav-badge { margin-left: auto; background: var(--orange); color: #fff; font-size: 10px; font-weight: 700; border-radius: 10px; padding: 2px 6px; min-width: 18px; height: 18px; display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; line-height: 1; }
     .nav-badge.danger { background: var(--danger); }
 
     /* VIEWS */
@@ -191,114 +191,288 @@
     .pend-case-actions { display: flex; gap: 6px; flex-shrink: 0; }
     .modal-pend { max-width: 520px; }
 
-    /* TOAST */
+    /* ── CHECK ALERTADO (Supervisor) ── */
+    .btn-alertado {
+      display: flex; align-items: center; gap: 5px;
+      border: 1.5px solid var(--border); border-radius: 8px;
+      background: var(--white); padding: 4px 10px;
+      font-family: var(--font); font-size: 11px; font-weight: 600;
+      color: var(--muted); cursor: pointer; transition: all 0.15s;
+      white-space: nowrap; flex-shrink: 0;
+    }
+    .btn-alertado i { font-size: 14px; }
+    .btn-alertado:not(:disabled):hover { border-color: var(--success); color: var(--success); background: var(--success-bg); }
+    .btn-alertado.alertado-active {
+      border-color: var(--success); background: var(--success-bg);
+      color: var(--success);
+    }
+    .btn-alertado:disabled { opacity: 0.45; cursor: default; }
+    .pend-case-card.alertado { border-left-color: var(--success); opacity: 0.75; }
+    .alertado-stamp { display: inline-flex; align-items: center; gap: 4px; font-size: 10px; color: var(--success); font-weight: 600; margin-top: 4px; }
+    .alertado-stamp i { font-size: 12px; }
     .toast { position: fixed; bottom: 24px; right: 24px; z-index: 999; background: var(--black); color: #fff; border-radius: 10px; padding: 12px 18px; font-size: 13px; font-weight: 500; display: flex; align-items: center; gap: 10px; transform: translateY(20px); opacity: 0; transition: all 0.3s ease; pointer-events: none; }
     .toast.show    { transform: translateY(0); opacity: 1; }
     .toast.success { background: var(--success); }
     .toast.error   { background: var(--danger); }
 
-    /* HOME */
+    /* ═══════════════════════════════════
+       HOME — REDISEÑO ELEGANTE
+    ═══════════════════════════════════ */
+    #view-inicio { padding: 0 !important; }
+
+    /* Hero principal */
     .home-hero {
-      background: var(--black); border-radius: 16px;
-      padding: 32px 36px; display: flex; align-items: center;
-      justify-content: space-between; gap: 24px; margin-bottom: 20px;
+      position: relative; overflow: hidden;
+      background: linear-gradient(135deg, #0D0D0D 0%, #1a0f06 50%, #0D0D0D 100%);
+      padding: 36px 36px 32px; margin-bottom: 0;
+      border-radius: 0; display: flex; align-items: center;
+      justify-content: space-between; gap: 24px;
     }
-    .home-hero-left { flex: 1; }
+    .home-hero::before {
+      content: ''; position: absolute; top: -60px; right: -60px;
+      width: 300px; height: 300px; border-radius: 50%;
+      background: radial-gradient(circle, rgba(242,101,34,0.18) 0%, transparent 70%);
+      pointer-events: none;
+    }
+    .home-hero::after {
+      content: ''; position: absolute; bottom: -40px; left: 30%;
+      width: 200px; height: 200px; border-radius: 50%;
+      background: radial-gradient(circle, rgba(242,101,34,0.08) 0%, transparent 70%);
+      pointer-events: none;
+    }
+    .home-hero-left { flex: 1; position: relative; z-index: 1; }
     .home-hero-tag {
       display: inline-flex; align-items: center; gap: 6px;
-      background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.12);
-      border-radius: 99px; padding: 4px 12px; font-size: 11px; color: #aaa;
-      margin-bottom: 14px;
+      background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 99px; padding: 4px 12px; font-size: 11px; color: #999;
+      margin-bottom: 16px; backdrop-filter: blur(4px);
     }
-    .home-hero-title { font-size: 26px; font-weight: 800; color: #fff; margin-bottom: 10px; line-height: 1.2; }
-    .home-hero-sub { font-size: 13px; color: #888; line-height: 1.7; max-width: 520px; margin-bottom: 18px; }
+    .home-hero-title {
+      font-size: 28px; font-weight: 800; color: #fff;
+      margin-bottom: 10px; line-height: 1.2;
+      letter-spacing: -0.5px;
+    }
+    .home-hero-title span { color: var(--orange); }
+    .home-hero-sub { font-size: 13px; color: #777; line-height: 1.75; max-width: 500px; margin-bottom: 20px; }
     .home-hero-chips { display: flex; gap: 8px; flex-wrap: wrap; }
     .home-chip {
       display: flex; align-items: center; gap: 6px;
-      border-radius: 99px; padding: 5px 14px; font-size: 12px; font-weight: 600;
+      border-radius: 10px; padding: 6px 14px; font-size: 11px; font-weight: 600;
+      cursor: pointer; transition: all 0.2s; letter-spacing: 0.01em;
     }
     .home-chip i { font-size: 13px; }
-    .home-chip.orange { background: rgba(242,101,34,0.15); color: #F26522; border: 1px solid rgba(242,101,34,0.25); }
-    .home-chip.purple { background: rgba(91,33,182,0.15); color: #7C3AED; border: 1px solid rgba(91,33,182,0.25); }
-    .home-chip.green  { background: rgba(26,122,69,0.15);  color: #22C55E; border: 1px solid rgba(26,122,69,0.25); }
-    .home-hero-right { flex-shrink: 0; }
-    .home-hero-icon-wrap {
-      width: 100px; height: 100px; border-radius: 24px;
-      background: rgba(242,101,34,0.12); border: 1px solid rgba(242,101,34,0.2);
-      display: flex; align-items: center; justify-content: center;
-      font-size: 48px; color: var(--orange);
-    }
+    .home-chip.orange { background: rgba(242,101,34,0.12); color: #F26522; border: 1px solid rgba(242,101,34,0.2); }
+    .home-chip.orange:hover { background: rgba(242,101,34,0.22); }
+    .home-chip.purple { background: rgba(91,33,182,0.12); color: #9B6FF5; border: 1px solid rgba(91,33,182,0.2); }
+    .home-chip.purple:hover { background: rgba(91,33,182,0.22); }
+    .home-chip.green  { background: rgba(26,122,69,0.12);  color: #3DD68C; border: 1px solid rgba(26,122,69,0.2); }
+    .home-chip.green:hover  { background: rgba(26,122,69,0.22); }
+    .home-hero-right { flex-shrink: 0; position: relative; z-index: 1; }
 
+    /* Reloj Lima */
+    .home-clock-wrap {
+      display: flex; flex-direction: column; align-items: center;
+      background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 20px; padding: 20px 24px; gap: 4px;
+      backdrop-filter: blur(8px);
+    }
+    .home-clock-label {
+      font-size: 9px; font-weight: 700; color: #555; text-transform: uppercase;
+      letter-spacing: 0.12em; margin-bottom: 2px;
+    }
+    .home-clock-time {
+      font-size: 36px; font-weight: 800; color: #fff;
+      letter-spacing: -1px; line-height: 1; font-variant-numeric: tabular-nums;
+    }
+    .home-clock-ampm {
+      font-size: 12px; font-weight: 600; color: var(--orange); margin-left: 4px;
+    }
+    .home-clock-date {
+      font-size: 11px; color: #555; text-align: center; margin-top: 2px;
+      text-transform: capitalize;
+    }
+    .home-clock-lima {
+      display: flex; align-items: center; gap: 5px;
+      font-size: 10px; color: #444; margin-top: 4px;
+    }
+    .home-clock-lima i { font-size: 11px; color: var(--orange); }
+
+    /* Sección de contenido del home */
+    .home-content { padding: 24px 28px 32px; }
+
+    /* Grid de accesos directos */
+    .home-section-label {
+      font-size: 10px; font-weight: 700; color: var(--muted); text-transform: uppercase;
+      letter-spacing: 0.1em; margin-bottom: 14px; display: flex; align-items: center; gap: 8px;
+    }
+    .home-section-label::after {
+      content: ''; flex: 1; height: 1px; background: var(--border);
+    }
     .home-cards-grid {
-      display: grid; grid-template-columns: repeat(auto-fill, minmax(280px,1fr));
-      gap: 12px; margin-bottom: 20px;
+      display: grid; grid-template-columns: repeat(auto-fill, minmax(270px,1fr));
+      gap: 12px; margin-bottom: 24px;
     }
     .home-info-card {
-      background: var(--white); border: 1px solid var(--border); border-radius: 14px;
-      padding: 18px 18px 18px 16px; display: flex; align-items: center; gap: 14px;
-      cursor: pointer; transition: box-shadow 0.15s, transform 0.15s;
+      background: var(--white); border: 1px solid var(--border); border-radius: 16px;
+      padding: 18px; display: flex; align-items: flex-start; gap: 14px;
+      cursor: pointer; transition: box-shadow 0.2s, transform 0.2s, border-color 0.2s;
+      position: relative; overflow: hidden;
     }
-    .home-info-card:hover { box-shadow: 0 4px 20px rgba(0,0,0,0.08); transform: translateY(-1px); }
+    .home-info-card::before {
+      content: ''; position: absolute; bottom: 0; left: 0; right: 0; height: 3px;
+      background: linear-gradient(90deg, var(--card-accent, var(--orange)), transparent);
+      opacity: 0; transition: opacity 0.2s;
+    }
+    .home-info-card:hover { box-shadow: 0 8px 32px rgba(0,0,0,0.1); transform: translateY(-2px); border-color: #D8D5D0; }
+    .home-info-card:hover::before { opacity: 1; }
     .home-card-icon {
-      width: 44px; height: 44px; border-radius: 12px; flex-shrink: 0;
+      width: 46px; height: 46px; border-radius: 14px; flex-shrink: 0;
       display: flex; align-items: center; justify-content: center; font-size: 22px;
     }
     .home-card-body { flex: 1; min-width: 0; }
-    .home-card-title { font-size: 13px; font-weight: 700; color: var(--black); margin-bottom: 3px; }
-    .home-card-desc  { font-size: 12px; color: var(--muted); line-height: 1.5; }
-    .home-card-arrow { font-size: 16px; color: var(--muted); flex-shrink: 0; transition: color 0.12s; }
-    .home-info-card:hover .home-card-arrow { color: var(--orange); }
+    .home-card-title { font-size: 13px; font-weight: 700; color: var(--black); margin-bottom: 4px; }
+    .home-card-desc  { font-size: 11px; color: var(--muted); line-height: 1.55; }
+    .home-card-arrow { font-size: 15px; color: #ccc; flex-shrink: 0; margin-top: 2px; transition: color 0.15s, transform 0.15s; }
+    .home-info-card:hover .home-card-arrow { color: var(--orange); transform: translateX(3px); }
 
+    /* Roles banner */
     .home-roles-banner {
-      background: var(--white); border: 1px solid var(--border); border-radius: 14px;
-      padding: 20px 22px; margin-bottom: 16px;
+      background: var(--white); border: 1px solid var(--border); border-radius: 16px;
+      padding: 20px 24px; margin-bottom: 16px;
     }
     .home-roles-title {
       font-size: 13px; font-weight: 700; color: var(--text);
-      margin-bottom: 14px; display: flex; align-items: center; gap: 7px;
+      margin-bottom: 16px; display: flex; align-items: center; gap: 7px;
     }
     .home-roles-title i { font-size: 16px; color: var(--orange); }
     .home-roles-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px,1fr)); gap: 12px; }
-    .home-role-card { background: var(--surface); border-radius: 10px; padding: 14px 16px; }
+    .home-role-card {
+      background: var(--surface); border-radius: 12px; padding: 14px 16px;
+      border: 1px solid var(--border);
+    }
     .home-role-badge {
       display: inline-flex; align-items: center; gap: 6px;
-      border-radius: 8px; padding: 5px 12px; font-size: 12px; font-weight: 700;
-      margin-bottom: 10px;
+      border-radius: 8px; padding: 5px 12px; font-size: 11px; font-weight: 700;
+      margin-bottom: 12px;
     }
-    .home-role-list { list-style: none; display: flex; flex-direction: column; gap: 5px; }
+    .home-role-list { list-style: none; display: flex; flex-direction: column; gap: 6px; }
     .home-role-list li {
-      display: flex; align-items: center; gap: 6px;
-      font-size: 12px; color: #555; line-height: 1.4;
+      display: flex; align-items: flex-start; gap: 6px;
+      font-size: 11px; color: #555; line-height: 1.4;
     }
-    .home-role-list i { font-size: 13px; color: var(--success); flex-shrink: 0; }
+    .home-role-list i { font-size: 13px; color: var(--success); flex-shrink: 0; margin-top: 1px; }
 
     .home-footer-note {
-      background: var(--info-bg); border: 1px solid rgba(29,95,189,0.2);
-      border-radius: 10px; padding: 12px 16px; font-size: 12px; color: var(--info);
-      display: flex; align-items: flex-start; gap: 8px; line-height: 1.6;
+      background: linear-gradient(135deg, #EBF2FF, #F0F6FF);
+      border: 1px solid rgba(29,95,189,0.15);
+      border-radius: 12px; padding: 14px 18px; font-size: 12px; color: var(--info);
+      display: flex; align-items: flex-start; gap: 10px; line-height: 1.6;
     }
-    .home-footer-note i { font-size: 15px; flex-shrink: 0; margin-top: 1px; }
-    .plantillas-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 14px; }
-    .plantilla-card { background: var(--white); border: 1px solid var(--border); border-radius: 14px; overflow: hidden; cursor: pointer; transition: box-shadow 0.15s, transform 0.15s; }
-    .plantilla-card:hover { box-shadow: 0 6px 24px rgba(0,0,0,0.09); transform: translateY(-2px); }
-    .plantilla-thumb { width: 100%; height: 130px; position: relative; overflow: hidden; border-bottom: 1px solid var(--border); }
-    .plantilla-thumb-img { width: 100%; height: 100%; object-fit: cover; display: block; transition: transform 0.2s; }
-    .plantilla-card:hover .plantilla-thumb-img { transform: scale(1.03); }
-    .plantilla-thumb-fallback { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; font-size: 38px; color: var(--muted); opacity: 0.4; }
-    .modal-plantilla { max-width: 600px; }
-    .plantilla-body { padding: 14px 16px 16px; }
-    .plantilla-num { font-size: 10px; font-weight: 700; color: var(--orange); text-transform: uppercase; letter-spacing: 0.07em; margin-bottom: 4px; }
-    .plantilla-name { font-size: 13px; font-weight: 700; color: var(--black); margin-bottom: 6px; line-height: 1.3; }
-    .plantilla-desc { font-size: 12px; color: var(--muted); line-height: 1.5; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
-    .plantilla-footer { padding: 0 16px 14px; display: flex; align-items: center; justify-content: space-between; }
-    .plantilla-copy-btn { display: flex; align-items: center; gap: 5px; background: var(--orange-light); color: var(--orange-dark); border: none; border-radius: 8px; padding: 6px 12px; font-family: var(--font); font-size: 12px; font-weight: 700; cursor: pointer; transition: background 0.12s; }
-    .plantilla-copy-btn:hover { background: var(--orange-mid); }
-    .plantilla-view-btn { font-size: 12px; color: var(--muted); background: none; border: none; cursor: pointer; font-family: var(--font); text-decoration: underline; }
-    .plantilla-upload-btn { position: absolute; bottom: 8px; right: 8px; width: 32px; height: 32px; border-radius: 8px; background: rgba(13,13,13,0.65); color: #fff; display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 15px; transition: background 0.15s; backdrop-filter: blur(4px); }
-    .plantilla-upload-btn:hover { background: var(--orange); }
-    .plantilla-card > div:first-child { position: relative; cursor: pointer; }
+    .home-footer-note i { font-size: 16px; flex-shrink: 0; margin-top: 1px; }
+    /* ── PLANTILLAS REDISEÑO ── */
+    .plantillas-wrap { display: flex; flex-direction: column; gap: 0; }
+    .plantillas-topbar { display: flex; align-items: center; justify-content: space-between; gap: 14px; margin-bottom: 20px; flex-wrap: wrap; }
+    .plantillas-topbar h2 { font-size: 20px; font-weight: 800; color: var(--black); }
+    .plantillas-topbar p  { font-size: 12px; color: var(--muted); margin-top: 2px; }
+    .plantillas-search { display: flex; align-items: center; gap: 8px; background: var(--white); border: 1px solid var(--border); border-radius: 10px; padding: 0 14px; height: 40px; min-width: 260px; }
+    .plantillas-search:focus-within { border-color: var(--orange); }
+    .plantillas-search i { color: var(--muted); font-size: 15px; }
+    .plantillas-search input { border: none; outline: none; font-family: var(--font); font-size: 13px; color: var(--text); background: transparent; flex: 1; }
+    .plantillas-search input::placeholder { color: #ccc; }
 
-    /* ── TIPIFICACIONES (sistema acordeones + chips) ── */
+    .plantillas-list { display: flex; flex-direction: column; gap: 10px; }
+
+    .plt-row {
+      background: var(--white); border: 1px solid var(--border); border-radius: 14px;
+      display: flex; align-items: stretch; overflow: hidden;
+      transition: box-shadow 0.15s, transform 0.15s, border-color 0.15s;
+      cursor: pointer; position: relative;
+    }
+    .plt-row:hover { box-shadow: 0 4px 20px rgba(0,0,0,0.08); transform: translateY(-1px); border-color: #D8D5D0; }
+
+    /* número lateral */
+    .plt-num-bar {
+      width: 52px; flex-shrink: 0; display: flex; flex-direction: column;
+      align-items: center; justify-content: center; gap: 4px;
+      border-right: 1px solid var(--border);
+      padding: 16px 0;
+    }
+    .plt-num-label { font-size: 9px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: 0.08em; }
+    .plt-num-val   { font-size: 18px; font-weight: 900; color: var(--orange); line-height: 1; }
+
+    /* icono central */
+    .plt-icon-wrap {
+      width: 64px; flex-shrink: 0; display: flex; align-items: center; justify-content: center;
+      font-size: 26px; border-right: 1px solid var(--border);
+    }
+
+    /* cuerpo */
+    .plt-body { flex: 1; padding: 14px 18px; min-width: 0; display: flex; flex-direction: column; justify-content: center; gap: 4px; }
+    .plt-name { font-size: 14px; font-weight: 700; color: var(--black); line-height: 1.3; }
+    .plt-desc { font-size: 12px; color: var(--muted); line-height: 1.5; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+
+    /* acciones */
+    .plt-actions {
+      display: flex; align-items: center; gap: 8px; padding: 14px 18px;
+      flex-shrink: 0; border-left: 1px solid var(--border);
+    }
+    .plt-btn-copy {
+      display: flex; align-items: center; gap: 6px;
+      background: var(--orange); color: #fff; border: none;
+      border-radius: 9px; padding: 8px 16px; font-family: var(--font);
+      font-size: 12px; font-weight: 700; cursor: pointer; transition: background 0.13s;
+      white-space: nowrap;
+    }
+    .plt-btn-copy:hover { background: var(--orange-dark); }
+    .plt-btn-view {
+      display: flex; align-items: center; justify-content: center;
+      width: 36px; height: 36px; border-radius: 9px;
+      background: var(--surface); border: 1px solid var(--border);
+      color: var(--muted); font-size: 16px; cursor: pointer; transition: all 0.13s;
+      flex-shrink: 0;
+    }
+    .plt-btn-view:hover { background: var(--orange-light); color: var(--orange-dark); border-color: var(--orange); }
+
+    /* empty */
+    .plt-empty { padding: 64px 24px; text-align: center; color: var(--muted); }
+    .plt-empty i { font-size: 38px; display: block; margin-bottom: 12px; opacity: 0.3; }
+    .plt-empty p { font-size: 13px; }
+
+    .modal-plantilla { max-width: 600px; }
+
+    /* ── PLANTILLAS — Modo Formador ── */
+    .plt-formador-bar { display: none; align-items: center; gap: 10px; background: #FFFBF0; border: 1.5px solid #F0C040; border-radius: 10px; padding: 10px 16px; margin-bottom: 16px; font-size: 12px; color: #7A5800; flex-wrap: wrap; }
+    .plt-formador-bar.visible { display: flex; }
+    .plt-formador-bar i { font-size: 15px; color: #B87000; flex-shrink: 0; }
+    .plt-formador-bar strong { font-weight: 700; }
+    .plt-formador-bar .fb-actions { display: flex; gap: 8px; margin-left: auto; }
+    .btn-plt-add { display: flex; align-items: center; gap: 6px; background: var(--orange); color: #fff; border: none; border-radius: 8px; padding: 7px 16px; font-size: 12px; font-weight: 700; font-family: var(--font); cursor: pointer; transition: background 0.15s; }
+    .btn-plt-add:hover { background: var(--orange-dark); }
+
+    /* acciones formador en cada fila */
+    .plt-row-actions { display: none; align-items: center; gap: 6px; padding: 0 10px 0 0; flex-shrink: 0; }
+    .is-formador-plt .plt-row-actions { display: flex; }
+    .btn-plt-edit { background: var(--orange-light); color: var(--orange-dark); border: none; border-radius: 6px; width: 28px; height: 28px; display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 13px; transition: background 0.12s; }
+    .btn-plt-edit:hover { background: var(--orange-mid); }
+    .btn-plt-del  { background: var(--danger-bg); color: var(--danger); border: none; border-radius: 6px; width: 28px; height: 28px; display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 13px; transition: background 0.12s; }
+    .btn-plt-del:hover { background: #FFCDD2; }
+
+    /* modal nueva/editar plantilla */
+    .modal-plt-form { max-width: 580px; }
+    .plt-icon-picker { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 4px; }
+    .plt-icon-opt { width: 38px; height: 38px; border-radius: 8px; border: 1.5px solid var(--border); background: var(--surface); display: flex; align-items: center; justify-content: center; font-size: 17px; cursor: pointer; transition: all 0.13s; color: var(--muted); }
+    .plt-icon-opt:hover { border-color: var(--orange); color: var(--orange); background: var(--orange-light); }
+    .plt-icon-opt.selected { border-color: var(--orange); background: var(--orange-light); color: var(--orange-dark); }
+    .plt-color-picker { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 4px; }
+    .plt-color-swatch { width: 30px; height: 30px; border-radius: 8px; border: 2.5px solid transparent; cursor: pointer; transition: transform 0.12s, border-color 0.12s; }
+    .plt-color-swatch:hover { transform: scale(1.15); }
+    .plt-color-swatch.selected { border-color: var(--black); transform: scale(1.15); }
+    .plt-img-upload-area { border: 2px dashed var(--border); border-radius: 10px; padding: 18px; text-align: center; cursor: pointer; transition: border-color 0.15s, background 0.15s; position: relative; }
+    .plt-img-upload-area:hover { border-color: var(--orange); background: var(--orange-light); }
+    .plt-img-upload-area input[type=file] { position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%; }
+    .plt-img-upload-area i { font-size: 24px; color: var(--muted); display: block; margin-bottom: 6px; }
+    .plt-img-upload-area p { font-size: 12px; color: var(--muted); margin: 0; }
+    .plt-img-preview { width: 100%; max-height: 140px; object-fit: contain; border-radius: 8px; border: 1px solid var(--border); display: none; margin-top: 10px; }
     .tipi-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 18px; flex-wrap: wrap; gap: 12px; }
     .tipi-title-wrap h2 { font-size: 18px; font-weight: 800; color: var(--text); }
     .tipi-title-wrap p  { font-size: 12px; color: var(--muted); margin-top: 2px; }
@@ -325,32 +499,44 @@
     .tipi-category-content { display: none; border-top: 1px solid #F0EEE9; background: #FAFAF9; }
 
     /* tabla dentro de cada acordeón */
-    .tipi-table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
-    .tipi-table { width: 100%; border-collapse: collapse; min-width: 1500px; table-layout: fixed; }
+    .tipi-table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; border-radius: 0 0 10px 10px; }
+    .tipi-table { width: 100%; border-collapse: collapse; min-width: 900px; table-layout: auto; }
 
-    .tipi-table colgroup col.col-num      { width: 36px; }
-    .tipi-table colgroup col.col-modal    { width: 200px; }
-    .tipi-table colgroup col.col-sub      { width: 160px; }
-    .tipi-table colgroup col.col-asunto   { width: 175px; }
-    .tipi-table colgroup col.col-aplica   { width: 240px; }
-    .tipi-table colgroup col.col-tipo     { width: 145px; }
-    .tipi-table colgroup col.col-plazo    { width: 105px; }
-    .tipi-table colgroup col.col-plazo-web    { width: 130px; }
-    .tipi-table colgroup col.col-plazo-manual { width: 130px; }
-    .tipi-table colgroup col.col-cola     { width: 200px; }
+    /* Columnas con anchos mínimos en lugar de fijos — el contenido puede crecer */
+    .tipi-table colgroup col.col-num      { width: 40px; }
+    .tipi-table colgroup col.col-modal    { min-width: 110px; }
+    .tipi-table colgroup col.col-sub      { min-width: 140px; }
+    .tipi-table colgroup col.col-asunto   { min-width: 160px; }
+    .tipi-table colgroup col.col-aplica   { min-width: 200px; }
+    .tipi-table colgroup col.col-tipo     { min-width: 120px; }
+    .tipi-table colgroup col.col-plazo    { min-width: 100px; }
+    .tipi-table colgroup col.col-plazo-web    { min-width: 110px; }
+    .tipi-table colgroup col.col-plazo-manual { min-width: 110px; }
+    .tipi-table colgroup col.col-cola     { min-width: 160px; }
     .tipi-table colgroup col.col-acc      { width: 70px; }
 
     .tipi-table thead th {
       background: #1C1C1A; color: #fff; font-size: 10px; font-weight: 600;
       text-transform: uppercase; letter-spacing: 0.07em; padding: 10px 12px;
-      text-align: left; white-space: nowrap;
+      text-align: left; white-space: nowrap; position: sticky; top: 0; z-index: 2;
     }
     .tipi-table tbody tr { border-bottom: 1px solid #F0EEE9; transition: background 0.1s; background: var(--white); }
     .tipi-table tbody tr:last-child { border-bottom: none; }
     .tipi-table tbody tr:hover { background: var(--orange-light); }
-    .tipi-table tbody td { padding: 10px 12px; font-size: 12px; color: var(--text); vertical-align: top; word-break: break-word; overflow-wrap: break-word; }
+    .tipi-table tbody td {
+      padding: 10px 12px; font-size: 12px; color: var(--text);
+      vertical-align: top; word-break: break-word; overflow-wrap: anywhere;
+      hyphens: auto; min-width: 0;
+    }
 
-    .tipi-badge { display: inline-flex; align-items: center; gap: 4px; border-radius: 99px; padding: 3px 10px; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; white-space: nowrap; max-width: 100%; }
+    /* Badges: wrap largo si es necesario, nunca salen del contenedor */
+    .tipi-badge {
+      display: inline-flex; align-items: center; gap: 4px;
+      border-radius: 99px; padding: 3px 10px; font-size: 10px; font-weight: 700;
+      text-transform: uppercase; letter-spacing: 0.05em;
+      white-space: normal; word-break: break-word; overflow-wrap: anywhere;
+      max-width: 100%; line-height: 1.4;
+    }
     .tipi-badge.modalidad     { background: var(--info-bg); color: var(--info); }
     .tipi-badge.proceso       { background: var(--orange-light); color: var(--orange-dark); }
     .tipi-badge.sub           { background: var(--surface); color: var(--muted); border: 1px solid var(--border); }
@@ -360,17 +546,18 @@
     .tipi-badge.mixto         { background: var(--pending-bg); color: var(--pending); }
     .tipi-badge.plazo         { background: #E8FAF0; color: #1A7A45; font-size: 10px; }
 
-    /* columna "En qué casos se deriva" — texto legible con scroll al hover */
+    /* columna "En qué casos aplica" — siempre legible, se expande al hover */
     .tipi-aplica {
       font-size: 11px; color: #444; line-height: 1.65;
-      word-break: break-word; overflow-wrap: break-word;
-      white-space: normal;
-      max-height: 72px; overflow: hidden;
-      position: relative;
+      word-break: break-word; overflow-wrap: anywhere;
+      white-space: normal; display: -webkit-box;
+      -webkit-line-clamp: 4; -webkit-box-orient: vertical;
+      overflow: hidden;
     }
     /* Al hacer hover en la fila, el texto se expande por completo */
     .tipi-table tbody tr:hover .tipi-aplica {
-      max-height: none;
+      display: block;
+      -webkit-line-clamp: unset;
       overflow: visible;
     }
     /* Cola de derivación - chips dentro de la tabla */
@@ -447,6 +634,221 @@
     .zoom-close-btn { position: fixed; top: 14px; right: 14px; z-index: 10000; width: 38px; height: 38px; border-radius: 50%; background: rgba(255,255,255,0.15); backdrop-filter: blur(8px); border: 1px solid rgba(255,255,255,0.25); color: #fff; font-size: 18px; cursor: pointer; display: flex; align-items: center; justify-content: center; }
     .zoom-close-btn:hover { background: rgba(255,255,255,0.3); }
 
+    /* ═══════════════════════════════════
+       CONFIGURACIÓN — REDISEÑO ELEGANTE
+    ═══════════════════════════════════ */
+    #view-config { padding: 28px 28px 40px; }
+
+    /* Toggle */
+    .cfg-toggle {
+      width: 44px; height: 24px; border-radius: 99px; background: #E0DDD8;
+      position: relative; flex-shrink: 0; cursor: pointer; transition: background 0.25s;
+    }
+    .cfg-toggle.active { background: var(--orange); }
+    .cfg-toggle-knob {
+      position: absolute; top: 3px; left: 3px;
+      width: 18px; height: 18px; border-radius: 50%; background: #fff;
+      transition: transform 0.25s cubic-bezier(0.34,1.56,0.64,1);
+      box-shadow: 0 2px 6px rgba(0,0,0,0.18);
+    }
+    .cfg-toggle.active .cfg-toggle-knob { transform: translateX(20px); }
+
+    /* KBD */
+    .cfg-kbd {
+      display: inline-flex; align-items: center; justify-content: center;
+      background: #fff; border: 1px solid #D8D5D0; border-bottom: 2.5px solid #C8C5C0;
+      border-radius: 6px; padding: 3px 8px; font-size: 10px; font-weight: 700;
+      color: var(--text); font-family: monospace; min-width: 28px;
+      box-shadow: 0 1px 0 rgba(0,0,0,0.05);
+    }
+
+    /* Config header */
+    .cfg-page-header { margin-bottom: 28px; }
+    .cfg-page-title { font-size: 22px; font-weight: 800; color: var(--black); letter-spacing: -0.3px; }
+    .cfg-page-sub { font-size: 12px; color: var(--muted); margin-top: 4px; }
+
+    /* Config grid */
+    .cfg-grid {
+      display: grid; grid-template-columns: 1fr 1fr;
+      gap: 16px; max-width: 960px;
+    }
+    .cfg-card {
+      background: var(--white); border: 1px solid var(--border);
+      border-radius: 18px; padding: 22px; transition: box-shadow 0.2s;
+    }
+    .cfg-card:hover { box-shadow: 0 4px 24px rgba(0,0,0,0.06); }
+    .cfg-card.span2 { grid-column: span 2; }
+
+    .cfg-card-icon {
+      width: 36px; height: 36px; border-radius: 10px; display: flex; align-items: center;
+      justify-content: center; font-size: 17px; margin-bottom: 14px; flex-shrink: 0;
+    }
+    .cfg-card-title { font-size: 14px; font-weight: 800; color: var(--black); margin-bottom: 3px; }
+    .cfg-card-sub { font-size: 11px; color: var(--muted); margin-bottom: 18px; line-height: 1.5; }
+
+    /* Section label inside card */
+    .cfg-section-label {
+      font-size: 10px; font-weight: 700; color: var(--muted);
+      text-transform: uppercase; letter-spacing: 0.09em; margin-bottom: 10px;
+    }
+
+    /* Tema buttons */
+    .cfg-tema-grid { display: flex; gap: 8px; margin-bottom: 20px; }
+    .cfg-tema-btn {
+      flex: 1; padding: 10px 8px; border-radius: 12px; border: 1.5px solid var(--border);
+      background: var(--surface); font-family: var(--font); font-size: 11px; font-weight: 700;
+      color: var(--muted); cursor: pointer; transition: all 0.18s; display: flex;
+      flex-direction: column; align-items: center; gap: 6px;
+    }
+    .cfg-tema-btn .tema-swatch {
+      width: 20px; height: 20px; border-radius: 50%;
+    }
+    .cfg-tema-btn.active {
+      border-color: var(--orange); background: var(--orange-light); color: var(--orange-dark);
+    }
+    .cfg-tema-btn:hover:not(.active) { border-color: #C8C5C0; color: var(--text); background: #F0EEE8; }
+
+    /* Densidad buttons */
+    .cfg-den-grid { display: flex; gap: 8px; }
+    .cfg-den-btn {
+      flex: 1; padding: 10px 8px; border-radius: 12px; border: 1.5px solid var(--border);
+      background: var(--surface); font-family: var(--font); font-size: 11px; font-weight: 700;
+      color: var(--muted); cursor: pointer; transition: all 0.18s; display: flex;
+      flex-direction: column; align-items: center; gap: 5px;
+    }
+    .cfg-den-btn .den-preview {
+      display: flex; flex-direction: column; gap: 2px; width: 24px;
+    }
+    .cfg-den-btn .den-bar {
+      height: 3px; background: currentColor; border-radius: 2px; opacity: 0.35;
+    }
+    .cfg-den-btn.active {
+      border-color: var(--orange); background: var(--orange-light); color: var(--orange-dark);
+    }
+    .cfg-den-btn:hover:not(.active) { border-color: #C8C5C0; color: var(--text); background: #F0EEE8; }
+
+    /* Preference rows */
+    .cfg-pref-row {
+      display: flex; align-items: center; justify-content: space-between;
+      gap: 12px; padding: 12px 0;
+    }
+    .cfg-pref-row + .cfg-pref-row { border-top: 1px solid #F0EEE9; }
+    .cfg-pref-text { flex: 1; }
+    .cfg-pref-name { font-size: 13px; font-weight: 600; color: var(--text); margin-bottom: 2px; }
+    .cfg-pref-hint { font-size: 11px; color: var(--muted); }
+
+    /* Shortcut rows */
+    .cfg-shortcut-row {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 10px 0; border-bottom: 1px solid #F5F4F2;
+    }
+    .cfg-shortcut-row:last-child { border-bottom: none; }
+    .cfg-shortcut-name { font-size: 12px; color: var(--text); font-weight: 500; }
+
+    /* New personalización sections */
+    .cfg-font-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 4px; }
+    .cfg-font-btn {
+      padding: 10px 12px; border-radius: 10px; border: 1.5px solid var(--border);
+      background: var(--surface); font-family: var(--font); font-size: 12px;
+      cursor: pointer; transition: all 0.15s; color: var(--text); font-weight: 500;
+      text-align: left;
+    }
+    .cfg-font-btn.active { border-color: var(--orange); background: var(--orange-light); color: var(--orange-dark); font-weight: 700; }
+    .cfg-font-btn:hover:not(.active) { border-color: #C8C5C0; background: #F0EEE8; }
+
+    /* About card */
+    .cfg-about-card {
+      background: linear-gradient(135deg, #0D0D0D 0%, #1a0f06 100%);
+      border-radius: 18px; padding: 24px 28px; grid-column: span 2;
+      display: flex; align-items: center; justify-content: space-between;
+      gap: 20px; flex-wrap: wrap; position: relative; overflow: hidden;
+    }
+    .cfg-about-card::after {
+      content: ''; position: absolute; top: -30px; right: -30px; width: 160px; height: 160px;
+      border-radius: 50%; background: radial-gradient(circle, rgba(242,101,34,0.15) 0%, transparent 70%);
+      pointer-events: none;
+    }
+    .cfg-about-title { font-size: 15px; font-weight: 800; color: #fff; margin-bottom: 4px; }
+    .cfg-about-desc { font-size: 11px; color: #555; line-height: 1.65; }
+    .cfg-about-meta { display: flex; gap: 16px; flex-wrap: wrap; align-items: center; }
+    .cfg-about-item { text-align: center; position: relative; z-index: 1; }
+    .cfg-about-item-label { font-size: 9px; color: #444; text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 4px; }
+    .cfg-about-item-val { font-size: 14px; font-weight: 700; color: #999; }
+    .cfg-divider { width: 1px; height: 32px; background: #1c1c1c; flex-shrink: 0; }
+
+    /* Profile card */
+    .cfg-profile-card {
+      background: var(--white); border: 1px solid var(--border);
+      border-radius: 18px; padding: 24px; grid-column: span 2;
+      display: flex; align-items: center; gap: 20px;
+    }
+    .cfg-av-ring {
+      width: 64px; height: 64px; border-radius: 50%;
+      background: linear-gradient(135deg, var(--orange), var(--orange-dark));
+      display: flex; align-items: center; justify-content: center;
+      color: #fff; font-size: 22px; font-weight: 800; flex-shrink: 0;
+      box-shadow: 0 4px 16px rgba(242,101,34,0.25);
+    }
+    .cfg-profile-info { flex: 1; min-width: 0; }
+    .cfg-profile-name { font-size: 17px; font-weight: 800; color: var(--black); }
+    .cfg-profile-email { font-size: 12px; color: var(--muted); margin-top: 2px; }
+    .cfg-profile-badge {
+      display: inline-flex; align-items: center; gap: 5px;
+      border-radius: 99px; padding: 4px 14px; font-size: 11px; font-weight: 700;
+      background: var(--orange-light); color: var(--orange-dark); margin-top: 8px;
+    }
+    .cfg-profile-sesion {
+      text-align: right; flex-shrink: 0;
+    }
+    .cfg-sesion-label { font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 4px; }
+    .cfg-sesion-val { font-size: 14px; font-weight: 700; color: var(--text); }
+
+    /* Tema azul */
+    body.tema-blue {
+      --orange: #1D5FBD; --orange-light: #EBF2FF; --orange-mid: #C8DCFF;
+      --orange-dark: #1247A0;
+    }
+    /* Tema verde */
+    body.tema-green {
+      --orange: #1A7A45; --orange-light: #E8FAF0; --orange-mid: #B8EDD0;
+      --orange-dark: #145E34;
+    }
+    /* Densidad compacta */
+    body.den-compact .nav-item { padding: 5px 18px; font-size: 12px; }
+    body.den-compact .caso-card .card-header { padding: 10px 14px 8px; }
+    body.den-compact .caso-card .card-body { padding: 8px 14px; }
+    body.den-compact .view { padding: 14px 18px 24px; }
+    /* Densidad amplia */
+    body.den-spacious .nav-item { padding: 11px 18px; }
+    body.den-spacious .caso-card .card-header { padding: 18px 20px 14px; }
+    body.den-spacious .view { padding: 32px 36px 48px; }
+
+    /* Animación casos alto (si pref_resaltar activo) */
+    body.resaltar-alto .caso-card[style*="E03131"] {
+      animation: pulseAlto 2.5s ease-in-out infinite;
+    }
+    @keyframes pulseAlto {
+      0%, 100% { box-shadow: 0 0 0 0 rgba(224,49,49,0); }
+      50% { box-shadow: 0 0 0 4px rgba(224,49,49,0.15); }
+    }
+    .prioridad-selector { display: flex; gap: 8px; margin-top: 4px; }
+    .prioridad-opt { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 5px; padding: 10px 8px; border-radius: 10px; border: 2px solid var(--border); background: var(--surface); cursor: pointer; transition: all 0.15s; font-family: var(--font); font-size: 11px; font-weight: 700; color: var(--muted); user-select: none; text-transform: uppercase; letter-spacing: 0.04em; }
+    .prioridad-opt i { font-size: 18px; }
+    .prioridad-opt:hover { transform: translateY(-1px); box-shadow: 0 3px 10px rgba(0,0,0,0.1); }
+    .prioridad-opt.sel-bajo   { border-color: #1A7A45; background: #E8FAF0; color: #1A7A45; }
+    .prioridad-opt.sel-medio  { border-color: #B87000; background: #FFF7E6; color: #B87000; }
+    .prioridad-opt.sel-alto   { border-color: #E03131; background: #FFF0F0; color: #E03131; }
+
+    .prioridad-badge { display: inline-flex; align-items: center; gap: 4px; border-radius: 99px; padding: 3px 10px; font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.06em; white-space: nowrap; }
+    .prioridad-badge.bajo  { background: #E8FAF0; color: #1A7A45; border: 1px solid #1A7A45; }
+    .prioridad-badge.medio { background: #FFF7E6; color: #B87000; border: 1px solid #B87000; }
+    .prioridad-badge.alto  { background: #FFF0F0; color: #E03131; border: 1px solid #E03131; }
+
+    .card-prioridad-strip { height: 4px; width: 100%; }
+    .card-prioridad-strip.bajo  { background: #1A7A45; }
+    .card-prioridad-strip.medio { background: #B87000; }
+    .card-prioridad-strip.alto  { background: #E03131; }
+
     ::-webkit-scrollbar { width: 5px; height: 5px; }
     ::-webkit-scrollbar-track { background: transparent; }
     ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 99px; }
@@ -457,6 +859,151 @@
       .cards-grid { grid-template-columns: 1fr; }
       .tipi-table-wrap { overflow-x: auto; }
     }
+
+    /* ── PREGUNTAS FRECUENTES ── */
+    .faq-header { display:flex; align-items:flex-start; justify-content:space-between; gap:16px; margin-bottom:20px; flex-wrap:wrap; }
+    .faq-main-title { font-size:20px; font-weight:800; color:var(--black); display:flex; align-items:center; }
+    .faq-main-sub { font-size:12px; color:var(--muted); margin-top:4px; }
+    .faq-toolbar { display:flex; align-items:center; gap:10px; margin-bottom:14px; flex-wrap:wrap; }
+    .faq-count { font-size:12px; color:var(--muted); font-weight:600; white-space:nowrap; }
+    .faq-chips-bar { display:flex; gap:8px; flex-wrap:wrap; margin-bottom:20px; }
+    .faq-chip { display:flex; align-items:center; gap:6px; padding:5px 14px; border-radius:99px; border:1.5px solid var(--border); background:var(--white); font-size:12px; font-weight:600; color:var(--muted); cursor:pointer; transition:all 0.15s; white-space:nowrap; }
+    .faq-chip:hover { border-color:var(--orange); color:var(--orange-dark); background:var(--orange-light); }
+    .faq-chip.active { border-color:var(--orange); color:var(--orange-dark); background:var(--orange-light); }
+    .faq-chip .faq-chip-n { font-size:10px; background:var(--orange-light); color:var(--orange-dark); border-radius:99px; padding:1px 6px; font-weight:700; }
+    .faq-chip.active .faq-chip-n { background:var(--orange-mid); }
+
+    .faq-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(360px,1fr)); gap:14px; }
+    .faq-card { background:var(--white); border:1px solid var(--border); border-radius:14px; overflow:hidden; cursor:pointer; transition:box-shadow 0.15s, transform 0.15s; display:flex; flex-direction:column; }
+    .faq-card:hover { box-shadow:0 4px 20px rgba(0,0,0,0.09); transform:translateY(-2px); }
+    .faq-card-top { padding:16px 18px 12px; flex:1; }
+    .faq-card-cat { display:inline-flex; align-items:center; gap:5px; border-radius:99px; padding:3px 10px; font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:.05em; margin-bottom:10px; }
+    .faq-card-q { font-size:13px; font-weight:700; color:var(--black); line-height:1.5; margin-bottom:10px; }
+    .faq-card-a-preview { font-size:12px; color:#666; line-height:1.55; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
+    .faq-card-footer { padding:10px 18px; border-top:1px solid #F0EEE9; background:#FAFAF8; display:flex; align-items:center; justify-content:space-between; gap:8px; }
+    .faq-card-icons { display:flex; gap:6px; }
+    .faq-card-icon-badge { display:flex; align-items:center; gap:4px; font-size:10px; font-weight:600; color:var(--muted); background:var(--surface); border-radius:99px; padding:3px 8px; }
+    .faq-card-meta { font-size:10px; color:var(--muted); }
+    .faq-card-num { font-size:10px; font-weight:700; color:var(--muted); }
+    .faq-card-actions { display:flex; gap:5px; }
+    .faq-cat-badge { display:inline-flex; align-items:center; gap:5px; border-radius:99px; padding:3px 12px; font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:.05em; }
+    .faq-modal-num { font-size:10px; font-weight:700; color:var(--muted); text-transform:uppercase; letter-spacing:.06em; }
+    .modal-faq-view { max-width:620px; }
+    .modal-faq-form { max-width:580px; }
+
+    /* colores categorías FAQ (cíclicos) */
+    .faq-color-0 { background:#EBF2FF; color:#1D5FBD; }
+    .faq-color-1 { background:#FFF0E8; color:var(--orange-dark); }
+    .faq-color-2 { background:#E8FAF0; color:var(--success); }
+    .faq-color-3 { background:#F5F0FF; color:var(--pending); }
+    .faq-color-4 { background:#FFF7E6; color:var(--warning); }
+    .faq-color-5 { background:#FFF0F0; color:var(--danger); }
+    .faq-color-6 { background:#F0F0F0; color:#444; }
+    .faq-color-7 { background:#E8F8FF; color:#0077AA; }
+
+    /* Sharp radius mode */
+    body.radius-sharp .caso-card,
+    body.radius-sharp .home-info-card,
+    body.radius-sharp .cfg-card,
+    body.radius-sharp .home-roles-banner,
+    body.radius-sharp .pend-case-card { border-radius: 4px !important; }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ── SIDEBAR CAPACÍTATE HIGHLIGHT ── */
+    .nav-capacitate {
+      background: linear-gradient(135deg, #1a0a00 0%, #2d1200 100%);
+      border-left: 3px solid var(--orange) !important;
+      color: var(--orange) !important;
+      font-weight: 700 !important;
+      margin: 4px 8px;
+      border-radius: 10px;
+      padding-left: 15px !important;
+    }
+    .nav-capacitate:hover { background: linear-gradient(135deg, #2d1200 0%, #3d1a00 100%) !important; color: #FF8A50 !important; }
+    .nav-capacitate.active { background: linear-gradient(135deg, #F26522 0%, #C94E0A 100%) !important; color: #fff !important; border-left-color: transparent !important; }
+    .nav-capacitate i { color: inherit !important; }
+
+    /* ── CAPACÍTATE VIEW ── */
+    .cap-header { display:flex; align-items:flex-start; justify-content:space-between; gap:16px; margin-bottom:24px; flex-wrap:wrap; }
+    .cap-title-wrap h2 { font-size:22px; font-weight:800; color:var(--black); display:flex; align-items:center; gap:10px; }
+    .cap-title-wrap h2 i { color:var(--orange); }
+    .cap-title-wrap p { font-size:12px; color:var(--muted); margin-top:4px; }
+
+    /* Categorías tabs */
+    .cap-cats-bar { display:flex; gap:8px; flex-wrap:wrap; margin-bottom:20px; }
+    .cap-cat-btn { display:flex; align-items:center; gap:6px; padding:7px 16px; border-radius:99px; border:1.5px solid var(--border); background:var(--white); font-size:12px; font-weight:600; color:var(--muted); cursor:pointer; transition:all .15s; white-space:nowrap; font-family:var(--font); }
+    .cap-cat-btn:hover { border-color:var(--orange); color:var(--orange-dark); }
+    .cap-cat-btn.active { background:var(--orange); border-color:var(--orange); color:#fff; }
+
+    /* Grid de videos estilo YT */
+    .cap-grid { display:grid; grid-template-columns:repeat(auto-fill, minmax(280px, 1fr)); gap:18px; }
+    .cap-card { background:var(--white); border:1px solid var(--border); border-radius:14px; overflow:hidden; cursor:pointer; transition:box-shadow .15s, transform .15s; }
+    .cap-card:hover { box-shadow:0 6px 24px rgba(0,0,0,.1); transform:translateY(-2px); }
+    .cap-thumb { position:relative; width:100%; aspect-ratio:16/9; background:#111; overflow:hidden; }
+    .cap-thumb img { width:100%; height:100%; object-fit:cover; display:block; }
+    .cap-thumb-placeholder { width:100%; height:100%; background:linear-gradient(135deg,#1a1a1a 0%,#2d2d2d 100%); display:flex; align-items:center; justify-content:center; }
+    .cap-thumb-placeholder i { font-size:36px; color:rgba(255,255,255,.25); }
+    .cap-play-overlay { position:absolute; inset:0; display:flex; align-items:center; justify-content:center; background:rgba(0,0,0,.3); opacity:0; transition:opacity .15s; }
+    .cap-card:hover .cap-play-overlay { opacity:1; }
+    .cap-play-btn { width:52px; height:52px; background:rgba(255,255,255,.95); border-radius:50%; display:flex; align-items:center; justify-content:center; }
+    .cap-play-btn i { font-size:22px; color:var(--orange-dark); margin-left:3px; }
+    .cap-duration { position:absolute; bottom:8px; right:8px; background:rgba(0,0,0,.8); color:#fff; font-size:10px; font-weight:700; padding:2px 6px; border-radius:4px; }
+    .cap-source-badge { position:absolute; top:8px; left:8px; display:flex; align-items:center; gap:4px; background:rgba(0,0,0,.75); color:#fff; font-size:10px; font-weight:600; padding:3px 8px; border-radius:99px; }
+    .cap-source-badge.yt { background:rgba(255,0,0,.85); }
+    .cap-source-badge.drive { background:rgba(29,95,189,.85); }
+
+    .cap-card-body { padding:12px 14px 14px; }
+    .cap-card-cat { display:inline-block; font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:.05em; color:var(--orange-dark); background:var(--orange-light); border-radius:99px; padding:2px 8px; margin-bottom:7px; }
+    .cap-card-title { font-size:13px; font-weight:700; color:var(--black); line-height:1.45; margin-bottom:6px; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
+    .cap-card-desc { font-size:11px; color:#666; line-height:1.5; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; margin-bottom:10px; }
+    .cap-card-footer { display:flex; align-items:center; justify-content:space-between; gap:8px; }
+    .cap-card-autor { display:flex; align-items:center; gap:5px; font-size:11px; color:var(--muted); }
+    .cap-card-autor i { font-size:13px; }
+    .cap-card-actions { display:flex; gap:4px; }
+
+    /* Modal video */
+    .modal-cap { max-width:700px; }
+    .cap-video-embed { width:100%; aspect-ratio:16/9; background:#000; border-radius:10px; overflow:hidden; margin-bottom:16px; position:relative; }
+    .cap-video-embed iframe { width:100%; height:100%; border:none; display:block; }
+    /* YT custom player (shown when embed is blocked) */
+    .cap-yt-player { width:100%; height:100%; position:relative; cursor:pointer; display:flex; align-items:center; justify-content:center; background:#000; border-radius:10px; overflow:hidden; }
+    .cap-yt-player img.yt-bg { position:absolute; inset:0; width:100%; height:100%; object-fit:cover; filter:brightness(.75); transition:filter .2s; }
+    .cap-yt-player:hover img.yt-bg { filter:brightness(.55); }
+    .cap-yt-play-circle { position:relative; z-index:2; width:72px; height:72px; background:rgba(255,0,0,.92); border-radius:50%; display:flex; align-items:center; justify-content:center; box-shadow:0 4px 24px rgba(0,0,0,.5); transition:transform .15s, background .15s; }
+    .cap-yt-player:hover .cap-yt-play-circle { transform:scale(1.12); background:#ff0000; }
+    .cap-yt-play-circle i { font-size:30px; color:#fff; margin-left:5px; }
+    .cap-yt-label { position:absolute; bottom:14px; left:0; right:0; text-align:center; z-index:2; }
+    .cap-yt-label span { background:rgba(0,0,0,.6); color:#fff; font-size:12px; font-weight:600; padding:4px 14px; border-radius:99px; backdrop-filter:blur(4px); }
+    .cap-modal-meta { display:flex; align-items:center; gap:10px; flex-wrap:wrap; margin-bottom:12px; }
+    .cap-modal-link { display:inline-flex; align-items:center; gap:5px; font-size:12px; color:var(--info); text-decoration:none; }
+    .cap-modal-link:hover { text-decoration:underline; }
+
+    /* Formador bar */
+    .cap-formador-bar {
+      display:none; align-items:center; gap:12px;
+      background:linear-gradient(135deg,#1a0a00,#2d1200);
+      border:1px solid rgba(242,101,34,.3);
+      border-radius:12px; padding:12px 16px; margin-bottom:20px; flex-wrap:wrap;
+    }
+    .cap-formador-bar.visible { display:flex; }
+    .cap-formador-bar i { font-size:16px; color:var(--orange); flex-shrink:0; }
+    .cap-formador-bar span { font-size:12px; color:#e0b090; flex:1; }
+    .btn-cap-add { display:flex; align-items:center; gap:6px; background:var(--orange); color:#fff; border:none; border-radius:8px; padding:8px 16px; font-size:12px; font-weight:700; font-family:var(--font); cursor:pointer; transition:background .15s; }
+    .btn-cap-add:hover { background:var(--orange-dark); }
+
+    /* Modal add video */
+    .modal-cap-form { max-width:560px; }
+    .cap-empty { padding:64px 24px; text-align:center; color:var(--muted); }
+    .cap-empty i { font-size:48px; display:block; margin-bottom:16px; opacity:.25; }
+    .cap-empty p { font-size:14px; font-weight:600; color:var(--text); margin-bottom:4px; }
+    .cap-empty span { font-size:12px; color:var(--muted); }
+
+    .cap-search-bar { display:flex; align-items:center; gap:10px; margin-bottom:20px; flex-wrap:wrap; }
+
+    /* Hover effects for admin actions on card */
+    .cap-card-actions .btn-row { opacity:0; transition:opacity .15s; }
+    .cap-card:hover .cap-card-actions .btn-row { opacity:1; }
   </style>
 </head>
 <body>
@@ -487,13 +1034,18 @@
       </div>
       <div>
         <div class="nav-label">Recursos</div>
-        <div class="nav-item" data-view="plantillas"><i class="ti ti-file-text"></i>Plantillas<span class="nav-badge">11</span></div>
+        <div class="nav-item" data-view="plantillas"><i class="ti ti-file-text"></i>Plantillas</div>
         <div class="nav-item" data-view="tipificaciones"><i class="ti ti-tags"></i>Tipificaciones</div>
         <div class="nav-item" data-view="preguntas"><i class="ti ti-award"></i>Preguntas frecuentes</div>
-        <div class="nav-label">Recursos</div>
-        <div class="nav-item" data-view="bo-llamadas"><i class="ti ti-phone-call"></i>Registro de llamadas(BackOffice)</div>
-        <div class="nav-label">Seguimiento</div>
-        <div class="nav-item" data-view="pendientes"><i class="ti ti-alert-circle"></i>Casos pendientes fuera de plazo<span class="nav-badge danger" id="badge-pendientes">0</span></div>
+      </div>
+      <div>
+        <div class="nav-label">Gestión</div>
+        <div class="nav-item" data-view="bo-llamadas"><i class="ti ti-phone-call"></i>Registro de llamadas<span class="nav-badge" id="badge-bo-llamadas" style="display:none">0</span></div>
+        <div class="nav-item" data-view="pendientes"><i class="ti ti-alert-circle"></i>Casos pendientes<span class="nav-badge danger" id="badge-pendientes" style="display:none">0</span></div>
+      </div>
+      <div>
+        <div class="nav-label">Formación</div>
+        <div class="nav-item nav-capacitate" data-view="capacitate"><i class="ti ti-player-play"></i>Capacítate</div>
       </div>
       <div>
         <div class="nav-label">Cuenta</div>
@@ -506,100 +1058,122 @@
       <!-- INICIO -->
       <div class="view active" id="view-inicio">
 
-        <!-- HERO BANNER -->
+        <!-- HERO BANNER CON RELOJ LIMA -->
         <div class="home-hero">
           <div class="home-hero-left">
-            <div class="home-hero-tag"><span class="dot" style="background:#3DBD72"></span>Portal activo</div>
-            <h1 class="home-hero-title">Portal SAES <span style="color:var(--orange)">·</span> Canal WhatsApp</h1>
-            <p class="home-hero-sub">Plataforma interna para asesores y supervisores del Contact Center del <strong>Instituto SISE</strong>. Gestiona casos, registra llamadas y centraliza el seguimiento de alumnos en un solo lugar.</p>
+            <div class="home-hero-tag"><span class="dot" style="background:#3DBD72"></span>Portal activo · Canal WhatsApp</div>
+            <h1 class="home-hero-title">Portal SAES <span>·</span> Instituto SISE</h1>
+            <p class="home-hero-sub">Plataforma interna para asesores y supervisores del Contact Center. Gestiona casos, registra llamadas y centraliza el seguimiento de alumnos.</p>
             <div class="home-hero-chips">
-              <span class="home-chip orange"><i class="ti ti-phone-call"></i>BO Llamadas</span>
-              <span class="home-chip purple"><i class="ti ti-alert-circle"></i>Casos pendientes</span>
-              <span class="home-chip green"><i class="ti ti-file-text"></i>Plantillas</span>
+              <span class="home-chip orange" onclick="document.querySelector('[data-view=bo-llamadas]').click()"><i class="ti ti-phone-call"></i>BO Llamadas</span>
+              <span class="home-chip purple" onclick="document.querySelector('[data-view=pendientes]').click()"><i class="ti ti-alert-circle"></i>Casos pendientes</span>
+              <span class="home-chip green" onclick="document.querySelector('[data-view=plantillas]').click()"><i class="ti ti-file-text"></i>Plantillas</span>
             </div>
           </div>
           <div class="home-hero-right">
-            <div class="home-hero-icon-wrap">
-              <i class="ti ti-headset"></i>
+            <div class="home-clock-wrap">
+              <div class="home-clock-label"><i class="ti ti-map-pin" style="font-size:10px;color:var(--orange);margin-right:3px"></i>Lima, Perú</div>
+              <div>
+                <span class="home-clock-time" id="clock-time">--:--</span>
+                <span class="home-clock-ampm" id="clock-ampm"></span>
+              </div>
+              <div class="home-clock-date" id="clock-date">—</div>
+              <div class="home-clock-lima">
+                <i class="ti ti-clock"></i>
+                <span>UTC-5 · Hora Lima</span>
+              </div>
             </div>
           </div>
         </div>
 
-        <!-- CARDS INFO -->
-        <div class="home-cards-grid">
-          <div class="home-info-card" onclick="document.querySelector('[data-view=bo-llamadas]').click()">
-            <div class="home-card-icon" style="background:#FFF0E8;color:var(--orange-dark)"><i class="ti ti-phone-call"></i></div>
-            <div class="home-card-body">
-              <div class="home-card-title">Registro de Llamadas BO</div>
-              <div class="home-card-desc">Deriva casos desde WhatsApp al equipo BackOffice. Las asesoras BO gestionan el estado: pendiente, no contesta o atendida.</div>
-            </div>
-            <i class="ti ti-arrow-right home-card-arrow"></i>
-          </div>
-          <div class="home-info-card" onclick="document.querySelector('[data-view=pendientes]').click()">
-            <div class="home-card-icon" style="background:#FFF0F0;color:var(--danger)"><i class="ti ti-alert-circle"></i></div>
-            <div class="home-card-body">
-              <div class="home-card-title">Casos Pendientes Fuera de Plazo</div>
-              <div class="home-card-desc">Registra casos que superaron el plazo de atención. Vista de calendario día a día para supervisores del Contact Center.</div>
-            </div>
-            <i class="ti ti-arrow-right home-card-arrow"></i>
-          </div>
-          <div class="home-info-card" onclick="document.querySelector('[data-view=plantillas]').click()">
-            <div class="home-card-icon" style="background:#EBF2FF;color:var(--info)"><i class="ti ti-file-text"></i></div>
-            <div class="home-card-body">
-              <div class="home-card-title">Plantillas de Derivación</div>
-              <div class="home-card-desc">10 plantillas listas para copiar y pegar en WhatsApp. Solicita la información correcta al alumno según el tipo de caso.</div>
-            </div>
-            <i class="ti ti-arrow-right home-card-arrow"></i>
-          </div>
-          <div class="home-info-card" onclick="document.querySelector('[data-view=preguntas]').click()">
-            <div class="home-card-icon" style="background:#E8FAF0;color:var(--success)"><i class="ti ti-award"></i></div>
-            <div class="home-card-body">
-              <div class="home-card-title">Preguntas Frecuentes</div>
-              <div class="home-card-desc">Guía de respuestas rápidas para las consultas más comunes de los alumnos en el canal WhatsApp.</div>
-            </div>
-            <i class="ti ti-arrow-right home-card-arrow"></i>
-          </div>
-        </div>
+        <!-- CONTENIDO PRINCIPAL -->
+        <div class="home-content">
 
-        <!-- ROLES BANNER -->
-        <div class="home-roles-banner">
-          <div class="home-roles-title"><i class="ti ti-users-group"></i> ¿Quién puede hacer qué?</div>
-          <div class="home-roles-grid">
-            <div class="home-role-card">
-              <div class="home-role-badge" style="background:#FFF0E8;color:var(--orange-dark)"><i class="ti ti-brand-whatsapp"></i>Asesor WSP</div>
-              <ul class="home-role-list">
-                <li><i class="ti ti-check"></i>Registrar casos para BO Llamadas</li>
-                <li><i class="ti ti-check"></i>Usar y copiar plantillas</li>
-                <li><i class="ti ti-check"></i>Consultar casos pendientes</li>
-                <li><i class="ti ti-x" style="color:var(--danger)"></i>No puede gestionar estados BO</li>
-                <li><i class="ti ti-x" style="color:var(--danger)"></i>No puede borrar casos pendientes</li>
-
-              </ul>
+          <!-- ACCESOS DIRECTOS -->
+          <div class="home-section-label">Accesos directos</div>
+          <div class="home-cards-grid">
+            <div class="home-info-card" style="--card-accent:var(--orange)" onclick="document.querySelector('[data-view=bo-llamadas]').click()">
+              <div class="home-card-icon" style="background:#FFF0E8;color:var(--orange-dark)"><i class="ti ti-phone-call"></i></div>
+              <div class="home-card-body">
+                <div class="home-card-title">Registro de Llamadas BO</div>
+                <div class="home-card-desc">Deriva casos al equipo BackOffice y gestiona estados de llamadas.</div>
+              </div>
+              <i class="ti ti-arrow-right home-card-arrow"></i>
             </div>
-            <div class="home-role-card">
-              <div class="home-role-badge" style="background:#F5F0FF;color:var(--pending)"><i class="ti ti-headset"></i>Rol BO</div>
-              <ul class="home-role-list">
-                <li><i class="ti ti-check"></i>Cambiar estado de llamadas</li>
-                <li><i class="ti ti-check"></i>Comentar gestión de casos</li>
-                <li><i class="ti ti-check"></i>Eliminar casos de llamadas</li>
-                <li><i class="ti ti-check"></i>Puede eliminar casos pendientes</li>
-              </ul>
+            <div class="home-info-card" style="--card-accent:var(--danger)" onclick="document.querySelector('[data-view=pendientes]').click()">
+              <div class="home-card-icon" style="background:#FFF0F0;color:var(--danger)"><i class="ti ti-alert-circle"></i></div>
+              <div class="home-card-body">
+                <div class="home-card-title">Casos Pendientes Fuera de Plazo</div>
+                <div class="home-card-desc">Vista de calendario para supervisores del Contact Center.</div>
+              </div>
+              <i class="ti ti-arrow-right home-card-arrow"></i>
             </div>
-            <div class="home-role-card">
-              <div class="home-role-badge" style="background:#FFF0F0;color:var(--danger)"><i class="ti ti-shield-check"></i>Supervisor</div>
-              <ul class="home-role-list">
-                <li><i class="ti ti-check"></i>Eliminar casos pendientes</li>
-              </ul>
+            <div class="home-info-card" style="--card-accent:var(--info)" onclick="document.querySelector('[data-view=plantillas]').click()">
+              <div class="home-card-icon" style="background:#EBF2FF;color:var(--info)"><i class="ti ti-file-text"></i></div>
+              <div class="home-card-body">
+                <div class="home-card-title">Plantillas de Derivación</div>
+                <div class="home-card-desc">Plantillas listas para copiar y pegar en WhatsApp según el caso.</div>
+              </div>
+              <i class="ti ti-arrow-right home-card-arrow"></i>
+            </div>
+            <div class="home-info-card" style="--card-accent:var(--success)" onclick="document.querySelector('[data-view=preguntas]').click()">
+              <div class="home-card-icon" style="background:#E8FAF0;color:var(--success)"><i class="ti ti-award"></i></div>
+              <div class="home-card-body">
+                <div class="home-card-title">Preguntas Frecuentes</div>
+                <div class="home-card-desc">Respuestas rápidas para consultas comunes de alumnos en WhatsApp.</div>
+              </div>
+              <i class="ti ti-arrow-right home-card-arrow"></i>
+            </div>
+            <div class="home-info-card" style="--card-accent:var(--orange)" onclick="document.querySelector('[data-view=capacitate]').click()">
+              <div class="home-card-icon" style="background:#1a0a00;color:var(--orange)"><i class="ti ti-player-play-filled"></i></div>
+              <div class="home-card-body">
+                <div class="home-card-title">Capacítate</div>
+                <div class="home-card-desc">Videos y recursos de formación para asesores del canal.</div>
+              </div>
+              <i class="ti ti-arrow-right home-card-arrow"></i>
             </div>
           </div>
-        </div>
 
-        <!-- FOOTER NOTE -->
-        <div class="home-footer-note">
-          <i class="ti ti-info-circle"></i>
-          Para obtener acceso o reportar inconvenientes, contacta al formador <strong>Gerardo Chacón</strong> o al asesor <strong>Jhon Ruiz</strong> a través de <strong>Microsoft Teams</strong>.
-        </div>
+          <!-- ROLES BANNER -->
+          <div class="home-section-label">Permisos por rol</div>
+          <div class="home-roles-banner">
+            <div class="home-roles-title"><i class="ti ti-users-group"></i> ¿Quién puede hacer qué?</div>
+            <div class="home-roles-grid">
+              <div class="home-role-card">
+                <div class="home-role-badge" style="background:#FFF0E8;color:var(--orange-dark)"><i class="ti ti-brand-whatsapp"></i>Asesor WSP</div>
+                <ul class="home-role-list">
+                  <li><i class="ti ti-check"></i>Registrar casos para BO Llamadas</li>
+                  <li><i class="ti ti-check"></i>Usar y copiar plantillas</li>
+                  <li><i class="ti ti-check"></i>Consultar casos pendientes</li>
+                  <li><i class="ti ti-x" style="color:var(--danger)"></i>No puede gestionar estados BO</li>
+                  <li><i class="ti ti-x" style="color:var(--danger)"></i>No puede borrar casos pendientes</li>
+                </ul>
+              </div>
+              <div class="home-role-card">
+                <div class="home-role-badge" style="background:#F5F0FF;color:var(--pending)"><i class="ti ti-headset"></i>Rol BO</div>
+                <ul class="home-role-list">
+                  <li><i class="ti ti-check"></i>Cambiar estado de llamadas</li>
+                  <li><i class="ti ti-check"></i>Comentar gestión de casos</li>
+                  <li><i class="ti ti-check"></i>Eliminar casos de llamadas</li>
+                  <li><i class="ti ti-check"></i>Puede eliminar casos pendientes</li>
+                </ul>
+              </div>
+              <div class="home-role-card">
+                <div class="home-role-badge" style="background:#FFF0F0;color:var(--danger)"><i class="ti ti-shield-check"></i>Supervisor</div>
+                <ul class="home-role-list">
+                  <li><i class="ti ti-check"></i>Eliminar casos pendientes</li>
+                </ul>
+              </div>
+            </div>
+          </div>
 
+          <!-- FOOTER NOTE -->
+          <div class="home-footer-note">
+            <i class="ti ti-info-circle"></i>
+            Para obtener acceso o reportar inconvenientes, contacta al formador <strong>Gerardo Chacón</strong> o al asesor <strong>Jhon Ruiz</strong> a través de <strong>Microsoft Teams</strong>.
+          </div>
+
+        </div><!-- /home-content -->
       </div>
 
       <!-- BO LLAMADAS -->
@@ -607,7 +1181,7 @@
         <div class="bo-header">
           <div class="bo-title-wrap">
             <h2>Registro de Llamadas — BackOffice</h2>
-            <p>Prioridad: más antiguos primero · Solo rol BO puede gestionar estados y comentar</p>
+            <p>Prioridad: más antiguos primero · BO, Supervisor y Formador pueden gestionar estados y comentar</p>
           </div>
           <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
             <button class="btn-export excel" id="btn-bo-export-excel"><i class="ti ti-table-export"></i>Excel</button>
@@ -633,6 +1207,16 @@
           </select>
         </div>
         <div id="cards-container"><div class="loading-state">Cargando casos...</div></div>
+
+        <!-- LLAMADOS DEL DÍA DE HOY -->
+        <div id="llamados-hoy-section" style="margin-top:32px;display:none">
+          <div class="pend-day-header" style="margin-bottom:14px">
+            <div class="pend-day-pill today"><i class="ti ti-phone-check" style="font-size:13px"></i>Llamados el día de hoy</div>
+            <div class="pend-day-line"></div>
+            <span class="pend-day-count" id="llamados-hoy-count">0 llamadas</span>
+          </div>
+          <div id="llamados-hoy-container"></div>
+        </div>
       </div>
 
       <!-- CASOS PENDIENTES FUERA DE PLAZO -->
@@ -699,13 +1283,27 @@
 
       <!-- PLANTILLAS -->
       <div class="view" id="view-plantillas">
-        <div class="pend-header">
-          <div class="pend-title-wrap">
+        <div class="plantillas-topbar">
+          <div>
             <h2>Plantillas de derivación</h2>
             <p>Copia la plantilla correspondiente y úsala en WhatsApp para solicitar información al alumno</p>
           </div>
+          <div class="plantillas-search">
+            <i class="ti ti-search"></i>
+            <input type="text" id="search-plantillas" placeholder="Buscar plantilla…"/>
+          </div>
         </div>
-        <div class="plantillas-grid" id="plantillas-grid"></div>
+
+        <!-- Banner modo formador -->
+        <div class="plt-formador-bar" id="plt-formador-bar">
+          <i class="ti ti-shield-check"></i>
+          <span><strong>Modo Formador activo</strong> — Puedes añadir, editar o eliminar plantillas.</span>
+          <div class="fb-actions">
+            <button class="btn-plt-add" id="btn-plt-nueva"><i class="ti ti-plus"></i>Nueva plantilla</button>
+          </div>
+        </div>
+
+        <div class="plantillas-list" id="plantillas-grid"></div>
 
         <!-- MODAL VER PLANTILLA -->
         <div class="modal-overlay" id="modal-plantilla-overlay">
@@ -731,8 +1329,538 @@
         </div>
       </div>
 
-      <div class="view" id="view-preguntas"><div class="hero"><h1>Preguntas frecuentes</h1><p>Guía de respuestas comunes para asesores.</p></div></div>
-      <div class="view" id="view-config"><div class="hero"><h1>Configuración</h1><p>Ajustes de cuenta y preferencias.</p></div></div>
+      <!-- MODAL: NUEVA / EDITAR PLANTILLA (solo Formador) -->
+      <div class="modal-overlay" id="modal-plt-form-overlay">
+        <div class="modal modal-plt-form">
+          <div class="modal-header">
+            <div>
+              <div class="modal-title" id="modal-plt-form-title">Nueva plantilla</div>
+              <div class="modal-subtitle">Solo visible para el rol Formador</div>
+            </div>
+            <button class="modal-close" id="modal-plt-form-close"><i class="ti ti-x"></i></button>
+          </div>
+          <div class="form-grid">
+            <div class="form-group span2">
+              <label>Nombre de la plantilla <span class="req">*</span></label>
+              <input type="text" class="form-control" id="fplt-nombre" placeholder="Ej: Solicitud de constancia de estudios"/>
+            </div>
+            <div class="form-group span2">
+              <label>Descripción breve <span class="req">*</span></label>
+              <input type="text" class="form-control" id="fplt-desc" placeholder="Cuándo se usa esta plantilla…"/>
+            </div>
+            <div class="form-group span2">
+              <label>Texto de la plantilla (lo que se copia) <span class="req">*</span></label>
+              <textarea class="form-control" id="fplt-texto" style="min-height:120px" placeholder="📢 Bríndame la siguiente información:&#10;&#10;Campo 1:&#10;Campo 2:"></textarea>
+            </div>
+            <div class="form-group span2">
+              <label>Ícono</label>
+              <div class="plt-icon-picker" id="fplt-icon-picker">
+                <div class="plt-icon-opt selected" data-icon="ti-file-text"     onclick="selPltIcon(this)"><i class="ti ti-file-text"></i></div>
+                <div class="plt-icon-opt" data-icon="ti-user"          onclick="selPltIcon(this)"><i class="ti ti-user"></i></div>
+                <div class="plt-icon-opt" data-icon="ti-building"      onclick="selPltIcon(this)"><i class="ti ti-building"></i></div>
+                <div class="plt-icon-opt" data-icon="ti-certificate"   onclick="selPltIcon(this)"><i class="ti ti-certificate"></i></div>
+                <div class="plt-icon-opt" data-icon="ti-school"        onclick="selPltIcon(this)"><i class="ti ti-school"></i></div>
+                <div class="plt-icon-opt" data-icon="ti-edit"          onclick="selPltIcon(this)"><i class="ti ti-edit"></i></div>
+                <div class="plt-icon-opt" data-icon="ti-search"        onclick="selPltIcon(this)"><i class="ti ti-search"></i></div>
+                <div class="plt-icon-opt" data-icon="ti-alert-triangle" onclick="selPltIcon(this)"><i class="ti ti-alert-triangle"></i></div>
+                <div class="plt-icon-opt" data-icon="ti-mood-sad"      onclick="selPltIcon(this)"><i class="ti ti-mood-sad"></i></div>
+                <div class="plt-icon-opt" data-icon="ti-users"         onclick="selPltIcon(this)"><i class="ti ti-users"></i></div>
+                <div class="plt-icon-opt" data-icon="ti-id-badge"      onclick="selPltIcon(this)"><i class="ti ti-id-badge"></i></div>
+                <div class="plt-icon-opt" data-icon="ti-user-minus"    onclick="selPltIcon(this)"><i class="ti ti-user-minus"></i></div>
+                <div class="plt-icon-opt" data-icon="ti-coin"          onclick="selPltIcon(this)"><i class="ti ti-coin"></i></div>
+                <div class="plt-icon-opt" data-icon="ti-clipboard"     onclick="selPltIcon(this)"><i class="ti ti-clipboard"></i></div>
+                <div class="plt-icon-opt" data-icon="ti-mail"          onclick="selPltIcon(this)"><i class="ti ti-mail"></i></div>
+                <div class="plt-icon-opt" data-icon="ti-phone"         onclick="selPltIcon(this)"><i class="ti ti-phone"></i></div>
+              </div>
+              <input type="hidden" id="fplt-icon" value="ti-file-text"/>
+            </div>
+            <div class="form-group span2">
+              <label>Color de fondo del ícono</label>
+              <div class="plt-color-picker" id="fplt-color-picker">
+                <div class="plt-color-swatch selected" data-color="#EBF2FF" style="background:#EBF2FF" onclick="selPltColor(this)" title="Azul claro"></div>
+                <div class="plt-color-swatch" data-color="#FFF0E8" style="background:#FFF0E8" onclick="selPltColor(this)" title="Naranja claro"></div>
+                <div class="plt-color-swatch" data-color="#FFF7E6" style="background:#FFF7E6" onclick="selPltColor(this)" title="Amarillo"></div>
+                <div class="plt-color-swatch" data-color="#E8FAF0" style="background:#E8FAF0" onclick="selPltColor(this)" title="Verde claro"></div>
+                <div class="plt-color-swatch" data-color="#FFF0F0" style="background:#FFF0F0" onclick="selPltColor(this)" title="Rojo claro"></div>
+                <div class="plt-color-swatch" data-color="#F5F0FF" style="background:#F5F0FF" onclick="selPltColor(this)" title="Morado claro"></div>
+                <div class="plt-color-swatch" data-color="#F0F0F0" style="background:#F0F0F0" onclick="selPltColor(this)" title="Gris claro"></div>
+                <div class="plt-color-swatch" data-color="#E8F8FF" style="background:#E8F8FF" onclick="selPltColor(this)" title="Cyan claro"></div>
+              </div>
+              <input type="hidden" id="fplt-color" value="#EBF2FF"/>
+            </div>
+            <div class="form-group span2">
+              <label>Imagen de referencia (opcional)</label>
+              <div class="plt-img-upload-area" id="fplt-img-drop">
+                <input type="file" id="fplt-img-file" accept="image/*"/>
+                <i class="ti ti-photo-up"></i>
+                <p>Haz clic o arrastra una imagen aquí<br><span style="font-size:11px;color:#bbb">PNG, JPG, WEBP — máx. 2 MB</span></p>
+              </div>
+              <img id="fplt-img-preview" class="plt-img-preview" alt="preview"/>
+              <input type="hidden" id="fplt-img-b64" value=""/>
+            </div>
+          </div>
+          <div class="form-actions">
+            <button class="btn-cancel" id="btn-plt-form-cancel">Cancelar</button>
+            <button class="btn-save"   id="btn-plt-form-save">
+              <i class="ti ti-device-floppy"></i><span id="btn-plt-form-save-text">Guardar plantilla</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- PREGUNTAS FRECUENTES -->
+      <div class="view" id="view-preguntas">
+
+        <!-- HEADER -->
+        <div class="faq-header">
+          <div>
+            <h2 class="faq-main-title"><i class="ti ti-books" style="color:var(--orange);margin-right:8px"></i>Biblioteca de Preguntas Frecuentes</h2>
+            <p class="faq-main-sub">Respuestas oficiales para asesores del canal WhatsApp · Solo BO, Supervisor y Formador pueden añadir preguntas</p>
+          </div>
+          <button class="btn-nuevo" id="btn-faq-nueva" style="display:none"><i class="ti ti-plus"></i>Nueva pregunta</button>
+        </div>
+
+        <!-- BARRA BÚSQUEDA + FILTROS -->
+        <div class="faq-toolbar">
+          <div class="filter-search" style="flex:1;max-width:480px">
+            <i class="ti ti-search"></i>
+            <input type="text" id="faq-search" placeholder="Buscar pregunta, palabra clave…"/>
+          </div>
+          <select class="filter-select" id="faq-cat-filter">
+            <option value="">Todas las categorías</option>
+          </select>
+          <span class="faq-count" id="faq-count">0 respuestas</span>
+        </div>
+
+        <!-- CATEGORÍAS CHIPS -->
+        <div class="faq-chips-bar" id="faq-chips-bar"></div>
+
+        <!-- GRID DE PREGUNTAS -->
+        <div class="faq-grid" id="faq-grid">
+          <div class="loading-state"><i class="ti ti-loader" style="display:block;font-size:28px;margin-bottom:8px;opacity:0.4"></i>Cargando biblioteca…</div>
+        </div>
+
+        <!-- MODAL VER PREGUNTA -->
+        <div class="modal-overlay" id="modal-faq-view-overlay">
+          <div class="modal modal-faq-view">
+            <div class="modal-header">
+              <div style="flex:1;min-width:0">
+                <div class="faq-modal-num" id="fmv-num"></div>
+                <div class="modal-title" id="fmv-pregunta" style="font-size:16px;line-height:1.4;margin-top:4px"></div>
+                <div style="display:flex;align-items:center;gap:8px;margin-top:8px;flex-wrap:wrap">
+                  <span class="faq-cat-badge" id="fmv-cat"></span>
+                  <span style="font-size:11px;color:var(--muted)" id="fmv-meta"></span>
+                </div>
+              </div>
+              <button class="modal-close" id="fmv-close"><i class="ti ti-x"></i></button>
+            </div>
+            <div style="background:var(--success-bg);border:1px solid rgba(26,122,69,0.2);border-radius:10px;padding:16px 18px;margin-bottom:16px">
+              <div style="font-size:10px;font-weight:700;color:var(--success);text-transform:uppercase;letter-spacing:.07em;margin-bottom:6px;display:flex;align-items:center;gap:5px"><i class="ti ti-check-circle" style="font-size:13px"></i>Respuesta oficial</div>
+              <div id="fmv-respuesta" style="font-size:14px;color:var(--text);line-height:1.7;white-space:pre-wrap"></div>
+            </div>
+            <div id="fmv-img-wrap" style="display:none;margin-bottom:14px">
+              <div style="font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.07em;margin-bottom:8px"><i class="ti ti-photo"></i> Imagen de referencia</div>
+              <img id="fmv-img" src="" alt="referencia" style="width:100%;max-height:260px;object-fit:contain;border-radius:10px;border:1px solid var(--border);cursor:zoom-in"/>
+            </div>
+            <div id="fmv-video-wrap" style="display:none;margin-bottom:14px">
+              <div style="font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.07em;margin-bottom:8px"><i class="ti ti-brand-youtube"></i> Video explicativo</div>
+              <div id="fmv-video-embed" style="border-radius:10px;overflow:hidden;aspect-ratio:16/9;background:#000"></div>
+              <a id="fmv-video-link" href="#" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;gap:5px;margin-top:8px;font-size:12px;color:var(--info)"><i class="ti ti-external-link"></i>Abrir en YouTube</a>
+            </div>
+            <div class="form-actions" style="margin-top:8px;padding-top:14px">
+              <button class="btn-cancel" id="fmv-cancel">Cerrar</button>
+              <button class="btn-save" id="fmv-edit-btn" style="display:none;background:var(--warning)"><i class="ti ti-pencil"></i>Editar</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- MODAL NUEVA / EDITAR PREGUNTA -->
+        <div class="modal-overlay" id="modal-faq-form-overlay">
+          <div class="modal modal-faq-form">
+            <div class="modal-header">
+              <div>
+                <div class="modal-title" id="modal-faq-form-title">Nueva pregunta</div>
+                <div class="modal-subtitle">Solo BO, Supervisor y Formador</div>
+              </div>
+              <button class="modal-close" id="modal-faq-form-close"><i class="ti ti-x"></i></button>
+            </div>
+            <div class="form-grid">
+              <div class="form-group span2">
+                <label>Categoría <span class="req">*</span></label>
+                <input type="text" class="form-control" id="ffaq-cat" placeholder="Ej: Derivaciones, Pagos, Matrículas…"/>
+                <div id="ffaq-cat-sugerencias" style="display:flex;gap:6px;flex-wrap:wrap;margin-top:6px"></div>
+              </div>
+              <div class="form-group span2">
+                <label>Pregunta <span class="req">*</span></label>
+                <textarea class="form-control" id="ffaq-pregunta" style="min-height:70px" placeholder="¿Cuál es la duda que tienen los asesores?"></textarea>
+              </div>
+              <div class="form-group span2">
+                <label>Respuesta oficial <span class="req">*</span></label>
+                <textarea class="form-control" id="ffaq-respuesta" style="min-height:100px" placeholder="Escribe la respuesta clara y completa…"></textarea>
+              </div>
+              <div class="form-group span2">
+                <label>Imagen de referencia <span style="font-weight:400;color:var(--muted)">(opcional)</span></label>
+                <div id="ffaq-img-drop" style="padding:16px;text-align:center;border:2px dashed var(--border);border-radius:10px;cursor:pointer;background:var(--surface)">
+                  <input type="file" id="ffaq-img-file" accept="image/*" style="display:none"/>
+                  <i class="ti ti-photo-up" style="font-size:22px;color:var(--muted);display:block;margin-bottom:4px"></i>
+                  <p style="font-size:12px;color:var(--muted)">Clic para subir imagen <span style="font-size:11px;color:#bbb;display:block">PNG, JPG — máx. 2 MB</span></p>
+                </div>
+                <img id="ffaq-img-preview" src="" alt="preview" style="display:none;width:100%;max-height:160px;object-fit:contain;border-radius:8px;border:1px solid var(--border);margin-top:8px"/>
+                <input type="hidden" id="ffaq-img-b64" value=""/>
+              </div>
+              <div class="form-group span2">
+                <label>URL de video YouTube <span style="font-weight:400;color:var(--muted)">(opcional)</span></label>
+                <input type="text" class="form-control" id="ffaq-video" placeholder="https://www.youtube.com/watch?v=…"/>
+              </div>
+            </div>
+            <div class="form-actions">
+              <button class="btn-cancel" id="btn-faq-form-cancel">Cancelar</button>
+              <button class="btn-save" id="btn-faq-form-save">
+                <i class="ti ti-device-floppy"></i><span id="btn-faq-form-save-text">Guardar pregunta</span>
+              </button>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- CAPACÍTATE -->
+      <div class="view" id="view-capacitate">
+
+        <!-- Header -->
+        <div class="cap-header">
+          <div class="cap-title-wrap">
+            <h2><i class="ti ti-player-play-filled"></i>Capacítate</h2>
+            <p>Videos de formación y recursos para asesores · Formador, Supervisor y BO pueden añadir contenido</p>
+          </div>
+        </div>
+
+        <!-- Barra formador -->
+        <div class="cap-formador-bar" id="cap-formador-bar">
+          <i class="ti ti-shield-check"></i>
+          <span><strong style="color:var(--orange)">Modo gestor activo</strong> — Puedes añadir, editar o eliminar videos y recursos.</span>
+          <button class="btn-cap-add" id="btn-cap-nueva"><i class="ti ti-plus"></i>Agregar video</button>
+        </div>
+
+        <!-- Search + filtros -->
+        <div class="cap-search-bar">
+          <div class="filter-search" style="flex:1;max-width:420px">
+            <i class="ti ti-search"></i>
+            <input type="text" id="cap-search" placeholder="Buscar por título, categoría…"/>
+          </div>
+          <span id="cap-count" style="font-size:12px;color:var(--muted);font-weight:600;white-space:nowrap">0 videos</span>
+        </div>
+
+        <!-- Categorías chips -->
+        <div class="cap-cats-bar" id="cap-cats-bar">
+          <button class="cap-cat-btn active" data-cat="">Todos</button>
+        </div>
+
+        <!-- Grid -->
+        <div class="cap-grid" id="cap-grid">
+          <div class="loading-state">Cargando videos…</div>
+        </div>
+
+        <!-- MODAL: VER VIDEO -->
+        <div class="modal-overlay" id="modal-cap-view-overlay">
+          <div class="modal modal-cap">
+            <div class="modal-header">
+              <div style="flex:1;min-width:0">
+                <div style="font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.07em" id="cmv-cat-label"></div>
+                <div class="modal-title" id="cmv-title" style="font-size:16px;line-height:1.4;margin-top:4px"></div>
+                <div style="font-size:12px;color:var(--muted);margin-top:4px" id="cmv-autor"></div>
+              </div>
+              <button class="modal-close" id="cmv-close"><i class="ti ti-x"></i></button>
+            </div>
+            <div class="cap-video-embed" id="cmv-embed"></div>
+            <div id="cmv-desc" style="font-size:13px;color:#555;line-height:1.65;margin-bottom:12px"></div>
+            <div class="cap-modal-meta">
+              <a class="cap-modal-link" id="cmv-ext-link" href="#" target="_blank" rel="noopener"><i class="ti ti-external-link"></i>Abrir en nueva pestaña</a>
+            </div>
+            <div class="form-actions" style="margin-top:8px;padding-top:14px">
+              <button class="btn-cancel" id="cmv-cancel">Cerrar</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- MODAL: AGREGAR / EDITAR VIDEO -->
+        <div class="modal-overlay" id="modal-cap-form-overlay">
+          <div class="modal modal-cap-form">
+            <div class="modal-header">
+              <div>
+                <div class="modal-title" id="modal-cap-form-title">Agregar video</div>
+                <div class="modal-subtitle">Formador, Supervisor y BO</div>
+              </div>
+              <button class="modal-close" id="modal-cap-form-close"><i class="ti ti-x"></i></button>
+            </div>
+            <div class="form-grid">
+              <div class="form-group span2">
+                <label>Título del video <span class="req">*</span></label>
+                <input type="text" class="form-control" id="fcap-titulo" placeholder="Ej: Cómo gestionar casos de matrícula"/>
+              </div>
+              <div class="form-group span2">
+                <label>URL del video <span class="req">*</span></label>
+                <input type="text" class="form-control" id="fcap-url" placeholder="https://www.youtube.com/watch?v=… o enlace de Drive"/>
+              </div>
+              <div class="form-group">
+                <label>Categoría <span class="req">*</span></label>
+                <input type="text" class="form-control" id="fcap-cat" placeholder="Ej: Accesos, Matrículas…"/>
+              </div>
+              <div class="form-group">
+                <label>Duración <span style="font-weight:400;color:var(--muted)">(opcional)</span></label>
+                <input type="text" class="form-control" id="fcap-duracion" placeholder="Ej: 12:30"/>
+              </div>
+              <div class="form-group span2">
+                <label>Descripción <span style="font-weight:400;color:var(--muted)">(opcional)</span></label>
+                <textarea class="form-control" id="fcap-desc" style="min-height:70px" placeholder="Breve descripción del contenido…"></textarea>
+              </div>
+            </div>
+            <div class="form-actions">
+              <button class="btn-cancel" id="btn-cap-form-cancel">Cancelar</button>
+              <button class="btn-save" id="btn-cap-form-save">
+                <i class="ti ti-device-floppy"></i><span id="btn-cap-form-save-text">Guardar video</span>
+              </button>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <div class="view" id="view-config">
+
+        <!-- Header -->
+        <div class="cfg-page-header">
+          <h2 class="cfg-page-title">Configuración</h2>
+          <p class="cfg-page-sub">Personaliza tu experiencia en el Portal SAES</p>
+        </div>
+
+        <div class="cfg-grid">
+
+          <!-- ── Tarjeta: Mi cuenta ── -->
+          <div class="cfg-profile-card">
+            <div class="cfg-av-ring" id="cfg-av"></div>
+            <div class="cfg-profile-info">
+              <div class="cfg-profile-name" id="cfg-nombre">—</div>
+              <div class="cfg-profile-email" id="cfg-email"></div>
+              <div>
+                <span class="cfg-profile-badge" id="cfg-rol-badge">
+                  <i class="ti ti-shield-check" style="font-size:12px"></i>
+                  <span id="cfg-rol-text">Cargando...</span>
+                </span>
+              </div>
+            </div>
+            <div class="cfg-profile-sesion">
+              <div class="cfg-sesion-label">Sesión activa desde</div>
+              <div class="cfg-sesion-val" id="cfg-sesion-hora">—</div>
+            </div>
+          </div>
+
+          <!-- ── Tarjeta: Apariencia ── -->
+          <div class="cfg-card">
+            <div style="display:flex;align-items:center;gap:10px;margin-bottom:4px">
+              <div class="cfg-card-icon" style="background:#FFF0E8;color:var(--orange-dark)"><i class="ti ti-palette"></i></div>
+              <div>
+                <div class="cfg-card-title">Apariencia</div>
+                <div class="cfg-card-sub" style="margin-bottom:0">Personaliza cómo se ve el portal</div>
+              </div>
+            </div>
+            <div style="height:1px;background:var(--border);margin:16px 0"></div>
+
+            <div class="cfg-section-label">Tema de color</div>
+            <div class="cfg-tema-grid" id="cfg-temas">
+              <button class="cfg-tema-btn active" data-tema="orange">
+                <div class="tema-swatch" style="background:#F26522"></div>
+                Naranja
+              </button>
+              <button class="cfg-tema-btn" data-tema="blue">
+                <div class="tema-swatch" style="background:#1D5FBD"></div>
+                Azul
+              </button>
+              <button class="cfg-tema-btn" data-tema="green">
+                <div class="tema-swatch" style="background:#1A7A45"></div>
+                Verde
+              </button>
+            </div>
+
+            <div class="cfg-section-label" style="margin-top:4px">Densidad de vista</div>
+            <div class="cfg-den-grid" id="cfg-densidad">
+              <button class="cfg-den-btn" data-den="compact">
+                <div class="den-preview">
+                  <div class="den-bar" style="width:80%"></div>
+                  <div class="den-bar" style="width:80%"></div>
+                  <div class="den-bar" style="width:80%"></div>
+                  <div class="den-bar" style="width:80%"></div>
+                </div>
+                Compacto
+              </button>
+              <button class="cfg-den-btn active" data-den="normal">
+                <div class="den-preview">
+                  <div class="den-bar" style="width:80%"></div>
+                  <div class="den-bar" style="width:0;height:2px"></div>
+                  <div class="den-bar" style="width:80%"></div>
+                  <div class="den-bar" style="width:0;height:2px"></div>
+                  <div class="den-bar" style="width:80%"></div>
+                </div>
+                Normal
+              </button>
+              <button class="cfg-den-btn" data-den="spacious">
+                <div class="den-preview">
+                  <div class="den-bar" style="width:80%"></div>
+                  <div class="den-bar" style="width:0;height:5px"></div>
+                  <div class="den-bar" style="width:80%"></div>
+                  <div class="den-bar" style="width:0;height:5px"></div>
+                  <div class="den-bar" style="width:80%"></div>
+                </div>
+                Amplio
+              </button>
+            </div>
+          </div>
+
+          <!-- ── Tarjeta: Preferencias ── -->
+          <div class="cfg-card">
+            <div style="display:flex;align-items:center;gap:10px;margin-bottom:4px">
+              <div class="cfg-card-icon" style="background:#F5F0FF;color:var(--pending)"><i class="ti ti-bell"></i></div>
+              <div>
+                <div class="cfg-card-title">Preferencias</div>
+                <div class="cfg-card-sub" style="margin-bottom:0">Ajusta el comportamiento del portal</div>
+              </div>
+            </div>
+            <div style="height:1px;background:var(--border);margin:16px 0"></div>
+
+            <div class="cfg-pref-row">
+              <div class="cfg-pref-text">
+                <div class="cfg-pref-name">Sonido al copiar plantilla</div>
+                <div class="cfg-pref-hint">Reproduce un clic al copiar texto</div>
+              </div>
+              <div class="cfg-toggle" id="tog-sonido" data-key="pref_sonido" data-on="true">
+                <div class="cfg-toggle-knob"></div>
+              </div>
+            </div>
+            <div class="cfg-pref-row">
+              <div class="cfg-pref-text">
+                <div class="cfg-pref-name">Confirmar antes de eliminar</div>
+                <div class="cfg-pref-hint">Pide confirmación al borrar registros</div>
+              </div>
+              <div class="cfg-toggle active" id="tog-confirmar" data-key="pref_confirmar" data-on="true">
+                <div class="cfg-toggle-knob"></div>
+              </div>
+            </div>
+            <div class="cfg-pref-row">
+              <div class="cfg-pref-text">
+                <div class="cfg-pref-name">Resaltar casos de alta prioridad</div>
+                <div class="cfg-pref-hint">Muestra animación en tarjetas rojas</div>
+              </div>
+              <div class="cfg-toggle active" id="tog-resaltar" data-key="pref_resaltar" data-on="true">
+                <div class="cfg-toggle-knob"></div>
+              </div>
+            </div>
+            <div class="cfg-pref-row">
+              <div class="cfg-pref-text">
+                <div class="cfg-pref-name">Animaciones de la interfaz</div>
+                <div class="cfg-pref-hint">Efectos visuales y transiciones</div>
+              </div>
+              <div class="cfg-toggle active" id="tog-animaciones" data-key="pref_animaciones" data-on="true">
+                <div class="cfg-toggle-knob"></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- ── Tarjeta: Accesos rápidos ── -->
+          <div class="cfg-card">
+            <div style="display:flex;align-items:center;gap:10px;margin-bottom:4px">
+              <div class="cfg-card-icon" style="background:#FFF7E6;color:var(--warning)"><i class="ti ti-bolt"></i></div>
+              <div>
+                <div class="cfg-card-title">Accesos rápidos</div>
+                <div class="cfg-card-sub" style="margin-bottom:0">Atajos de teclado disponibles</div>
+              </div>
+            </div>
+            <div style="height:1px;background:var(--border);margin:16px 0"></div>
+
+            <div class="cfg-shortcut-row">
+              <span class="cfg-shortcut-name">Ir a Plantillas</span>
+              <span style="display:flex;gap:4px"><kbd class="cfg-kbd">Alt</kbd><kbd class="cfg-kbd">P</kbd></span>
+            </div>
+            <div class="cfg-shortcut-row">
+              <span class="cfg-shortcut-name">Ir a Tipificaciones</span>
+              <span style="display:flex;gap:4px"><kbd class="cfg-kbd">Alt</kbd><kbd class="cfg-kbd">T</kbd></span>
+            </div>
+            <div class="cfg-shortcut-row">
+              <span class="cfg-shortcut-name">Ir a BackOffice</span>
+              <span style="display:flex;gap:4px"><kbd class="cfg-kbd">Alt</kbd><kbd class="cfg-kbd">B</kbd></span>
+            </div>
+            <div class="cfg-shortcut-row">
+              <span class="cfg-shortcut-name">Ir a Casos pendientes</span>
+              <span style="display:flex;gap:4px"><kbd class="cfg-kbd">Alt</kbd><kbd class="cfg-kbd">C</kbd></span>
+            </div>
+            <div class="cfg-shortcut-row">
+              <span class="cfg-shortcut-name">Ir a Inicio</span>
+              <span style="display:flex;gap:4px"><kbd class="cfg-kbd">Alt</kbd><kbd class="cfg-kbd">I</kbd></span>
+            </div>
+          </div>
+
+          <!-- ── Tarjeta: Personalización avanzada ── -->
+          <div class="cfg-card">
+            <div style="display:flex;align-items:center;gap:10px;margin-bottom:4px">
+              <div class="cfg-card-icon" style="background:#E8FAF0;color:var(--success)"><i class="ti ti-brush"></i></div>
+              <div>
+                <div class="cfg-card-title">Personalización avanzada</div>
+                <div class="cfg-card-sub" style="margin-bottom:0">Ajusta detalles visuales del portal</div>
+              </div>
+            </div>
+            <div style="height:1px;background:var(--border);margin:16px 0"></div>
+
+            <div class="cfg-section-label">Tamaño de texto</div>
+            <div class="cfg-font-grid" id="cfg-fontsize">
+              <button class="cfg-font-btn" data-size="small" style="font-size:11px">Pequeño</button>
+              <button class="cfg-font-btn active" data-size="medium" style="font-size:13px">Normal</button>
+              <button class="cfg-font-btn" data-size="large" style="font-size:15px">Grande</button>
+              <button class="cfg-font-btn" data-size="xlarge" style="font-size:16px">Muy grande</button>
+            </div>
+
+            <div class="cfg-section-label" style="margin-top:16px">Borde de tarjetas</div>
+            <div style="display:flex;gap:8px">
+              <button class="cfg-font-btn active" data-radius="normal" id="cfg-radius-normal" style="flex:1;text-align:center">Redondeado</button>
+              <button class="cfg-font-btn" data-radius="sharp" id="cfg-radius-sharp" style="flex:1;text-align:center">Angular</button>
+            </div>
+
+            <div class="cfg-section-label" style="margin-top:16px">Sidebar compacto</div>
+            <div class="cfg-pref-row" style="padding:0">
+              <div class="cfg-pref-text">
+                <div class="cfg-pref-name">Ocultar etiquetas del menú</div>
+                <div class="cfg-pref-hint">Muestra solo iconos en la barra lateral</div>
+              </div>
+              <div class="cfg-toggle" id="tog-sidebar-mini" data-key="pref_sidebar_mini" data-on="false">
+                <div class="cfg-toggle-knob"></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- ── Tarjeta: Acerca del portal ── -->
+          <div class="cfg-about-card">
+            <div>
+              <div class="cfg-about-title">SISE · Portal SAES</div>
+              <div class="cfg-about-desc">Canal WhatsApp — Atención al Alumno<br>Desarrollado internamente para el Contact Center del Instituto SISE.</div>
+            </div>
+            <div class="cfg-about-meta">
+              <div class="cfg-about-item">
+                <div class="cfg-about-item-label">Versión</div>
+                <div class="cfg-about-item-val">2.4.0</div>
+              </div>
+              <div class="cfg-divider"></div>
+              <div class="cfg-about-item">
+                <div class="cfg-about-item-label">Actualización</div>
+                <div class="cfg-about-item-val">Jun 2026</div>
+              </div>
+              <div class="cfg-divider"></div>
+              <div class="cfg-about-item">
+                <div class="cfg-about-item-label">Soporte</div>
+                <div class="cfg-about-item-val">G. Chacón</div>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
 
     </main>
   </div>
@@ -772,6 +1900,23 @@
       <div class="form-group span2">
         <label>Motivo por el que se deriva a llamada <span class="req">*</span></label>
         <textarea class="form-control" id="f-motivo" placeholder="Describe el motivo..."></textarea>
+      </div>
+      <div class="form-group span2">
+        <label>Prioridad del caso <span class="req">*</span></label>
+        <div class="prioridad-selector" id="prioridad-selector">
+          <label class="prioridad-opt" id="prio-bajo">
+            <input type="radio" name="prioridad" value="bajo" style="display:none"/>
+            <i class="ti ti-flag"></i>Bajo
+          </label>
+          <label class="prioridad-opt" id="prio-medio">
+            <input type="radio" name="prioridad" value="medio" style="display:none"/>
+            <i class="ti ti-flag-2"></i>Medio
+          </label>
+          <label class="prioridad-opt" id="prio-alto">
+            <input type="radio" name="prioridad" value="alto" style="display:none"/>
+            <i class="ti ti-flag-3"></i>Alto
+          </label>
+        </div>
       </div>
     </div>
     <div class="form-actions">
@@ -960,6 +2105,9 @@
     getFirestore, collection, addDoc, updateDoc, deleteDoc,
     doc, query, orderBy, serverTimestamp, onSnapshot, getDoc, setDoc, getDocs, where
   } from "https://www.gstatic.com/firebasejs/11.8.1/firebase-firestore.js";
+  import {
+    getStorage, ref as storageRef, uploadBytes, getDownloadURL, deleteObject
+  } from "https://www.gstatic.com/firebasejs/11.8.1/firebase-storage.js";
 
   const app  = initializeApp({
     apiKey:            "AIzaSyD3sNXaKgp-GpU46Lhx6DichJl15nMFTxU",
@@ -972,7 +2120,8 @@
   });
   getAnalytics(app);
   const auth = getAuth(app);
-  const db   = getFirestore(app);
+  const db      = getFirestore(app);
+  const storage = getStorage(app);
 
   let currentUser    = null;
   let currentUserRol = "";          // cargado de Firestore: "Supervisor", "Formador", etc.
@@ -1040,6 +2189,11 @@
   function escH(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 
   function isFormador() { return (currentUserRol || '').toLowerCase() === 'formador'; }
+  // BO, Supervisor y Formador comparten permisos elevados
+  function tienePermiso() {
+    const r = (currentUserRol || '').toLowerCase();
+    return r === 'bo' || r === 'supervisor' || r === 'formador';
+  }
 
   function tipoClass(tipo) {
     if (!tipo) return 'sub';
@@ -1574,8 +2728,12 @@
     if (isFormador()) {
       document.getElementById('tipi-formador-bar').classList.add('visible');
     }
+    setupPltFormador();
     loadCasos();
     loadPendientes();
+    if (window._loadFaqs) window._loadFaqs();
+    // Re-render FAQs con permisos correctos una vez cargado el rol
+    setTimeout(() => { if (window._rerenderFaqs) window._rerenderFaqs(); }, 1500);
   });
 
   document.getElementById('btn-logout').addEventListener('click', async () => {
@@ -1596,6 +2754,26 @@
   // ── BO LLAMADAS ──
   const boOverlay = document.getElementById('modal-bo-overlay');
 
+  function setPrioridad(val) {
+    ['bajo','medio','alto'].forEach(p => {
+      const el = document.getElementById('prio-' + p);
+      el.classList.remove('sel-bajo','sel-medio','sel-alto');
+      const radio = el.querySelector('input');
+      radio.checked = (p === val);
+      if (p === val) el.classList.add('sel-' + p);
+    });
+  }
+
+  // Clic en etiquetas de prioridad
+  ['bajo','medio','alto'].forEach(p => {
+    document.getElementById('prio-' + p).addEventListener('click', () => setPrioridad(p));
+  });
+
+  function getPrioridad() {
+    const sel = document.querySelector('#prioridad-selector input[type=radio]:checked');
+    return sel ? sel.value : null;
+  }
+
   function openBoModal(modo, data) {
     boEditId = data ? data.id : null;
     const isEdit = !!data;
@@ -1606,6 +2784,7 @@
     document.getElementById('f-celular').value    = data ? (data.celular   || '') : '';
     document.getElementById('f-asesor-wsp').value = data ? (data.asesorWsp || '') : '';
     document.getElementById('f-motivo').value     = data ? (data.motivo    || '') : '';
+    setPrioridad(data ? (data.prioridad || 'medio') : 'medio');
     boOverlay.classList.add('open');
   }
   function closeBoModal() { boOverlay.classList.remove('open'); boEditId = null; }
@@ -1620,16 +2799,21 @@
     for (const id of required) {
       if (!document.getElementById(id).value.trim()) { showToast('Completa todos los campos (*)', 'error'); return; }
     }
+    const prioridad = getPrioridad();
+    if (!prioridad) { showToast('Selecciona una prioridad', 'error'); return; }
     const btn = document.getElementById('btn-bo-save');
     const txt = document.getElementById('btn-bo-save-text');
     btn.disabled = true; txt.textContent = 'Guardando...';
+    const ahora = new Date();
     const payload = {
-      codigo:    document.getElementById('f-codigo').value.trim(),
-      nombre:    document.getElementById('f-nombre').value.trim(),
-      celular:   document.getElementById('f-celular').value.trim(),
-      asesorWsp: document.getElementById('f-asesor-wsp').value.trim(),
-      motivo:    document.getElementById('f-motivo').value.trim(),
-      fechaRegistro: new Date().toISOString().split('T')[0],
+      codigo:        document.getElementById('f-codigo').value.trim(),
+      nombre:        document.getElementById('f-nombre').value.trim(),
+      celular:       document.getElementById('f-celular').value.trim(),
+      asesorWsp:     document.getElementById('f-asesor-wsp').value.trim(),
+      motivo:        document.getElementById('f-motivo').value.trim(),
+      prioridad:     prioridad,
+      fechaRegistro: ahora.toISOString().split('T')[0],
+      horaRegistro:  ahora.toTimeString().slice(0,5),
     };
     try {
       if (boEditId) {
@@ -1649,7 +2833,7 @@
   });
 
   async function eliminarCaso(id) {
-    if (currentUserRol.toLowerCase() !== 'bo') { showToast('Solo el rol BO puede eliminar casos', 'error'); return; }
+    if (!tienePermiso()) { showToast('Solo BO, Supervisor o Formador pueden eliminar casos', 'error'); return; }
     if (!confirm('¿Eliminar este caso?')) return;
     try { await deleteDoc(doc(db, 'bo_llamadas', id)); showToast('Caso eliminado'); }
     catch (err) { showToast('Error al eliminar', 'error'); }
@@ -1710,12 +2894,27 @@
       (r.motivo||'').toLowerCase().includes(q)
     );
     if (est) data = data.filter(r => (r.estadoLlamada || 'pendiente') === est);
+
+    // Ordenar: Alto > Medio > Bajo, y dentro de cada nivel el más antiguo primero
+    const prioOrder = { alto: 0, medio: 1, bajo: 2 };
+    data.sort((a, b) => {
+      const pa = prioOrder[a.prioridad || 'medio'];
+      const pb = prioOrder[b.prioridad || 'medio'];
+      if (pa !== pb) return pa - pb;
+      // mismo nivel → más antiguo primero (creadoEn asc)
+      const ta = a.creadoEn?.toDate?.() || new Date(a.horaRegistro || 0);
+      const tb = b.creadoEn?.toDate?.() || new Date(b.horaRegistro || 0);
+      return ta - tb;
+    });
+
     renderCards(data);
+    updateBoBadge();
+    renderLlamadosHoy();
   }
 
   function renderCards(data) {
     const container = document.getElementById('cards-container');
-    const isBO = currentUserRol.toLowerCase() === 'bo';
+    const isBO = tienePermiso();
 
     if (!data.length) {
       container.innerHTML = '<div class="empty-state"><i class="ti ti-phone-off"></i><p>No hay casos para este día.</p><p class="empty-hint">Usa \"Registrar caso\" o navega a otro día.</p></div>';
@@ -1731,20 +2930,30 @@
       }
     };
 
+    const prioBadge = (p) => {
+      const cfg = { bajo: ['Bajo','ti-flag'], medio: ['Medio','ti-flag-2'], alto: ['Alto 🔴','ti-flag-3'] };
+      const [label, icon] = cfg[p] || cfg['medio'];
+      return `<span class="prioridad-badge ${p||'medio'}"><i class="ti ${icon}" style="font-size:10px"></i>${label}</span>`;
+    };
+
     container.innerHTML = '<div class="cards-grid">' + data.map((r,i) => {
-      const est = r.estadoLlamada || 'pendiente';
+      const est  = r.estadoLlamada || 'pendiente';
+      const prio = r.prioridad || 'medio';
       const descArea = isBO
         ? `<textarea class="bo-desc-textarea" id="desc-${r.id}" placeholder="Comentario de gestión BO..." onblur="window._boDesc('${r.id}')">${r.descripcionBo||''}</textarea>`
         : `<div class="bo-desc-readonly">${r.descripcionBo || '<span style=\"color:#ccc;font-style:italic\">Sin comentario BO aún</span>'}</div>`;
 
-      return `<div class="caso-card">
+      return `<div class="caso-card" style="border-top: 3px solid ${prio==='alto'?'#E03131':prio==='medio'?'#B87000':'#1A7A45'}">
         <div class="card-header">
           <div class="card-header-left">
-            <div class="card-case-num">Caso #${String(i+1).padStart(3,'0')} · Cód. ${r.codigo||'—'}</div>
+            <div class="card-case-num" style="display:flex;align-items:center;gap:6px">
+              Caso #${String(i+1).padStart(3,'0')} · Cód. ${r.codigo||'—'}
+              ${prioBadge(prio)}
+            </div>
             <div class="card-alumno-name">${r.nombre||'—'}</div>
             <div class="card-meta">
               <span class="card-meta-item"><i class="ti ti-phone"></i>${r.celular||'—'}</span>
-              <span class="card-meta-item"><i class="ti ti-calendar"></i>${r.fechaRegistro||'—'}</span>
+              <span class="card-meta-item"><i class="ti ti-calendar"></i>${r.fechaRegistro||'—'}${r.horaRegistro?' · '+r.horaRegistro:''}</span>
             </div>
           </div>
           <div class="card-wsp-badge"><i class="ti ti-brand-whatsapp"></i>${r.asesorWsp||'—'}</div>
@@ -1768,7 +2977,7 @@
             <button class="btn-row edit" onclick="window._boEdit('${r.id}')"><i class="ti ti-pencil"></i></button>
             ${isBO
               ? `<button class="btn-row del" onclick="window._boDel('${r.id}')"><i class="ti ti-trash"></i></button>`
-              : `<button class="btn-row del" disabled style="opacity:0.3;cursor:not-allowed" title="Solo rol BO puede eliminar"><i class="ti ti-trash"></i></button>`
+              : `<button class="btn-row del" disabled style="opacity:0.3;cursor:not-allowed" title="Solo BO, Supervisor o Formador pueden eliminar"><i class="ti ti-trash"></i></button>`
             }
           </div>
         </div>
@@ -1776,12 +2985,62 @@
     }).join('') + '</div>';
   }
 
+  function renderLlamadosHoy() {
+    // Solo mostrar llamados del día de HOY (independiente del día navegado)
+    const today = new Date().toISOString().split('T')[0];
+    const llamados = allCasos.filter(r =>
+      (r.fechaRegistro || '') === today &&
+      ['no_contesta','atendida'].includes(r.estadoLlamada || 'pendiente')
+    );
+
+    const section   = document.getElementById('llamados-hoy-section');
+    const container = document.getElementById('llamados-hoy-container');
+    const countEl   = document.getElementById('llamados-hoy-count');
+
+    if (!llamados.length) {
+      section.style.display = 'none';
+      return;
+    }
+    section.style.display = '';
+    countEl.textContent = llamados.length + ' llamada' + (llamados.length !== 1 ? 's' : '');
+
+    const estadoLabel = (est) => {
+      if (est === 'atendida')    return '<span style="display:inline-flex;align-items:center;gap:4px;background:var(--success-bg);color:var(--success);border-radius:99px;padding:3px 10px;font-size:11px;font-weight:700"><i class="ti ti-phone-check" style="font-size:12px"></i>Atendida</span>';
+      if (est === 'no_contesta') return '<span style="display:inline-flex;align-items:center;gap:4px;background:var(--danger-bg);color:var(--danger);border-radius:99px;padding:3px 10px;font-size:11px;font-weight:700"><i class="ti ti-phone-off" style="font-size:12px"></i>No contesta</span>';
+      return '';
+    };
+
+    container.innerHTML = '<div class="cards-grid">' + llamados.map((r, i) => {
+      const prio = r.prioridad || 'medio';
+      return `<div class="caso-card" style="border-top:3px solid ${prio==='alto'?'#E03131':prio==='medio'?'#B87000':'#1A7A45'};opacity:0.88">
+        <div class="card-header">
+          <div class="card-header-left">
+            <div class="card-case-num">Cód. ${r.codigo||'—'} · ${r.horaRegistro||'—'}</div>
+            <div class="card-alumno-name">${r.nombre||'—'}</div>
+            <div class="card-meta">
+              <span class="card-meta-item"><i class="ti ti-phone"></i>${r.celular||'—'}</span>
+              <span class="card-meta-item"><i class="ti ti-brand-whatsapp"></i>${r.asesorWsp||'—'}</span>
+            </div>
+          </div>
+          <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px">
+            ${estadoLabel(r.estadoLlamada)}
+          </div>
+        </div>
+        <div class="card-body">
+          <div class="card-motivo-label">Motivo</div>
+          <div class="card-motivo">${r.motivo||'—'}</div>
+          ${r.descripcionBo ? `<div class="card-motivo-label" style="margin-top:8px">Gestión BO</div><div class="card-motivo" style="color:#555;font-style:italic">${r.descripcionBo}</div>` : ''}
+        </div>
+      </div>`;
+    }).join('') + '</div>';
+  }
+
   window._boEstado = (id, estado) => {
-    if (currentUserRol.toLowerCase() !== 'bo') { showToast('Solo el rol BO puede cambiar el estado', 'error'); return; }
+    if (!tienePermiso()) { showToast('Solo BO, Supervisor o Formador pueden cambiar el estado', 'error'); return; }
     actualizarEstado(id, estado);
   };
   window._boDesc = (id) => {
-    if (currentUserRol.toLowerCase() !== 'bo') return;
+    if (!tienePermiso()) return;
     const v    = document.getElementById('desc-'+id)?.value||'';
     const orig = allCasos.find(c=>c.id===id)?.descripcionBo||'';
     if (v !== orig) actualizarDescripcion(id, v);
@@ -1850,29 +3109,92 @@
     showToast('PDF descargado');
   });
 
-  // ── PLANTILLAS ──
-  const PLANTILLAS = [
-    { id: 1, nombre: 'Plantilla de uso general destinada a la atención de casos que no cuentan con una plantilla específica o que no se encuentran contemplados en las categorías existentes.', desc: 'Para casos que deban ser derivados a un área especializada fuera del canal de WhatsApp, así como para consultas simples o requerimientos que hayan sido resueltos y cerrados por el asesor.', img: 'ref_plantilla_01.png', icon: 'ti-building', color: '#EBF2FF', texto: `📢 Bríndame la siguiente información:\n\nCarrera/Curso extensión/Titulación:\nSede/Modalidad:\nTurno:\nCorreo personal:\nCelular:` },
-    { id: 2, nombre: 'Ingreso manual de retiro', desc: 'Para solicitar el retiro de ciclo o definitivo de un alumno de forma manual.', img: 'ref_plantilla_02.png', icon: 'ti-user-minus', color: '#FFF0F0', texto: `📢 Bríndame la siguiente información:\n\nCarrera/Curso extensión/Titulación:\nSede/Modalidad:\nTipo de retiro: Ciclo o definitivo (elige según retiro)\nCorreo personal:\nCelular:` },
-    { id: 3, nombre: 'Regularización de notas', desc: 'Para regularizar calificaciones de un alumno en un curso o ciclo específico.', img: 'ref_plantilla_03.png', icon: 'ti-edit', color: '#FFF7E6', texto: `📢 Bríndame la siguiente información:\n\nMotivo de la regularización:\nCurso:\nCiclo lectivo:\nCalificaciones (EA1, EA2, EP, EF) o promedio final:\nCorreo personal:\nCelular:\nAdjuntar sustentos` },
-    { id: 4, nombre: 'Búsqueda de notas Carrera CPEX y Titulación', desc: 'Para localizar calificaciones de alumnos antiguos o egresados de carrera.', img: 'ref_plantilla_04.png', icon: 'ti-search', color: '#E8FAF0', texto: `📢 Bríndame la siguiente información:\n\nCarrera/Curso extensión/Titulación:\nSede/Modalidad:\nAño ingreso/egreso aproximado:\nHasta qué ciclo estudió:\nCorreo personal:\nCelular:` },
-    { id: 5, nombre: 'Reportar incidencia con docente', desc: 'Para registrar una incidencia puntual con un docente en un curso.', img: 'ref_plantilla_05.png', icon: 'ti-alert-triangle', color: '#FFF7E6', texto: `📢 Bríndame la siguiente información:\n\nCarrera/Curso extensión/Titulación:\nSede/Modalidad:\nCurso:\nDocente:\nCorreo personal:\nCelular:` },
-    { id: 6, nombre: 'Queja con docente', desc: 'Para registrar una queja formal sobre la conducta o desempeño de un docente.', img: 'ref_plantilla_06.png', icon: 'ti-mood-sad', color: '#FFF0F0', texto: `📢 Bríndame la siguiente información:\n\nCarrera/Curso extensión/Titulación:\nSede/Modalidad:\nTurno:\nCiclo/Bloque:\nCurso:\nDocente:\nCorreo personal:\nCelular:\nMotivo de la queja:` },
-    { id: 7, nombre: 'Certificado FCI', desc: 'Para solicitar el certificado de finalización de curso de extensión (FCI).', img: 'ref_plantilla_07.png', icon: 'ti-certificate', color: '#F5F0FF', texto: `📢 Bríndame la siguiente información:\n\nNombre del Curso de Extensión:\nSede:\nModalidad:\nFecha de inicio:\nFecha que culminó:\nCorreo personal:\nNivel de módulo obtenido: (Aplica para estudiantes que ingresaron por examen de clasificación)` },
-    { id: 8, nombre: 'Alumnos antiguos que no figuran en PeopleSoft', desc: 'Para alumnos antiguos que no figuran en PeopleSoft y requieren la creación de una cuenta en Salesforce para la gestión de su caso.', img: 'ref_plantilla_08.png', icon: 'ti-users', color: '#EBF2FF', texto: `📢 Bríndame la siguiente información:\n\nNombres y Apellidos:\nDNI:\nCarrera:\nSede/Modalidad:\nAño ingreso/egreso:\nCiclo/Bloque que estudió:\nCorreo personal:\nCelular:` },
-    { id: 9, nombre: 'Matrícula administrativa FCI', desc: 'Para matricular administrativamente a un alumno en un curso de extensión.', img: 'ref_plantilla_09.png', icon: 'ti-school', color: '#E8FAF0', texto: `📢 Bríndame la siguiente información:\n\nCurso:\nHorario:\nGrupo:\nDocente:\nCorreo personal:\nCelular:` },
-    { id: 10, nombre: 'Creación de ID para pago', desc: 'Para generar un ID de pago a alumnos antiguos que no cuentan con uno.', img: 'ref_plantilla_10.png', icon: 'ti-id-badge', color: '#FFF0E8', texto: `📢 Bríndame la siguiente información:\n\nCarrera/Curso extensión/Titulación:\nSede/Modalidad:\nNúmero de DNI/CE/PS:\nCorreo personal:\nCelular:\nDirección:\nFecha de Nacimiento:\nAdjuntar imagen de DNI/CE/PASAPORTE` },
+  // ── PLANTILLAS — Firestore en tiempo real ──
+  const PLANTILLAS_SEMILLA = [
+    { orden: 1,  nombre: 'Plantilla de uso general destinada a la atención de casos que no cuentan con una plantilla específica o que no se encuentran contemplados en las categorías existentes.', desc: 'Para casos que deban ser derivados a un área especializada fuera del canal de WhatsApp, así como para consultas simples o requerimientos que hayan sido resueltos y cerrados por el asesor.', icon: 'ti-building',      color: '#EBF2FF', texto: `📢 Bríndame la siguiente información:\n\nCarrera/Curso extensión/Titulación:\nSede/Modalidad:\nTurno:\nCorreo personal:\nCelular:`, imgB64: '' },
+    { orden: 2,  nombre: 'Ingreso manual de retiro', desc: 'Para solicitar el retiro de ciclo o definitivo de un alumno de forma manual.', icon: 'ti-user-minus', color: '#FFF0F0', texto: `📢 Bríndame la siguiente información:\n\nCarrera/Curso extensión/Titulación:\nSede/Modalidad:\nTipo de retiro: Ciclo o definitivo (elige según retiro)\nCorreo personal:\nCelular:`, imgB64: '' },
+    { orden: 3,  nombre: 'Regularización de notas', desc: 'Para regularizar calificaciones de un alumno en un curso o ciclo específico.', icon: 'ti-edit',         color: '#FFF7E6', texto: `📢 Bríndame la siguiente información:\n\nMotivo de la regularización:\nCurso:\nCiclo lectivo:\nCalificaciones (EA1, EA2, EP, EF) o promedio final:\nCorreo personal:\nCelular:\nAdjuntar sustentos`, imgB64: '' },
+    { orden: 4,  nombre: 'Búsqueda de notas Carrera CPEX y Titulación', desc: 'Para localizar calificaciones de alumnos antiguos o egresados de carrera.', icon: 'ti-search',       color: '#E8FAF0', texto: `📢 Bríndame la siguiente información:\n\nCarrera/Curso extensión/Titulación:\nSede/Modalidad:\nAño ingreso/egreso aproximado:\nHasta qué ciclo estudió:\nCorreo personal:\nCelular:`, imgB64: '' },
+    { orden: 5,  nombre: 'Reportar incidencia con docente', desc: 'Para registrar una incidencia puntual con un docente en un curso.', icon: 'ti-alert-triangle', color: '#FFF7E6', texto: `📢 Bríndame la siguiente información:\n\nCarrera/Curso extensión/Titulación:\nSede/Modalidad:\nCurso:\nDocente:\nCorreo personal:\nCelular:`, imgB64: '' },
+    { orden: 6,  nombre: 'Queja con docente', desc: 'Para registrar una queja formal sobre la conducta o desempeño de un docente.', icon: 'ti-mood-sad',     color: '#FFF0F0', texto: `📢 Bríndame la siguiente información:\n\nCarrera/Curso extensión/Titulación:\nSede/Modalidad:\nTurno:\nCiclo/Bloque:\nCurso:\nDocente:\nCorreo personal:\nCelular:\nMotivo de la queja:`, imgB64: '' },
+    { orden: 7,  nombre: 'Certificado FCI', desc: 'Para solicitar el certificado de finalización de curso de extensión (FCI).', icon: 'ti-certificate',  color: '#F5F0FF', texto: `📢 Bríndame la siguiente información:\n\nNombre del Curso de Extensión:\nSede:\nModalidad:\nFecha de inicio:\nFecha que culminó:\nCorreo personal:\nNivel de módulo obtenido: (Aplica para estudiantes que ingresaron por examen de clasificación)`, imgB64: '' },
+    { orden: 8,  nombre: 'Alumnos antiguos que no figuran en PeopleSoft', desc: 'Para alumnos antiguos que no figuran en PeopleSoft y requieren la creación de una cuenta en Salesforce para la gestión de su caso.', icon: 'ti-users', color: '#EBF2FF', texto: `📢 Bríndame la siguiente información:\n\nNombres y Apellidos:\nDNI:\nCarrera:\nSede/Modalidad:\nAño ingreso/egreso:\nCiclo/Bloque que estudió:\nCorreo personal:\nCelular:`, imgB64: '' },
+    { orden: 9,  nombre: 'Matrícula administrativa FCI', desc: 'Para matricular administrativamente a un alumno en un curso de extensión.', icon: 'ti-school',       color: '#E8FAF0', texto: `📢 Bríndame la siguiente información:\n\nCurso:\nHorario:\nGrupo:\nDocente:\nCorreo personal:\nCelular:`, imgB64: '' },
+    { orden: 10, nombre: 'Creación de ID para pago', desc: 'Para generar un ID de pago a alumnos antiguos que no cuentan con uno.', icon: 'ti-id-badge',    color: '#FFF0E8', texto: `📢 Bríndame la siguiente información:\n\nCarrera/Curso extensión/Titulación:\nSede/Modalidad:\nNúmero de DNI/CE/PS:\nCorreo personal:\nCelular:\nDirección:\nFecha de Nacimiento:\nAdjuntar imagen de DNI/CE/PASAPORTE`, imgB64: '' },
   ];
 
-  function renderPlantillas() {
+  let PLANTILLAS       = [];       // array en tiempo real desde Firestore
+  let _pltEditId       = null;     // null = crear, string = editar
+
+  async function iniciarListenersPlantillas() {
+    const snap0 = await getDocs(collection(db, 'plantillas'));
+    if (snap0.empty) {
+      await Promise.all(PLANTILLAS_SEMILLA.map(p =>
+        addDoc(collection(db, 'plantillas'), { ...p, creadoEn: serverTimestamp() })
+      ));
+    }
+    onSnapshot(
+      query(collection(db, 'plantillas'), orderBy('orden', 'asc')),
+      snap => { PLANTILLAS = snap.docs.map(d => ({ id: d.id, ...d.data() })); renderPlantillas(); },
+      err => console.error('onSnapshot plantillas:', err)
+    );
+  }
+  iniciarListenersPlantillas();
+
+  // ── Render ──
+  function renderPlantillas(q) {
     const grid = document.getElementById('plantillas-grid');
     if (!grid) return;
-    grid.innerHTML = PLANTILLAS.map(p => {
-      const imgHtml = `<div class="plantilla-thumb" style="background:${p.color}"><img src="${p.img}" alt="referencia" class="plantilla-thumb-img" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"/><div class="plantilla-thumb-fallback" style="display:none"><i class="ti ${p.icon}"></i></div></div>`;
-      return `<div class="plantilla-card" onclick="window._verPlantilla(${p.id})">${imgHtml}<div class="plantilla-body"><div class="plantilla-num">Plantilla ${String(p.id).padStart(2,'0')}</div><div class="plantilla-name">${p.nombre}</div><div class="plantilla-desc">${p.desc}</div></div><div class="plantilla-footer"><button class="plantilla-copy-btn" onclick="event.stopPropagation();window._copiarPlantilla(${p.id})"><i class="ti ti-copy"></i>Copiar</button><button class="plantilla-view-btn" onclick="event.stopPropagation();window._verPlantilla(${p.id})">Ver completa →</button></div></div>`;
+    const query2 = (q || document.getElementById('search-plantillas').value || '').toLowerCase().trim();
+    const formador = isFormador();
+    if (formador) grid.classList.add('is-formador-plt');
+    else grid.classList.remove('is-formador-plt');
+
+    const filtered = PLANTILLAS.filter(p =>
+      !query2 ||
+      (p.nombre||'').toLowerCase().includes(query2) ||
+      (p.desc||'').toLowerCase().includes(query2) ||
+      (p.texto||'').toLowerCase().includes(query2)
+    );
+    if (!filtered.length) {
+      grid.innerHTML = `<div class="plt-empty"><i class="ti ti-file-off"></i><p>No se encontraron plantillas${query2 ? ` para "<strong>${query2}</strong>"` : ''}.</p></div>`;
+      return;
+    }
+    grid.innerHTML = filtered.map((p, idx) => {
+      const rowActs = formador ? `
+        <div class="plt-row-actions" onclick="event.stopPropagation()">
+          <button class="btn-plt-edit" title="Editar" onclick="abrirModalPlt('${p.id}')"><i class="ti ti-pencil"></i></button>
+          <button class="btn-plt-del"  title="Eliminar" onclick="eliminarPlt('${p.id}')"><i class="ti ti-trash"></i></button>
+        </div>` : '';
+      return `
+      <div class="plt-row" onclick="window._verPlantilla('${p.id}')">
+        <div class="plt-num-bar">
+          <span class="plt-num-label">Nº</span>
+          <span class="plt-num-val">${String(idx + 1).padStart(2,'0')}</span>
+        </div>
+        <div class="plt-icon-wrap" style="background:${p.color||'#EBF2FF'}40">
+          <i class="ti ${p.icon||'ti-file-text'}" style="color:var(--orange)"></i>
+        </div>
+        <div class="plt-body">
+          <div class="plt-name">${escH(p.nombre)}</div>
+          <div class="plt-desc">${escH(p.desc)}</div>
+        </div>
+        ${rowActs}
+        <div class="plt-actions" onclick="event.stopPropagation()">
+          <button class="plt-btn-copy" onclick="window._copiarPlantillaId('${p.id}')">
+            <i class="ti ti-copy"></i>Copiar
+          </button>
+          <button class="plt-btn-view" title="Ver completa" onclick="window._verPlantilla('${p.id}')">
+            <i class="ti ti-eye"></i>
+          </button>
+        </div>
+      </div>`;
     }).join('');
   }
 
+  document.getElementById('search-plantillas').addEventListener('input', function() { renderPlantillas(this.value); });
+
+  // ── Ver plantilla (modal) ──
   const mpOverlay = document.getElementById('modal-plantilla-overlay');
   document.getElementById('mp-close').addEventListener('click',  () => mpOverlay.classList.remove('open'));
   document.getElementById('mp-cancel').addEventListener('click', () => mpOverlay.classList.remove('open'));
@@ -1890,20 +3212,138 @@
     document.getElementById('mp-body').textContent  = p.texto;
     const wrap = document.getElementById('mp-img-wrap');
     const img  = document.getElementById('mp-img');
-    img.src = p.img;
-    wrap.style.display = 'flex';
-    img.onerror = () => { wrap.style.display = 'none'; };
-    wrap.onclick = () => openZoom(p.img);
+    if (p.imgB64) {
+      img.src = p.imgB64; wrap.style.display = 'flex';
+      wrap.onclick = () => openZoom(p.imgB64);
+    } else { wrap.style.display = 'none'; }
     mpOverlay.classList.add('open');
   };
 
-  window._copiarPlantilla = (id) => {
+  window._copiarPlantillaId = (id) => {
     const p = PLANTILLAS.find(x => x.id === id);
     if (!p) return;
     navigator.clipboard.writeText(p.texto).then(() => showToast('Plantilla copiada al portapapeles'));
   };
 
-  renderPlantillas();
+  // ── Modal nueva/editar plantilla (solo Formador) ──
+  const pltFormOverlay = document.getElementById('modal-plt-form-overlay');
+
+  function abrirModalPltNueva() { abrirModalPlt(null); }
+
+  window.abrirModalPlt = function(id) {
+    const p = id ? PLANTILLAS.find(x => x.id === id) : null;
+    _pltEditId = id || null;
+    document.getElementById('modal-plt-form-title').textContent   = p ? 'Editar plantilla' : 'Nueva plantilla';
+    document.getElementById('btn-plt-form-save-text').textContent = p ? 'Guardar cambios' : 'Guardar plantilla';
+    document.getElementById('fplt-nombre').value = p ? (p.nombre || '') : '';
+    document.getElementById('fplt-desc').value   = p ? (p.desc   || '') : '';
+    document.getElementById('fplt-texto').value  = p ? (p.texto  || '') : '';
+    // Icon
+    const iconVal = p ? (p.icon || 'ti-file-text') : 'ti-file-text';
+    document.getElementById('fplt-icon').value = iconVal;
+    document.querySelectorAll('.plt-icon-opt').forEach(el => {
+      el.classList.toggle('selected', el.dataset.icon === iconVal);
+    });
+    // Color
+    const colorVal = p ? (p.color || '#EBF2FF') : '#EBF2FF';
+    document.getElementById('fplt-color').value = colorVal;
+    document.querySelectorAll('.plt-color-swatch').forEach(el => {
+      el.classList.toggle('selected', el.dataset.color === colorVal);
+    });
+    // Image preview
+    const preview = document.getElementById('fplt-img-preview');
+    const b64 = p ? (p.imgB64 || '') : '';
+    document.getElementById('fplt-img-b64').value = b64;
+    document.getElementById('fplt-img-file').value = '';
+    if (b64) { preview.src = b64; preview.style.display = 'block'; }
+    else { preview.src = ''; preview.style.display = 'none'; }
+    pltFormOverlay.classList.add('open');
+  };
+
+  function cerrarModalPlt() { pltFormOverlay.classList.remove('open'); _pltEditId = null; }
+
+  document.getElementById('modal-plt-form-close').addEventListener('click', cerrarModalPlt);
+  document.getElementById('btn-plt-form-cancel').addEventListener('click', cerrarModalPlt);
+  pltFormOverlay.addEventListener('click', e => { if (e.target === pltFormOverlay) cerrarModalPlt(); });
+
+  document.getElementById('btn-plt-nueva').addEventListener('click', abrirModalPltNueva);
+
+  // Icon picker
+  window.selPltIcon = function(el) {
+    document.querySelectorAll('.plt-icon-opt').forEach(o => o.classList.remove('selected'));
+    el.classList.add('selected');
+    document.getElementById('fplt-icon').value = el.dataset.icon;
+  };
+
+  // Color picker
+  window.selPltColor = function(el) {
+    document.querySelectorAll('.plt-color-swatch').forEach(o => o.classList.remove('selected'));
+    el.classList.add('selected');
+    document.getElementById('fplt-color').value = el.dataset.color;
+  };
+
+  // Image upload
+  document.getElementById('fplt-img-file').addEventListener('change', function() {
+    const file = this.files[0];
+    if (!file) return;
+    if (file.size > 2.5 * 1024 * 1024) { showToast('La imagen no debe superar 2 MB', 'error'); return; }
+    const reader = new FileReader();
+    reader.onload = e => {
+      const b64 = e.target.result;
+      document.getElementById('fplt-img-b64').value = b64;
+      const prev = document.getElementById('fplt-img-preview');
+      prev.src = b64; prev.style.display = 'block';
+    };
+    reader.readAsDataURL(file);
+  });
+
+  // Save
+  document.getElementById('btn-plt-form-save').addEventListener('click', async () => {
+    const nombre = document.getElementById('fplt-nombre').value.trim();
+    const desc   = document.getElementById('fplt-desc').value.trim();
+    const texto  = document.getElementById('fplt-texto').value.trim();
+    if (!nombre || !desc || !texto) { showToast('Completa los campos obligatorios (*)', 'error'); return; }
+    const btn = document.getElementById('btn-plt-form-save');
+    btn.disabled = true;
+    const payload = {
+      nombre, desc, texto,
+      icon:   document.getElementById('fplt-icon').value,
+      color:  document.getElementById('fplt-color').value,
+      imgB64: document.getElementById('fplt-img-b64').value,
+    };
+    try {
+      if (_pltEditId) {
+        await updateDoc(doc(db, 'plantillas', _pltEditId), payload);
+        showToast('Plantilla actualizada');
+      } else {
+        const maxOrden = PLANTILLAS.length ? Math.max(...PLANTILLAS.map(p => p.orden || 0)) : 0;
+        await addDoc(collection(db, 'plantillas'), { ...payload, orden: maxOrden + 1, creadoEn: serverTimestamp() });
+        showToast('Plantilla añadida');
+      }
+      cerrarModalPlt();
+    } catch (e) {
+      console.error(e);
+      showToast('Error al guardar: ' + e.message, 'error');
+    } finally { btn.disabled = false; }
+  });
+
+  window.eliminarPlt = async function(id) {
+    const p = PLANTILLAS.find(x => x.id === id);
+    if (!p) return;
+    if (!confirm(`¿Eliminar la plantilla "${p.nombre}"? Esta acción no se puede deshacer.`)) return;
+    try {
+      await deleteDoc(doc(db, 'plantillas', id));
+      showToast('Plantilla eliminada', 'error');
+    } catch (e) { showToast('Error al eliminar: ' + e.message, 'error'); }
+  };
+
+  // Mostrar banner y funciones solo si Formador (se llama después de cargar rol)
+  function setupPltFormador() {
+    if (isFormador()) {
+      document.getElementById('plt-formador-bar').classList.add('visible');
+      renderPlantillas();
+    }
+  }
 
   // ── PENDIENTES ──
   const pendOverlay = document.getElementById('modal-pend-overlay');
@@ -1957,8 +3397,8 @@
   });
 
   async function eliminarPendiente(id) {
-    if (currentUserRol.toLowerCase() !== 'supervisor') {
-      showToast('Solo los supervisores pueden eliminar casos', 'error'); return;
+    if (!tienePermiso()) {
+      showToast('Solo BO, Supervisor o Formador pueden eliminar casos', 'error'); return;
     }
     if (!confirm('¿Eliminar este caso pendiente?')) return;
     try { await deleteDoc(doc(db, 'casos_pendientes', id)); showToast('Caso eliminado'); }
@@ -1978,7 +3418,23 @@
   }
 
   function updatePendBadge() {
-    document.getElementById('badge-pendientes').textContent = allPendientes.length;
+    // Solo contar casos SIN check del supervisor (alertado !== true)
+    const sinCheck = allPendientes.filter(r => !r.alertado).length;
+    const badge = document.getElementById('badge-pendientes');
+    badge.textContent = sinCheck;
+    badge.style.display = sinCheck > 0 ? '' : 'none';
+  }
+
+  function updateBoBadge() {
+    // Badge BO = casos de HOY que están en estado "pendiente"
+    const today = new Date().toISOString().split('T')[0];
+    const pendientesHoy = allCasos.filter(r =>
+      (r.fechaRegistro || '') === today &&
+      (r.estadoLlamada || 'pendiente') === 'pendiente'
+    ).length;
+    const badge = document.getElementById('badge-bo-llamadas');
+    badge.textContent = pendientesHoy;
+    badge.style.display = pendientesHoy > 0 ? '' : 'none';
   }
 
   document.getElementById('pend-prev').addEventListener('click', () => { pendViewDay.setDate(pendViewDay.getDate()-1); renderPendientes(); });
@@ -2007,10 +3463,24 @@
       (r.asesor||'').toLowerCase().includes(q)
     );
 
-    const isSupervisor = currentUserRol.toLowerCase() === 'supervisor';
+    const isSupervisor = tienePermiso();
     const delBtn = (id) => isSupervisor
       ? '<button class="btn-row del" onclick="window._pendDel(\'' + id + '\')"><i class="ti ti-trash"></i></button>'
-      : '<button class="btn-row del" disabled style="opacity:0.3;cursor:not-allowed" title="Solo supervisores pueden eliminar"><i class="ti ti-trash"></i></button>';
+      : '<button class="btn-row del" disabled style="opacity:0.3;cursor:not-allowed" title="Solo BO, Supervisor o Formador pueden eliminar"><i class="ti ti-trash"></i></button>';
+
+    const alertadoBtn = (r) => {
+      const active = !!r.alertado;
+      if (isSupervisor) {
+        return '<button class="btn-alertado' + (active?' alertado-active':'') + '" onclick="window._pendAlertado(\'' + r.id + '\',' + (!active) + ')" title="' + (active?'Marcar como no alertado':'Marcar como alertado') + '">' +
+          '<i class="ti ' + (active?'ti-check':'ti-bell') + '"></i>' +
+          (active ? 'Alertado' : 'Alertar') +
+          '</button>';
+      } else {
+        return active
+          ? '<span class="btn-alertado alertado-active" style="cursor:default" title="Caso alertado por supervisor"><i class="ti ti-check"></i>Alertado</span>'
+          : '<span class="btn-alertado" style="cursor:default;opacity:0.4" title="Pendiente de alerta"><i class="ti ti-bell"></i>Sin alertar</span>';
+      }
+    };
 
     if (!data.length) {
       container.innerHTML = '<div class="empty-state"><i class="ti ti-calendar-off"></i><p>No hay casos el ' + d.getDate() + ' de ' + MESES[d.getMonth()] + ' ' + d.getFullYear() + '.</p><p class="empty-hint">Usa &quot;Nuevo caso&quot; para registrar uno.</p></div>';
@@ -2027,7 +3497,7 @@
           '<span class="pend-day-count">' + data.length + ' caso' + (data.length!==1?'s':'') + '</span>' +
         '</div>' +
         data.map(r =>
-          '<div class="pend-case-card">' +
+          '<div class="pend-case-card' + (r.alertado?' alertado':'') + '">' +
             '<div class="pend-num-badge"><i class="ti ti-alert-triangle" style="font-size:11px;margin-right:3px"></i>Caso ' + escH(r.numeroCaso||'—') + '</div>' +
             '<div class="pend-case-body">' +
               '<div class="pend-case-desc">' + escH(r.descripcion||'—') + '</div>' +
@@ -2035,9 +3505,11 @@
                 '<span class="pend-case-meta-item"><i class="ti ti-user"></i>' + escH(r.asesor||'—') + '</span>' +
                 (r.fechaCaso ? '<span class="pend-case-meta-item"><i class="ti ti-calendar-x"></i>Caso desde: ' + fmtDate(r.fechaCaso) + '</span>' : '') +
                 (r.creadoPor ? '<span class="pend-case-meta-item"><i class="ti ti-mail"></i>' + escH(r.creadoPor.split('@')[0]) + '</span>' : '') +
+                (r.alertado && r.alertadoPor ? '<span class="pend-case-meta-item" style="color:var(--success);font-weight:600"><i class="ti ti-check-circle"></i>Alertado por ' + escH(r.alertadoPor.split('@')[0]) + (r.alertadoEn ? ' · ' + r.alertadoEn : '') + '</span>' : '') +
               '</div>' +
             '</div>' +
-            '<div class="pend-case-actions">' +
+            '<div class="pend-case-actions" style="align-items:center">' +
+              alertadoBtn(r) +
               '<button class="btn-row edit" onclick="window._pendEdit(\'' + r.id + '\')"><i class="ti ti-pencil"></i></button>' +
               delBtn(r.id) +
             '</div>' +
@@ -2045,6 +3517,29 @@
         ).join('') +
       '</div>';
   }
+
+  window._pendAlertado = async (id, valor) => {
+    if (!tienePermiso()) { showToast('Solo BO, Supervisor o Formador pueden marcar alertas', 'error'); return; }
+    try {
+      const ahora = new Date();
+      const hora  = ahora.toTimeString().slice(0,5);
+      if (valor) {
+        await updateDoc(doc(db, 'casos_pendientes', id), {
+          alertado: true,
+          alertadoPor: currentUser.email,
+          alertadoEn: hora
+        });
+        showToast('Caso marcado como alertado ✓');
+      } else {
+        await updateDoc(doc(db, 'casos_pendientes', id), {
+          alertado: false,
+          alertadoPor: '',
+          alertadoEn: ''
+        });
+        showToast('Alerta removida');
+      }
+    } catch(e) { showToast('Error al actualizar', 'error'); }
+  };
 
   // ── EXPORT EXCEL ──
   document.getElementById('btn-export-excel').addEventListener('click', () => {
@@ -2135,6 +3630,919 @@
     const el = document.querySelector('.home-hero-title');
     if (el) el.innerHTML = greet + '! Portal SAES <span style="color:var(--orange)">·</span> Canal WhatsApp';
   })();
+
+  // ── CONFIGURACIÓN ──
+  (function() {
+    const sesionInicio = new Date();
+    let statPlantillas = 0, statCasos = 0, statVistas = 0;
+
+    // Actualizar datos del perfil en la tarjeta config
+    function actualizarPerfilCfg() {
+      if (!currentUser) return;
+      const email = currentUser.email || '';
+      const nombre = email.split('@')[0];
+      document.getElementById('cfg-av').textContent        = nombre.substring(0,2).toUpperCase();
+      document.getElementById('cfg-nombre').textContent    = nombre;
+      document.getElementById('cfg-email').textContent     = email;
+      document.getElementById('cfg-rol-text').textContent  = currentUserRol || 'Asesor WSP';
+      document.getElementById('cfg-sesion-hora').textContent = sesionInicio.toLocaleTimeString('es-PE',{hour:'2-digit',minute:'2-digit'});
+    }
+
+    // Temporizador de tiempo en portal
+    setInterval(() => {
+      const mins = Math.floor((new Date() - sesionInicio) / 60000);
+      const el = document.getElementById('cfg-stat-tiempo');
+      if (el) el.textContent = mins < 60 ? mins + 'm' : Math.floor(mins/60) + 'h ' + (mins%60) + 'm';
+    }, 30000);
+
+    // Contar vistas visitadas
+    document.querySelectorAll('.nav-item[data-view]').forEach(item => {
+      item.addEventListener('click', () => {
+        statVistas++;
+        const el = document.getElementById('cfg-stat-vistas');
+        if (el) el.textContent = statVistas;
+      });
+    });
+
+    // Interceptar copias de plantillas y registros de casos para stats
+    const origAddDoc = window._origAddDoc || null;
+    document.addEventListener('click', e => {
+      if (e.target.closest('.plt-btn-copy')) {
+        statPlantillas++;
+        const el = document.getElementById('cfg-stat-plantillas');
+        if (el) el.textContent = statPlantillas;
+      }
+    });
+
+    // Actualizar perfil cuando se carga la vista
+    document.querySelector('[data-view="config"]')?.addEventListener('click', () => {
+      actualizarPerfilCfg();
+      const el = document.getElementById('cfg-stat-casos');
+      if (el) el.textContent = document.querySelectorAll('.caso-card').length;
+    });
+
+    // ── TEMAS DE COLOR ──
+    const savedTema = localStorage.getItem('sise_tema') || 'orange';
+    function aplicarTema(tema) {
+      document.body.classList.remove('tema-blue','tema-green');
+      if (tema !== 'orange') document.body.classList.add('tema-' + tema);
+      document.querySelectorAll('.cfg-tema-btn').forEach(b => {
+        b.classList.toggle('active', b.dataset.tema === tema);
+      });
+      localStorage.setItem('sise_tema', tema);
+    }
+    aplicarTema(savedTema);
+    document.getElementById('cfg-temas')?.addEventListener('click', e => {
+      const btn = e.target.closest('.cfg-tema-btn');
+      if (btn) aplicarTema(btn.dataset.tema);
+    });
+
+    // ── DENSIDAD ──
+    const savedDen = localStorage.getItem('sise_den') || 'normal';
+    function aplicarDen(den) {
+      document.body.classList.remove('den-compact','den-spacious');
+      if (den !== 'normal') document.body.classList.add('den-' + den);
+      document.querySelectorAll('.cfg-den-btn').forEach(b => {
+        b.classList.toggle('active', b.dataset.den === den);
+      });
+      localStorage.setItem('sise_den', den);
+    }
+    aplicarDen(savedDen);
+    document.getElementById('cfg-densidad')?.addEventListener('click', e => {
+      const btn = e.target.closest('.cfg-den-btn');
+      if (btn) aplicarDen(btn.dataset.den);
+    });
+
+    // ── TOGGLES DE PREFERENCIAS ──
+    function initToggle(id, key, defaultVal) {
+      const tog = document.getElementById(id);
+      if (!tog) return;
+      const val = localStorage.getItem(key);
+      const active = val === null ? defaultVal : val === 'true';
+      tog.classList.toggle('active', active);
+      if (key === 'pref_resaltar') document.body.classList.toggle('resaltar-alto', active);
+      tog.addEventListener('click', () => {
+        const now = tog.classList.toggle('active');
+        localStorage.setItem(key, now);
+        if (key === 'pref_resaltar') document.body.classList.toggle('resaltar-alto', now);
+      });
+    }
+    initToggle('tog-sonido',    'pref_sonido',    false);
+    initToggle('tog-confirmar', 'pref_confirmar', true);
+    initToggle('tog-resaltar',  'pref_resaltar',  true);
+    initToggle('tog-animaciones', 'pref_animaciones', true);
+    initToggle('tog-sidebar-mini', 'pref_sidebar_mini', false);
+
+    // ── TAMAÑO DE FUENTE ──
+    const savedFontSize = localStorage.getItem('sise_fontsize') || 'medium';
+    const fontSizeMap = { small: '12px', medium: '14px', large: '15px', xlarge: '16px' };
+    function aplicarFontSize(size) {
+      document.documentElement.style.fontSize = fontSizeMap[size] || '14px';
+      document.querySelectorAll('.cfg-font-btn[data-size]').forEach(b => b.classList.toggle('active', b.dataset.size === size));
+      localStorage.setItem('sise_fontsize', size);
+    }
+    aplicarFontSize(savedFontSize);
+    document.getElementById('cfg-fontsize')?.addEventListener('click', e => {
+      const btn = e.target.closest('.cfg-font-btn[data-size]');
+      if (btn) aplicarFontSize(btn.dataset.size);
+    });
+
+    // ── BORDE DE TARJETAS ──
+    const savedRadius = localStorage.getItem('sise_radius') || 'normal';
+    function aplicarRadius(r) {
+      document.body.classList.toggle('radius-sharp', r === 'sharp');
+      document.getElementById('cfg-radius-normal')?.classList.toggle('active', r === 'normal');
+      document.getElementById('cfg-radius-sharp')?.classList.toggle('active', r === 'sharp');
+      localStorage.setItem('sise_radius', r);
+    }
+    aplicarRadius(savedRadius);
+    document.querySelectorAll('[data-radius]').forEach(btn => {
+      btn.addEventListener('click', () => aplicarRadius(btn.dataset.radius));
+    });
+
+    // ── RELOJ LIMA ──
+    function actualizarReloj() {
+      const ahora = new Date(new Date().toLocaleString('en-US', { timeZone: 'America/Lima' }));
+      const h = ahora.getHours();
+      const m = ahora.getMinutes().toString().padStart(2, '0');
+      const s = ahora.getSeconds().toString().padStart(2, '0');
+      const ampm = h >= 12 ? 'p.m.' : 'a.m.';
+      const h12 = (h % 12 || 12).toString().padStart(2, '0');
+      const dias = ['domingo','lunes','martes','miércoles','jueves','viernes','sábado'];
+      const meses = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
+      const dia = dias[ahora.getDay()];
+      const fecha = `${dia} ${ahora.getDate()} de ${meses[ahora.getMonth()]}`;
+      const timeEl = document.getElementById('clock-time');
+      const ampmEl = document.getElementById('clock-ampm');
+      const dateEl = document.getElementById('clock-date');
+      if (timeEl) timeEl.textContent = `${h12}:${m}`;
+      if (ampmEl) ampmEl.textContent = ampm;
+      if (dateEl) dateEl.textContent = fecha;
+    }
+    actualizarReloj();
+    setInterval(actualizarReloj, 1000);
+
+    // ── ATAJOS DE TECLADO ──
+    document.addEventListener('keydown', e => {
+      if (!e.altKey) return;
+      const mapa = { p:'plantillas', t:'tipificaciones', b:'bo-llamadas', c:'pendientes', i:'inicio' };
+      const vista = mapa[e.key.toLowerCase()];
+      if (vista) {
+        e.preventDefault();
+        document.querySelector(`[data-view="${vista}"]`)?.click();
+      }
+    });
+
+  })();
+
+  // ══════════════════════════════════════════════════════════
+  // ── PREGUNTAS FRECUENTES (FAQ) ──
+  // ══════════════════════════════════════════════════════════
+  (function() {
+
+    let allFaqs = [];
+    let faqEditId = null;
+    let activeFaqCat = null;
+
+    // Paleta de colores cíclica para categorías
+    const CAT_COLORS = ['faq-color-0','faq-color-1','faq-color-2','faq-color-3','faq-color-4','faq-color-5','faq-color-6','faq-color-7'];
+    const catColorMap = {};
+    let catColorIdx = 0;
+    function getCatColor(cat) {
+      if (!catColorMap[cat]) { catColorMap[cat] = CAT_COLORS[catColorIdx % CAT_COLORS.length]; catColorIdx++; }
+      return catColorMap[cat];
+    }
+
+    // ── Puede gestionar FAQs (BO, Supervisor, Formador) ──
+    function puedeGestionar() {
+      const r = (currentUserRol || '').toLowerCase();
+      return r === 'bo' || r === 'supervisor' || r === 'formador';
+    }
+
+    // ── Extraer ID de YouTube ──
+    function ytId(url) {
+      if (!url) return null;
+      const m = url.match(/(?:v=|youtu\.be\/)([\w-]{11})/);
+      return m ? m[1] : null;
+    }
+
+    // ── Cargar desde Firestore ──
+    function loadFaqs() {
+      // Primero intentamos con orderBy (requiere índice en Firestore)
+      // Si falla por índice inexistente, caemos a query sin ordenar y ordenamos en cliente
+      function suscribir(conOrden) {
+        const q = conOrden
+          ? query(collection(db, 'faqs'), orderBy('creadoEn', 'asc'))
+          : collection(db, 'faqs');
+
+        return onSnapshot(q, snap => {
+          allFaqs = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+          // Ordenar en cliente como fallback o refuerzo
+          allFaqs.sort((a, b) => {
+            const ta = a.creadoEn?.seconds ?? a.orden ?? 0;
+            const tb = b.creadoEn?.seconds ?? b.orden ?? 0;
+            return ta - tb;
+          });
+          // Precarga de colores para mantener consistencia
+          allFaqs.forEach(f => getCatColor(f.categoria || 'General'));
+          renderFaqView();
+          // Botón nueva pregunta solo si puede gestionar
+          if (puedeGestionar()) document.getElementById('btn-faq-nueva').style.display = '';
+        }, err => {
+          console.error('faqs error:', err);
+          if (conOrden && (err.code === 'failed-precondition' || err.message?.includes('index'))) {
+            // Índice no existe → reintentar sin orderBy, ordenando en cliente
+            console.warn('Índice no disponible, cargando sin orderBy…');
+            suscribir(false);
+          } else if (!snap || snap.empty) {
+            // Colección vacía → seedear datos iniciales
+            seedFaqs();
+          }
+        });
+      }
+      suscribir(true);
+    }
+
+    // ── Datos iniciales de ejemplo ──
+    async function seedFaqs() {
+      const ejemplos = [
+        {
+          categoria: 'Derivaciones',
+          pregunta: '¿A qué cola se deriva cuando le hicieron caso manual de pago de uniforme y vuelven con el boucher al canal?',
+          respuesta: 'Se deriva a la cola SISE Sede.',
+          videoUrl: '',
+          imgUrl: '',
+          creadoPor: 'sistema',
+          creadoEn: serverTimestamp(),
+          orden: 1
+        },
+        {
+          categoria: 'Derivaciones',
+          pregunta: '¿A qué área se escala cuando un alumno reporta que su pago no se ve reflejado después de 48 horas?',
+          respuesta: 'Se debe escalar al área de Tesorería mediante la cola SISE Tesorería, adjuntando el voucher de pago del alumno y el número de operación.',
+          videoUrl: '',
+          imgUrl: '',
+          creadoPor: 'sistema',
+          creadoEn: serverTimestamp(),
+          orden: 2
+        }
+      ];
+      for (const e of ejemplos) {
+        try { await addDoc(collection(db, 'faqs'), e); } catch(err) { console.error(err); }
+      }
+      // Recargar tras sembrar datos iniciales
+      loadFaqs();
+    }
+
+    // ── Render principal ──
+    function renderFaqView() {
+      const q   = (document.getElementById('faq-search')?.value || '').toLowerCase().trim();
+      const cat = activeFaqCat;
+
+      let data = [...allFaqs];
+      if (cat)  data = data.filter(f => f.categoria === cat);
+      if (q)    data = data.filter(f =>
+        (f.pregunta||'').toLowerCase().includes(q) ||
+        (f.respuesta||'').toLowerCase().includes(q) ||
+        (f.categoria||'').toLowerCase().includes(q)
+      );
+
+      // Contador
+      document.getElementById('faq-count').textContent = data.length + ' respuesta' + (data.length !== 1 ? 's' : '');
+
+      // Chips categorías
+      renderFaqChips();
+
+      // Select filtro
+      renderFaqCatSelect();
+
+      // Grid
+      const grid = document.getElementById('faq-grid');
+      if (!data.length) {
+        grid.innerHTML = '<div class="empty-state"><i class="ti ti-help-off"></i><p>No se encontraron preguntas.</p><p class="empty-hint">Intenta con otra búsqueda o categoría.</p></div>';
+        return;
+      }
+
+      grid.innerHTML = data.map((f, idx) => {
+        const color = getCatColor(f.categoria || 'General');
+        const hasImg   = !!(f.imgUrl || f.imgB64);
+        const hasVideo = !!ytId(f.videoUrl);
+        const gestor   = puedeGestionar();
+        return `<div class="faq-card" onclick="window._faqVer('${f.id}')">
+          <div class="faq-card-top">
+            <div class="faq-card-cat ${color}"><i class="ti ti-folder" style="font-size:11px"></i>${escH(f.categoria||'General')}</div>
+            <div class="faq-card-q">${escH(f.pregunta||'')}</div>
+            <div class="faq-card-a-preview">${escH(f.respuesta||'')}</div>
+          </div>
+          <div class="faq-card-footer">
+            <div class="faq-card-icons">
+              ${hasImg   ? '<span class="faq-card-icon-badge"><i class="ti ti-photo" style="font-size:12px"></i>Imagen</span>' : ''}
+              ${hasVideo ? '<span class="faq-card-icon-badge"><i class="ti ti-brand-youtube" style="font-size:12px;color:#E03131"></i>Video</span>' : ''}
+              ${!hasImg && !hasVideo ? '<span class="faq-card-icon-badge"><i class="ti ti-align-left" style="font-size:12px"></i>Solo texto</span>' : ''}
+            </div>
+            <div style="display:flex;align-items:center;gap:8px">
+              ${gestor ? `<button class="btn-row edit" title="Editar" onclick="event.stopPropagation();window._faqEditar('${f.id}')"><i class="ti ti-pencil"></i></button>
+              <button class="btn-row del"  title="Eliminar" onclick="event.stopPropagation();window._faqEliminar('${f.id}')"><i class="ti ti-trash"></i></button>` : ''}
+              <span class="faq-card-meta">${f.creadoPor && f.creadoPor !== 'sistema' ? f.creadoPor.split('@')[0] : ''}</span>
+            </div>
+          </div>
+        </div>`;
+      }).join('');
+    }
+
+    function renderFaqChips() {
+      const cats = [...new Set(allFaqs.map(f => f.categoria || 'General'))];
+      const bar = document.getElementById('faq-chips-bar');
+      const total = allFaqs.length;
+      bar.innerHTML =
+        `<button class="faq-chip${!activeFaqCat ? ' active' : ''}" onclick="window._faqChip(null)">
+          <i class="ti ti-layout-grid" style="font-size:13px"></i>Todas
+          <span class="faq-chip-n">${total}</span>
+        </button>` +
+        cats.map(cat => {
+          const n = allFaqs.filter(f => (f.categoria||'General') === cat).length;
+          return `<button class="faq-chip${activeFaqCat===cat?' active':''}" onclick="window._faqChip('${cat.replace(/'/g,"\\'")}')">
+            ${escH(cat)}<span class="faq-chip-n">${n}</span>
+          </button>`;
+        }).join('');
+    }
+
+    function renderFaqCatSelect() {
+      const cats = [...new Set(allFaqs.map(f => f.categoria || 'General'))];
+      const sel = document.getElementById('faq-cat-filter');
+      const current = sel.value;
+      sel.innerHTML = '<option value="">Todas las categorías</option>' +
+        cats.map(c => `<option value="${escH(c)}"${c===current?' selected':''}>${escH(c)}</option>`).join('');
+    }
+
+    window._faqChip = (cat) => { activeFaqCat = cat; renderFaqView(); };
+    document.getElementById('faq-search')?.addEventListener('input', renderFaqView);
+    document.getElementById('faq-cat-filter')?.addEventListener('change', function() {
+      activeFaqCat = this.value || null;
+      renderFaqView();
+    });
+
+    // ── Ver pregunta (modal) ──
+    const viewOverlay = document.getElementById('modal-faq-view-overlay');
+
+    window._faqVer = (id) => {
+      const f = allFaqs.find(x => x.id === id);
+      if (!f) return;
+      const color = getCatColor(f.categoria || 'General');
+      document.getElementById('fmv-num').textContent = 'Pregunta frecuente';
+      document.getElementById('fmv-pregunta').textContent  = f.pregunta || '';
+      document.getElementById('fmv-respuesta').textContent = f.respuesta || '';
+      document.getElementById('fmv-cat').textContent       = f.categoria || 'General';
+      document.getElementById('fmv-cat').className         = 'faq-cat-badge ' + color;
+      const por = f.creadoPor && f.creadoPor !== 'sistema' ? 'Agregado por ' + f.creadoPor.split('@')[0] : 'Pregunta base';
+      document.getElementById('fmv-meta').textContent = por;
+
+      // Imagen
+      const imgWrap = document.getElementById('fmv-img-wrap');
+      const imgEl   = document.getElementById('fmv-img');
+      const imgSrc = f.imgUrl || f.imgB64 || ''; if (imgSrc) { imgEl.src = imgSrc; imgWrap.style.display = ''; imgEl.onclick = () => window.open(imgSrc,'_blank'); }
+      else { imgWrap.style.display = 'none'; }
+
+      // Video
+      const vidWrap  = document.getElementById('fmv-video-wrap');
+      const vidEmbed = document.getElementById('fmv-video-embed');
+      const vidLink  = document.getElementById('fmv-video-link');
+      const vid = ytId(f.videoUrl);
+      if (vid) {
+        vidEmbed.innerHTML = `<iframe width="100%" height="100%" src="https://www.youtube.com/embed/${vid}" frameborder="0" allowfullscreen style="display:block"></iframe>`;
+        vidLink.href = f.videoUrl;
+        vidWrap.style.display = '';
+      } else { vidWrap.style.display = 'none'; }
+
+      // Botón editar
+      const editBtn = document.getElementById('fmv-edit-btn');
+      if (puedeGestionar()) {
+        editBtn.style.display = '';
+        editBtn.onclick = () => { viewOverlay.classList.remove('open'); window._faqEditar(id); };
+      } else { editBtn.style.display = 'none'; }
+
+      viewOverlay.classList.add('open');
+    };
+
+    document.getElementById('fmv-close')?.addEventListener('click',  () => viewOverlay.classList.remove('open'));
+    document.getElementById('fmv-cancel')?.addEventListener('click', () => viewOverlay.classList.remove('open'));
+    viewOverlay.addEventListener('click', e => { if (e.target === viewOverlay) viewOverlay.classList.remove('open'); });
+
+    // ── Modal nueva / editar ──
+    const formOverlay = document.getElementById('modal-faq-form-overlay');
+
+    function abrirModalFaq(id) {
+      faqEditId = id || null;
+      const f = id ? allFaqs.find(x => x.id === id) : null;
+      document.getElementById('modal-faq-form-title').textContent   = f ? 'Editar pregunta' : 'Nueva pregunta';
+      document.getElementById('btn-faq-form-save-text').textContent = f ? 'Guardar cambios' : 'Guardar pregunta';
+      document.getElementById('ffaq-cat').value       = f ? (f.categoria  || '') : '';
+      document.getElementById('ffaq-pregunta').value  = f ? (f.pregunta   || '') : '';
+      document.getElementById('ffaq-respuesta').value = f ? (f.respuesta  || '') : '';
+      document.getElementById('ffaq-video').value     = f ? (f.videoUrl   || '') : '';
+      document.getElementById('ffaq-img-b64').value   = '';  // no longer used
+      const prev = document.getElementById('ffaq-img-preview');
+      if (f?.imgUrl) { prev.src = f.imgUrl; prev.style.display = 'block'; }
+      else           { prev.src = ''; prev.style.display = 'none'; }
+      document.getElementById('ffaq-img-file').value = '';
+
+      // Sugerencias de categorías existentes
+      const cats = [...new Set(allFaqs.map(f => f.categoria || 'General').filter(Boolean))];
+      document.getElementById('ffaq-cat-sugerencias').innerHTML = cats.map(c =>
+        `<button type="button" style="padding:3px 10px;border-radius:99px;border:1.5px solid var(--border);background:var(--surface);font-size:11px;font-weight:600;color:var(--muted);cursor:pointer;font-family:var(--font)"
+          onclick="document.getElementById('ffaq-cat').value='${escH(c)}'">
+          ${escH(c)}
+        </button>`
+      ).join('');
+
+      formOverlay.classList.add('open');
+    }
+
+    function cerrarModalFaq() { formOverlay.classList.remove('open'); faqEditId = null; }
+
+    document.getElementById('btn-faq-nueva')?.addEventListener('click', () => abrirModalFaq(null));
+    document.getElementById('modal-faq-form-close')?.addEventListener('click', cerrarModalFaq);
+    document.getElementById('btn-faq-form-cancel')?.addEventListener('click', cerrarModalFaq);
+    formOverlay.addEventListener('click', e => { if (e.target === formOverlay) cerrarModalFaq(); });
+
+    window._faqEditar   = (id) => abrirModalFaq(id);
+    window._faqEliminar = async (id) => {
+      if (!puedeGestionar()) { showToast('Sin permiso para eliminar preguntas', 'error'); return; }
+      if (!confirm('¿Eliminar esta pregunta de la biblioteca?')) return;
+      try { await deleteDoc(doc(db, 'faqs', id)); showToast('Pregunta eliminada'); }
+      catch(e) { showToast('Error al eliminar', 'error'); }
+    };
+
+    // Upload imagen
+    document.getElementById('ffaq-img-drop')?.addEventListener('click', () =>
+      document.getElementById('ffaq-img-file').click()
+    );
+    document.getElementById('ffaq-img-file')?.addEventListener('change', function() {
+      const file = this.files[0];
+      if (!file) return;
+      if (file.size > 2.5 * 1024 * 1024) { showToast('La imagen no debe superar 2 MB', 'error'); return; }
+      const reader = new FileReader();
+      reader.onload = e => {
+        const b64 = e.target.result;
+        document.getElementById('ffaq-img-b64').value = b64;
+        const prev = document.getElementById('ffaq-img-preview');
+        prev.src = b64; prev.style.display = 'block';
+      };
+      reader.readAsDataURL(file);
+    });
+
+    // Guardar
+    // ── Comprimir imagen en canvas (max 900px, calidad 0.65) ──
+    function comprimirImagen(file) {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = e => {
+          const img = new Image();
+          img.onload = () => {
+            const MAX = 900;
+            let w = img.width, h = img.height;
+            if (w > MAX || h > MAX) {
+              if (w > h) { h = Math.round(h * MAX / w); w = MAX; }
+              else       { w = Math.round(w * MAX / h); h = MAX; }
+            }
+            const canvas = document.createElement('canvas');
+            canvas.width = w; canvas.height = h;
+            canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+            resolve(canvas.toDataURL('image/jpeg', 0.65));
+          };
+          img.onerror = reject;
+          img.src = e.target.result;
+        };
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+      });
+    }
+
+    document.getElementById('btn-faq-form-save')?.addEventListener('click', async () => {
+      if (!puedeGestionar()) { showToast('Sin permiso para gestionar la biblioteca', 'error'); return; }
+      const cat       = document.getElementById('ffaq-cat').value.trim();
+      const pregunta  = document.getElementById('ffaq-pregunta').value.trim();
+      const respuesta = document.getElementById('ffaq-respuesta').value.trim();
+      if (!cat || !pregunta || !respuesta) { showToast('Completa los campos obligatorios (*)', 'error'); return; }
+
+      const btn = document.getElementById('btn-faq-form-save');
+      const resetBtn = () => { btn.disabled = false; btn.innerHTML = '<i class="ti ti-device-floppy"></i> Guardar'; };
+
+      btn.disabled = true;
+      btn.innerHTML = '<i class="ti ti-loader" style="animation:spin .8s linear infinite"></i> Guardando…';
+
+      try {
+        const fileInput = document.getElementById('ffaq-img-file');
+        const file = fileInput?.files?.[0];
+        let imgUrl  = '';
+        let imgB64  = '';
+
+        if (file) {
+          // 1) Intentar Storage
+          let storageOk = false;
+          try {
+            const ext  = file.name.split('.').pop().replace(/[^a-z0-9]/gi,'').toLowerCase() || 'jpg';
+            const path = `faqs/${Date.now()}_${Math.random().toString(36).slice(2)}.${ext}`;
+            const sRef = storageRef(storage, path);
+            const snap = await uploadBytes(sRef, file);
+            imgUrl = await getDownloadURL(snap.ref);
+            storageOk = true;
+          } catch(storageErr) {
+            console.warn('Storage no disponible, usando base64:', storageErr.message);
+          }
+
+          // 2) Fallback base64 si Storage falló
+          if (!storageOk) {
+            try {
+              imgB64 = await comprimirImagen(file);
+              if (imgB64.length > 900000) {
+                showToast('Imagen demasiado grande. Usa una de menos de 1 MB.', 'error');
+                resetBtn();
+                return;
+              }
+            } catch(b64Err) {
+              console.error('Error al comprimir imagen:', b64Err);
+              showToast('No se pudo procesar la imagen. Intenta con otra.', 'error');
+              resetBtn();
+              return;
+            }
+          }
+        } else if (faqEditId) {
+          // Edición sin cambiar imagen: conservar la existente
+          const existing = allFaqs.find(x => x.id === faqEditId);
+          imgUrl = existing?.imgUrl || '';
+          imgB64 = existing?.imgB64 || '';
+        }
+
+        const payload = {
+          categoria: cat,
+          pregunta, respuesta,
+          videoUrl: (document.getElementById('ffaq-video').value || '').trim(),
+          imgUrl,
+          imgB64,
+        };
+
+        if (faqEditId) {
+          await updateDoc(doc(db, 'faqs', faqEditId), {
+            ...payload,
+            actualizadoPor: currentUser.email,
+            actualizadoEn: serverTimestamp()
+          });
+          showToast('Pregunta actualizada ✓');
+        } else {
+          const maxOrden = allFaqs.length ? Math.max(...allFaqs.map(f => f.orden || 0)) : 0;
+          await addDoc(collection(db, 'faqs'), {
+            ...payload,
+            orden: maxOrden + 1,
+            creadoPor: currentUser.email,
+            creadoEn: serverTimestamp()
+          });
+          showToast('Pregunta añadida a la biblioteca ✓');
+        }
+        cerrarModalFaq();
+      } catch(e) {
+        console.error('Error al guardar FAQ:', e);
+        showToast('Error al guardar: ' + (e.message || 'Error desconocido'), 'error');
+      } finally {
+        resetBtn();
+      }
+    });
+
+    // Iniciar carga cuando se visita la vista
+    document.querySelector('[data-view="preguntas"]')?.addEventListener('click', () => {
+      if (!allFaqs.length) loadFaqs();
+    });
+
+    // También cargar al inicio si ya está en esa vista
+    if (document.getElementById('view-preguntas')?.classList.contains('active')) loadFaqs();
+
+    // Exponer loadFaqs para llamarlo tras login
+    window._loadFaqs = loadFaqs;
+    window._rerenderFaqs = () => {
+      renderFaqView();
+      const btn = document.getElementById('btn-faq-nueva');
+      if (btn) btn.style.display = puedeGestionar() ? '' : 'none';
+    };
+
+  })();
+</script>
+
+<!-- ══════════════════════════ CAPACÍTATE MODULE ══════════════════════════ -->
+<script type="module">
+  import { getApp }  from "https://www.gstatic.com/firebasejs/11.8.1/firebase-app.js";
+  import {
+    getFirestore, collection, addDoc, updateDoc, deleteDoc,
+    doc, query, orderBy, serverTimestamp, onSnapshot, getDoc
+  } from "https://www.gstatic.com/firebasejs/11.8.1/firebase-firestore.js";
+  import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.8.1/firebase-auth.js";
+
+  // Reutilizamos la app ya registrada por el módulo principal (evita duplicado)
+  await new Promise(r => setTimeout(r, 400));
+  const app  = getApp();
+  const auth = getAuth(app);
+  const db   = getFirestore(app);
+
+  let capVideos    = [];
+  let capEditId    = null;
+  let capActiveCat = '';
+  let currentCapRol = '';
+  let currentCapUser = null;
+
+  function puedeGestionar() {
+    const r = (currentCapRol || '').toLowerCase();
+    return r === 'formador' || r === 'supervisor' || r === 'bo';
+  }
+
+  function escH(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+  function showCapToast(msg, type='success') {
+    const t = document.getElementById('toast');
+    if (!t) return;
+    t.textContent = (type==='success'?'✓ ':'✗ ') + msg;
+    t.className = `toast ${type} show`;
+    setTimeout(() => t.classList.remove('show'), 3500);
+  }
+
+  // ── Detectar tipo de URL ──
+  function detectSource(url) {
+    if (!url) return 'other';
+    if (/youtube\.com|youtu\.be/.test(url)) return 'youtube';
+    if (/drive\.google\.com/.test(url)) return 'drive';
+    return 'other';
+  }
+
+  // ── Extraer YouTube embed URL ──
+  function ytEmbedUrl(url) {
+    let id = '';
+    try {
+      const u = new URL(url);
+      if (u.hostname.includes('youtu.be')) id = u.pathname.slice(1);
+      else id = u.searchParams.get('v') || '';
+    } catch(e) {}
+    return id ? `https://www.youtube.com/embed/${id}?rel=0&modestbranding=1` : null;
+  }
+
+  // ── Thumbnail de YouTube ──
+  function ytThumb(url) {
+    try {
+      const u = new URL(url);
+      let id = '';
+      if (u.hostname.includes('youtu.be')) id = u.pathname.slice(1);
+      else id = u.searchParams.get('v') || '';
+      return id ? `https://img.youtube.com/vi/${id}/mqdefault.jpg` : null;
+    } catch(e) { return null; }
+  }
+
+  // ── Embed para Drive ──
+  function driveEmbedUrl(url) {
+    const m = url.match(/\/d\/([^/]+)\//);
+    return m ? `https://drive.google.com/file/d/${m[1]}/preview` : url;
+  }
+
+  // ── Render chips de categorías ──
+  function renderCapCats() {
+    const cats = [...new Set(capVideos.map(v => v.categoria).filter(Boolean))].sort();
+    const bar = document.getElementById('cap-cats-bar');
+    bar.innerHTML = `<button class="cap-cat-btn${capActiveCat===''?' active':''}" data-cat="">Todos</button>`;
+    cats.forEach(c => {
+      const btn = document.createElement('button');
+      btn.className = 'cap-cat-btn' + (capActiveCat===c?' active':'');
+      btn.dataset.cat = c;
+      btn.textContent = c;
+      bar.appendChild(btn);
+    });
+    bar.querySelectorAll('.cap-cat-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        capActiveCat = btn.dataset.cat;
+        renderCapCats();
+        renderCapGrid();
+      });
+    });
+  }
+
+  // ── Render grid de videos ──
+  function renderCapGrid() {
+    const q = document.getElementById('cap-search')?.value.toLowerCase() || '';
+    const grid = document.getElementById('cap-grid');
+    const canEdit = puedeGestionar();
+
+    let filtered = capVideos.filter(v => {
+      const catMatch = !capActiveCat || v.categoria === capActiveCat;
+      const searchMatch = !q || (v.titulo||'').toLowerCase().includes(q)
+        || (v.categoria||'').toLowerCase().includes(q)
+        || (v.desc||'').toLowerCase().includes(q);
+      return catMatch && searchMatch;
+    });
+
+    document.getElementById('cap-count').textContent = `${filtered.length} video${filtered.length!==1?'s':''}`;
+
+    if (!filtered.length) {
+      grid.innerHTML = `<div class="cap-empty" style="grid-column:1/-1">
+        <i class="ti ti-player-play"></i>
+        <p>No hay videos disponibles</p>
+        <span>${canEdit ? 'Usa el botón "Agregar video" para añadir el primero.' : 'Aún no hay videos en esta categoría.'}</span>
+      </div>`;
+      return;
+    }
+
+    grid.innerHTML = filtered.map(v => {
+      const src = detectSource(v.url);
+      const thumb = src==='youtube' ? ytThumb(v.url) : null;
+      const srcLabel = src==='youtube' ? '<i class="ti ti-brand-youtube"></i> YouTube' : src==='drive' ? '<i class="ti ti-brand-google-drive"></i> Drive' : '<i class="ti ti-link"></i> Externo';
+      const srcClass = src==='youtube' ? 'yt' : src==='drive' ? 'drive' : '';
+      const thumbHtml = thumb
+        ? `<img src="${escH(thumb)}" alt="${escH(v.titulo)}" loading="lazy" onerror="this.parentElement.innerHTML='<div class=cap-thumb-placeholder><i class=\\'ti ti-player-play\\'></i></div>'">`
+        : `<div class="cap-thumb-placeholder"><i class="ti ti-player-play"></i></div>`;
+
+      const actionsHtml = canEdit ? `
+        <div class="cap-card-actions">
+          <button class="btn-row edit" title="Editar" onclick="event.stopPropagation();window._capEditar('${escH(v.id)}')"><i class="ti ti-pencil"></i></button>
+          <button class="btn-row del"  title="Eliminar" onclick="event.stopPropagation();window._capEliminar('${escH(v.id)}')"><i class="ti ti-trash"></i></button>
+        </div>` : '';
+
+      return `
+        <div class="cap-card" onclick="window._capVerVideo('${escH(v.id)}')">
+          <div class="cap-thumb">
+            ${thumbHtml}
+            <div class="cap-play-overlay"><div class="cap-play-btn"><i class="ti ti-player-play-filled"></i></div></div>
+            <span class="cap-source-badge ${srcClass}">${srcLabel}</span>
+            ${v.duracion ? `<span class="cap-duration">${escH(v.duracion)}</span>` : ''}
+          </div>
+          <div class="cap-card-body">
+            <div class="cap-card-cat">${escH(v.categoria||'General')}</div>
+            <div class="cap-card-title">${escH(v.titulo)}</div>
+            ${v.desc ? `<div class="cap-card-desc">${escH(v.desc)}</div>` : ''}
+            <div class="cap-card-footer">
+              <div class="cap-card-autor"><i class="ti ti-user-circle"></i>${escH(v.creadoPor?.split('@')[0] || 'Formador')}</div>
+              ${actionsHtml}
+            </div>
+          </div>
+        </div>`;
+    }).join('');
+  }
+
+  // ── Ver video (modal) ──
+  window._capVerVideo = function(id) {
+    const v = capVideos.find(x => x.id === id);
+    if (!v) return;
+    document.getElementById('cmv-cat-label').textContent = v.categoria || '';
+    document.getElementById('cmv-title').textContent     = v.titulo || '';
+    document.getElementById('cmv-autor').textContent     = 'Subido por: ' + (v.creadoPor?.split('@')[0] || 'Formador');
+    document.getElementById('cmv-desc').textContent      = v.desc || '';
+    document.getElementById('cmv-ext-link').href         = v.url || '#';
+
+    const embed = document.getElementById('cmv-embed');
+    const src   = detectSource(v.url);
+
+    if (src === 'youtube') {
+      // YouTube: mostrar player personalizado con thumbnail + botón que abre en YT
+      // (los iframes de YT están bloqueados en muchos videos por política del canal)
+      const thumb    = ytThumb(v.url);
+      const hqThumb  = thumb ? thumb.replace('mqdefault', 'maxresdefault') : '';
+      const fallback = thumb || '';
+      const ytUrl    = v.url;
+      embed.innerHTML = `
+        <div class="cap-yt-player" onclick="window.open('${ytUrl}','_blank')">
+          <img class="yt-bg" src="${hqThumb}" onerror="this.src='${fallback}'" alt="${escH(v.titulo)}"/>
+          <div class="cap-yt-play-circle"><i class="ti ti-player-play-filled"></i></div>
+          <div class="cap-yt-label"><span><i class="ti ti-brand-youtube" style="font-size:11px;margin-right:4px"></i>Ver en YouTube</span></div>
+        </div>`;
+    } else if (src === 'drive') {
+      // Google Drive: embed directo (generalmente funciona)
+      const embedUrl = driveEmbedUrl(v.url);
+      embed.innerHTML = `<iframe src="${escH(embedUrl)}" allowfullscreen allow="autoplay"></iframe>`;
+    } else {
+      // Otro enlace: player con botón de apertura
+      embed.innerHTML = `
+        <div class="cap-yt-player" onclick="window.open('${escH(v.url)}','_blank')" style="background:#111">
+          <div class="cap-yt-play-circle" style="background:var(--orange)"><i class="ti ti-external-link" style="margin-left:0"></i></div>
+          <div class="cap-yt-label"><span>Abrir recurso externo</span></div>
+        </div>`;
+    }
+
+    document.getElementById('modal-cap-view-overlay').classList.add('open');
+  };
+
+  function closeCapViewModal() {
+    document.getElementById('modal-cap-view-overlay').classList.remove('open');
+    document.getElementById('cmv-embed').innerHTML = ''; // stop video
+  }
+
+  // ── Editar video ──
+  window._capEditar = function(id) {
+    capEditId = id;
+    const v = capVideos.find(x => x.id === id);
+    if (!v) return;
+    document.getElementById('modal-cap-form-title').textContent    = 'Editar video';
+    document.getElementById('btn-cap-form-save-text').textContent  = 'Guardar cambios';
+    document.getElementById('fcap-titulo').value   = v.titulo || '';
+    document.getElementById('fcap-url').value      = v.url || '';
+    document.getElementById('fcap-cat').value      = v.categoria || '';
+    document.getElementById('fcap-duracion').value = v.duracion || '';
+    document.getElementById('fcap-desc').value     = v.desc || '';
+    document.getElementById('modal-cap-form-overlay').classList.add('open');
+  };
+
+  // ── Eliminar video ──
+  window._capEliminar = async function(id) {
+    if (!confirm('¿Eliminar este video de la biblioteca?')) return;
+    try {
+      await deleteDoc(doc(db, 'capacitate', id));
+      showCapToast('Video eliminado');
+    } catch(e) {
+      showCapToast('Error al eliminar: ' + (e.message||''), 'error');
+    }
+  };
+
+  // ── Abrir modal nuevo ──
+  function abrirModalCapNuevo() {
+    capEditId = null;
+    document.getElementById('modal-cap-form-title').textContent   = 'Agregar video';
+    document.getElementById('btn-cap-form-save-text').textContent = 'Guardar video';
+    ['fcap-titulo','fcap-url','fcap-cat','fcap-duracion','fcap-desc'].forEach(id => {
+      document.getElementById(id).value = '';
+    });
+    document.getElementById('modal-cap-form-overlay').classList.add('open');
+  }
+
+  function closeCapFormModal() {
+    document.getElementById('modal-cap-form-overlay').classList.remove('open');
+    capEditId = null;
+  }
+
+  // ── Guardar video ──
+  document.getElementById('btn-cap-form-save')?.addEventListener('click', async () => {
+    const titulo = document.getElementById('fcap-titulo').value.trim();
+    const url    = document.getElementById('fcap-url').value.trim();
+    const cat    = document.getElementById('fcap-cat').value.trim();
+    if (!titulo || !url || !cat) { showCapToast('Completa los campos obligatorios (*)', 'error'); return; }
+
+    const btn = document.getElementById('btn-cap-form-save');
+    btn.disabled = true;
+    btn.innerHTML = '<i class="ti ti-loader" style="animation:spin .8s linear infinite"></i> Guardando…';
+
+    const payload = {
+      titulo, url, categoria: cat,
+      duracion: document.getElementById('fcap-duracion').value.trim(),
+      desc:     document.getElementById('fcap-desc').value.trim(),
+    };
+
+    try {
+      if (capEditId) {
+        await updateDoc(doc(db, 'capacitate', capEditId), { ...payload, actualizadoPor: currentCapUser?.email, actualizadoEn: serverTimestamp() });
+        showCapToast('Video actualizado ✓');
+      } else {
+        await addDoc(collection(db, 'capacitate'), { ...payload, creadoPor: currentCapUser?.email, creadoEn: serverTimestamp() });
+        showCapToast('Video añadido ✓');
+      }
+      closeCapFormModal();
+    } catch(e) {
+      showCapToast('Error: ' + (e.message||''), 'error');
+    } finally {
+      btn.disabled = false;
+      btn.innerHTML = '<i class="ti ti-device-floppy"></i><span id="btn-cap-form-save-text">' + (capEditId?'Guardar cambios':'Guardar video') + '</span>';
+    }
+  });
+
+  // ── Listeners modales ──
+  document.getElementById('btn-cap-nueva')?.addEventListener('click', abrirModalCapNuevo);
+  document.getElementById('btn-cap-form-cancel')?.addEventListener('click', closeCapFormModal);
+  document.getElementById('modal-cap-form-close')?.addEventListener('click', closeCapFormModal);
+  document.getElementById('modal-cap-form-overlay')?.addEventListener('click', e => { if(e.target===document.getElementById('modal-cap-form-overlay')) closeCapFormModal(); });
+  document.getElementById('cmv-close')?.addEventListener('click', closeCapViewModal);
+  document.getElementById('cmv-cancel')?.addEventListener('click', closeCapViewModal);
+  document.getElementById('modal-cap-view-overlay')?.addEventListener('click', e => { if(e.target===document.getElementById('modal-cap-view-overlay')) closeCapViewModal(); });
+
+  document.getElementById('cap-search')?.addEventListener('input', renderCapGrid);
+
+  // ── Firestore listener ──
+  onSnapshot(
+    query(collection(db, 'capacitate'), orderBy('creadoEn', 'asc')),
+    snap => {
+      capVideos = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+      renderCapCats();
+      renderCapGrid();
+    },
+    err => {
+      console.warn('Capacítate onSnapshot:', err);
+      document.getElementById('cap-grid').innerHTML = `<div class="cap-empty" style="grid-column:1/-1"><i class="ti ti-wifi-off"></i><p>Error al cargar videos</p><span>${err.message}</span></div>`;
+    }
+  );
+
+  // ── Auth ──
+  onAuthStateChanged(auth, async user => {
+    if (!user) return;
+    currentCapUser = user;
+    try {
+      const snap = await getDoc(doc(db, 'asesores_autorizados', user.email.toLowerCase()));
+      if (snap.exists()) currentCapRol = snap.data().Rol || '';
+    } catch(e) { currentCapRol = ''; }
+
+    const bar = document.getElementById('cap-formador-bar');
+    if (puedeGestionar() && bar) bar.classList.add('visible');
+
+    renderCapGrid(); // re-render con permisos correctos
+  });
 
 </script>
 </body>
