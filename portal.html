@@ -210,6 +210,79 @@
     .pend-case-card.alertado { border-left-color: var(--success); opacity: 0.75; }
     .alertado-stamp { display: inline-flex; align-items: center; gap: 4px; font-size: 10px; color: var(--success); font-weight: 600; margin-top: 4px; }
     .alertado-stamp i { font-size: 12px; }
+
+    /* ── TIPO CHECK (Supervisor / Back Office) en casos pendientes ── */
+    .tipo-check-selector { display: flex; gap: 8px; margin-top: 4px; }
+    .tipo-check-btn {
+      flex: 1; display: flex; align-items: center; justify-content: center; gap: 6px;
+      padding: 8px 12px; border-radius: 10px; border: 2px solid var(--border);
+      background: var(--white); font-family: var(--font); font-size: 12px; font-weight: 700;
+      cursor: pointer; transition: all 0.18s; color: var(--muted);
+    }
+    .tipo-check-btn i { font-size: 15px; }
+    .tipo-check-btn:hover:not(:disabled) { border-color: currentColor; }
+    .tipo-check-btn.supervisor-active { border-color: var(--danger); background: var(--danger-bg); color: var(--danger); }
+    .tipo-check-btn.bo-active { border-color: var(--warning); background: var(--warning-bg); color: var(--warning); }
+    .tipo-check-btn:disabled { opacity: 0.55; cursor: not-allowed; }
+
+    /* Badge tipo en tarjeta */
+    .pend-tipo-badge {
+      display: inline-flex; align-items: center; gap: 4px;
+      border-radius: 99px; padding: 2px 9px; font-size: 10px; font-weight: 700;
+      text-transform: uppercase; letter-spacing: 0.05em; flex-shrink: 0;
+    }
+    .pend-tipo-badge.supervisor { background: var(--danger-bg); color: var(--danger); border: 1px solid rgba(224,49,49,0.25); }
+    .pend-tipo-badge.backoffice { background: var(--warning-bg); color: var(--warning); border: 1px solid rgba(184,112,0,0.25); }
+    .pend-case-card.tipo-supervisor { border-left-color: var(--danger); }
+    .pend-case-card.tipo-backoffice { border-left-color: var(--warning); }
+
+    /* ── FILTROS MIS CASOS / TODOS ── */
+    .pend-view-toggle { display: flex; gap: 6px; background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 3px; }
+    .pend-view-btn {
+      display: flex; align-items: center; gap: 5px; padding: 5px 12px; border-radius: 8px;
+      border: none; background: transparent; font-family: var(--font); font-size: 12px;
+      font-weight: 600; color: var(--muted); cursor: pointer; transition: all 0.15s; white-space: nowrap;
+    }
+    .pend-view-btn.active { background: var(--white); color: var(--text); box-shadow: 0 1px 4px rgba(0,0,0,0.1); }
+    .pend-view-btn i { font-size: 13px; }
+
+    /* ── SECCIÓN ATENDIDOS DEL DÍA (pendientes) ── */
+    .pend-atendidos-section { margin-top: 28px; }
+    .pend-atend-pill { background: var(--success); }
+
+    /* ── COMENTARIOS EN CASOS PENDIENTES ── */
+    .pend-comments-area { border-top: 1px solid var(--border); padding: 10px 16px 12px; background: #FAFAF8; }
+    .pend-comments-title { font-size: 10px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: 0.07em; margin-bottom: 8px; display: flex; align-items: center; gap: 5px; }
+    .pend-comment-item { display: flex; gap: 8px; margin-bottom: 8px; }
+    .pend-comment-av { width: 24px; height: 24px; border-radius: 50%; background: var(--orange); color: #fff; font-size: 9px; font-weight: 700; display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 1px; }
+    .pend-comment-av.supervisor { background: var(--danger); }
+    .pend-comment-av.bo { background: var(--warning); }
+    .pend-comment-av.formador { background: var(--pending); }
+    .pend-comment-bubble { background: var(--white); border: 1px solid var(--border); border-radius: 0 10px 10px 10px; padding: 7px 10px; flex: 1; min-width: 0; }
+    .pend-comment-meta { font-size: 10px; color: var(--muted); margin-bottom: 3px; display: flex; gap: 6px; }
+    .pend-comment-meta strong { color: var(--text); font-weight: 600; }
+    .pend-comment-text { font-size: 12px; color: var(--text); line-height: 1.5; word-break: break-word; }
+    .pend-add-comment { display: flex; gap: 8px; align-items: flex-end; margin-top: 10px; }
+    .pend-add-comment textarea { flex: 1; min-height: 38px; max-height: 100px; border: 1px solid var(--border); border-radius: 8px; padding: 8px 10px; font-family: var(--font); font-size: 12px; color: var(--text); background: var(--white); outline: none; resize: vertical; line-height: 1.4; transition: border-color 0.15s; }
+    .pend-add-comment textarea:focus { border-color: var(--orange); }
+    .pend-add-comment textarea::placeholder { color: #ccc; }
+    .btn-send-comment { height: 38px; padding: 0 14px; border-radius: 8px; border: none; background: var(--orange); color: #fff; font-family: var(--font); font-size: 12px; font-weight: 700; cursor: pointer; white-space: nowrap; display: flex; align-items: center; gap: 5px; transition: background 0.15s; flex-shrink: 0; }
+    .btn-send-comment:hover { background: var(--orange-dark); }
+    .btn-send-comment:disabled { opacity: 0.5; cursor: not-allowed; }
+    .pend-case-card { border-bottom-left-radius: 0; border-bottom-right-radius: 0; }
+    .pend-case-wrapper { margin-bottom: 12px; }
+    .pend-case-wrapper .pend-comments-area { border-radius: 0 0 12px 12px; border: 1px solid var(--border); border-top: none; }
+
+    /* ── MIS CASOS ALERTADOS (boton en header) ── */
+    .btn-mis-alertados {
+      display: flex; align-items: center; gap: 6px; padding: 8px 14px; border-radius: 9px;
+      border: 1.5px solid var(--success); font-family: var(--font); font-size: 13px;
+      font-weight: 600; cursor: pointer; transition: all 0.15s;
+      background: var(--white); color: var(--success);
+    }
+    .btn-mis-alertados:hover { background: var(--success-bg); }
+    .btn-mis-alertados.active { background: var(--success-bg); }
+    .btn-mis-alertados i { font-size: 14px; }
     .toast { position: fixed; bottom: 24px; right: 24px; z-index: 999; background: var(--black); color: #fff; border-radius: 10px; padding: 12px 18px; font-size: 13px; font-weight: 500; display: flex; align-items: center; gap: 10px; transform: translateY(20px); opacity: 0; transition: all 0.3s ease; pointer-events: none; }
     .toast.show    { transform: translateY(0); opacity: 1; }
     .toast.success { background: var(--success); }
@@ -908,6 +981,26 @@
     body.radius-sharp .home-roles-banner,
     body.radius-sharp .pend-case-card { border-radius: 4px !important; }
 
+    /* Sidebar compacto */
+    body.sidebar-mini .sidebar { width: 56px; padding: 16px 0; overflow: visible; }
+    body.sidebar-mini .nav-label,
+    body.sidebar-mini .nav-item span,
+    body.sidebar-mini .nav-badge { display: none !important; }
+    body.sidebar-mini .nav-item { justify-content: center; padding: 8px 0; border-left: 3px solid transparent; position: relative; }
+    body.sidebar-mini .nav-item i { font-size: 20px; }
+    body.sidebar-mini .nav-item:hover::after {
+      content: attr(data-label);
+      position: absolute; left: 62px; top: 50%; transform: translateY(-50%);
+      background: var(--black); color: #fff; border-radius: 6px;
+      padding: 5px 10px; font-size: 12px; font-weight: 600; white-space: nowrap;
+      z-index: 999; pointer-events: none;
+    }
+
+    /* Sin animaciones */
+    body.no-animations *, body.no-animations *::before, body.no-animations *::after {
+      transition: none !important; animation: none !important;
+    }
+
     @keyframes spin { to { transform: rotate(360deg); } }
 
     /* ── SIDEBAR CAPACÍTATE HIGHLIGHT ── */
@@ -1030,26 +1123,26 @@
     <nav class="sidebar">
       <div>
         <div class="nav-label">Menú</div>
-        <div class="nav-item active" data-view="inicio"><i class="ti ti-layout-dashboard"></i>Inicio</div>
+        <div class="nav-item active" data-view="inicio" data-label="Inicio"><i class="ti ti-layout-dashboard"></i>Inicio</div>
       </div>
       <div>
         <div class="nav-label">Recursos</div>
-        <div class="nav-item" data-view="plantillas"><i class="ti ti-file-text"></i>Plantillas</div>
-        <div class="nav-item" data-view="tipificaciones"><i class="ti ti-tags"></i>Tipificaciones</div>
-        <div class="nav-item" data-view="preguntas"><i class="ti ti-award"></i>Preguntas frecuentes</div>
+        <div class="nav-item" data-view="plantillas" data-label="Plantillas"><i class="ti ti-file-text"></i>Plantillas</div>
+        <div class="nav-item" data-view="tipificaciones" data-label="Tipificaciones"><i class="ti ti-tags"></i>Tipificaciones</div>
+        <div class="nav-item" data-view="preguntas" data-label="Preguntas frecuentes"><i class="ti ti-award"></i>Preguntas frecuentes</div>
       </div>
       <div>
         <div class="nav-label">Gestión</div>
-        <div class="nav-item" data-view="bo-llamadas"><i class="ti ti-phone-call"></i>Registro de llamadas<span class="nav-badge" id="badge-bo-llamadas" style="display:none">0</span></div>
-        <div class="nav-item" data-view="pendientes"><i class="ti ti-alert-circle"></i>Casos pendientes<span class="nav-badge danger" id="badge-pendientes" style="display:none">0</span></div>
+        <div class="nav-item" data-view="bo-llamadas" data-label="Registro de llamadas"><i class="ti ti-phone-call"></i>Registro de llamadas<span class="nav-badge" id="badge-bo-llamadas" style="display:none">0</span></div>
+        <div class="nav-item" data-view="pendientes" data-label="Casos pendientes"><i class="ti ti-alert-circle"></i>Casos pendientes<span class="nav-badge danger" id="badge-pendientes" style="display:none">0</span></div>
       </div>
       <div>
         <div class="nav-label">Formación</div>
-        <div class="nav-item nav-capacitate" data-view="capacitate"><i class="ti ti-player-play"></i>Capacítate</div>
+        <div class="nav-item nav-capacitate" data-view="capacitate" data-label="Capacítate"><i class="ti ti-player-play"></i>Capacítate</div>
       </div>
       <div>
         <div class="nav-label">Cuenta</div>
-        <div class="nav-item" data-view="config"><i class="ti ti-settings"></i>Configuración</div>
+        <div class="nav-item" data-view="config" data-label="Configuración"><i class="ti ti-settings"></i>Configuración</div>
       </div>
     </nav>
 
@@ -1208,10 +1301,10 @@
         </div>
         <div id="cards-container"><div class="loading-state">Cargando casos...</div></div>
 
-        <!-- LLAMADOS DEL DÍA DE HOY -->
+        <!-- LLAMADOS GESTIONADOS DEL DÍA NAVEGADO -->
         <div id="llamados-hoy-section" style="margin-top:32px;display:none">
           <div class="pend-day-header" style="margin-bottom:14px">
-            <div class="pend-day-pill today"><i class="ti ti-phone-check" style="font-size:13px"></i>Llamados el día de hoy</div>
+            <div class="pend-day-pill today" id="llamados-hoy-pill"><i class="ti ti-phone-check" style="font-size:13px"></i>Gestionados del día</div>
             <div class="pend-day-line"></div>
             <span class="pend-day-count" id="llamados-hoy-count">0 llamadas</span>
           </div>
@@ -1227,16 +1320,21 @@
             <p>Registro diario para supervisores del Contact Center · Ordenado por fecha</p>
           </div>
           <div class="pend-actions">
+            <button class="btn-mis-alertados" id="btn-mis-alertados"><i class="ti ti-bell-check"></i>Mis alertados</button>
             <button class="btn-export excel" id="btn-export-excel"><i class="ti ti-table-export"></i>Excel</button>
             <button class="btn-export pdf"   id="btn-export-pdf"><i class="ti ti-file-type-pdf"></i>PDF</button>
             <button class="btn-nuevo" id="btn-nuevo-pendiente"><i class="ti ti-plus"></i>Nuevo caso</button>
           </div>
         </div>
-        <div class="pend-filters">
+        <div class="pend-filters" style="flex-wrap:wrap;gap:10px">
           <button class="month-nav" id="pend-prev"><i class="ti ti-chevron-left"></i></button>
           <span class="month-label" id="pend-month-label">Hoy</span>
           <button class="month-nav" id="pend-next"><i class="ti ti-chevron-right"></i></button>
           <button class="month-nav" id="pend-today" title="Ir a hoy" style="width:auto;padding:0 10px;font-size:11px;font-weight:700;color:var(--orange);border-color:var(--orange)">Hoy</button>
+          <div class="pend-view-toggle">
+            <button class="pend-view-btn active" data-filter="todos" id="pend-filter-todos"><i class="ti ti-users"></i>Todos</button>
+            <button class="pend-view-btn" data-filter="mios" id="pend-filter-mios"><i class="ti ti-user"></i>Mis casos</button>
+          </div>
           <div style="flex:1"></div>
           <div class="filter-search" style="max-width:260px">
             <i class="ti ti-search"></i>
@@ -1244,6 +1342,16 @@
           </div>
         </div>
         <div id="pend-calendar-container"><div class="loading-state">Cargando casos...</div></div>
+
+        <!-- RESUELTOS DEL DÍA -->
+        <div class="pend-atendidos-section" id="pend-atendidos-section" style="display:none;margin-top:28px">
+          <div class="pend-day-header" style="margin-bottom:12px">
+            <div class="pend-day-pill" style="background:var(--success)"><i class="ti ti-checks" style="font-size:13px"></i>Resueltos del día</div>
+            <div class="pend-day-line"></div>
+            <span class="pend-day-count" id="pend-atendidos-count">0 casos</span>
+          </div>
+          <div id="pend-atendidos-container"></div>
+        </div>
       </div>
 
       <!-- TIPIFICACIONES -->
@@ -1948,6 +2056,19 @@
         <input type="date" class="form-control" id="fp-fecha"/>
       </div>
       <div class="form-group span2">
+        <label>Tipo de escalamiento <span class="req">*</span></label>
+        <div class="tipo-check-selector" id="fp-tipo-selector">
+          <button type="button" class="tipo-check-btn" id="fp-tipo-supervisor" onclick="selPendTipo('supervisor')">
+            <i class="ti ti-shield-check"></i>Supervisor
+          </button>
+          <button type="button" class="tipo-check-btn" id="fp-tipo-bo" onclick="selPendTipo('backoffice')">
+            <i class="ti ti-headset"></i>Back Office
+          </button>
+        </div>
+        <input type="hidden" id="fp-tipo" value=""/>
+        <div id="fp-tipo-locked-msg" style="display:none;font-size:11px;color:var(--muted);margin-top:4px"><i class="ti ti-lock" style="font-size:11px"></i> Ya seleccionado — solo Supervisor, BO o Formador pueden cambiarlo</div>
+      </div>
+      <div class="form-group span2">
         <label>Descripción detallada del caso <span class="req">*</span></label>
         <textarea class="form-control" id="fp-descripcion" style="min-height:100px"
           placeholder="Describe detalladamente el caso pendiente, el motivo por el que está fuera de plazo y las acciones pendientes..."></textarea>
@@ -2130,6 +2251,8 @@
   let allPendientes  = [];
   let pendEditId     = null;
   let pendViewDay    = new Date();   // día visible en pendientes (navegación día a día)
+  let pendFilterMode = 'todos';      // 'todos' | 'mios'
+  let showMisAlertados = false;      // modo filtro mis alertados
 
   const MESES = ['Enero','Febrero','Marzo','Abril','Mayo','Junio',
                  'Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
@@ -2443,7 +2566,7 @@
     const msg = n > 0
       ? `¿Eliminar la categoría "${cat}" y sus ${n} tipificación${n!==1?'es':''}? Esta acción no se puede deshacer.`
       : `¿Eliminar la categoría vacía "${cat}"?`;
-    if (!confirm(msg)) return;
+    if (!confirmarAccion(msg)) return;
     try {
       const batch = TIPIFICACIONES
         .filter(t => t.categoria === cat)
@@ -2466,7 +2589,7 @@
   window.eliminarTipi = async function(id) {
     const t = TIPIFICACIONES.find(x => x.id === id);
     if (!t) return;
-    if (!confirm(`¿Eliminar la tipificación "${t.asunto}"?`)) return;
+    if (!confirmarAccion(`¿Eliminar la tipificación "${t.asunto}"?`)) return;
     try {
       await deleteDoc(doc(db, 'tipificaciones', id));
       showToast('Tipificación eliminada', 'error');
@@ -2832,9 +2955,17 @@
     }
   });
 
+  // ── Helper centralizado que respeta la preferencia pref_confirmar ──
+  function confirmarAccion(msg) {
+    const pref = localStorage.getItem('pref_confirmar');
+    const activo = pref === null ? true : pref === 'true';
+    if (!activo) return true;
+    return confirm(msg);
+  }
+
   async function eliminarCaso(id) {
     if (!tienePermiso()) { showToast('Solo BO, Supervisor o Formador pueden eliminar casos', 'error'); return; }
-    if (!confirm('¿Eliminar este caso?')) return;
+    if (!confirmarAccion('¿Eliminar este caso?')) return;
     try { await deleteDoc(doc(db, 'bo_llamadas', id)); showToast('Caso eliminado'); }
     catch (err) { showToast('Error al eliminar', 'error'); }
   }
@@ -2893,7 +3024,13 @@
       (r.asesorWsp||'').toLowerCase().includes(q) ||
       (r.motivo||'').toLowerCase().includes(q)
     );
-    if (est) data = data.filter(r => (r.estadoLlamada || 'pendiente') === est);
+    // Si el usuario filtra por un estado específico, mostrar ese estado en el grid principal
+    // Si no hay filtro, mostrar solo PENDIENTES en el grid (los gestionados van abajo)
+    if (est) {
+      data = data.filter(r => (r.estadoLlamada || 'pendiente') === est);
+    } else {
+      data = data.filter(r => (r.estadoLlamada || 'pendiente') === 'pendiente');
+    }
 
     // Ordenar: Alto > Medio > Bajo, y dentro de cada nivel el más antiguo primero
     const prioOrder = { alto: 0, medio: 1, bajo: 2 };
@@ -2986,16 +3123,19 @@
   }
 
   function renderLlamadosHoy() {
-    // Solo mostrar llamados del día de HOY (independiente del día navegado)
-    const today = new Date().toISOString().split('T')[0];
+    // Mostrar llamados gestionados del DÍA NAVEGADO (no solo hoy)
+    const viewStr = boViewDay.toISOString().split('T')[0];
+    const todayStr = new Date().toISOString().split('T')[0];
+    const isToday = viewStr === todayStr;
     const llamados = allCasos.filter(r =>
-      (r.fechaRegistro || '') === today &&
+      (r.fechaRegistro || '') === viewStr &&
       ['no_contesta','atendida'].includes(r.estadoLlamada || 'pendiente')
     );
 
     const section   = document.getElementById('llamados-hoy-section');
     const container = document.getElementById('llamados-hoy-container');
     const countEl   = document.getElementById('llamados-hoy-count');
+    const pill      = document.getElementById('llamados-hoy-pill');
 
     if (!llamados.length) {
       section.style.display = 'none';
@@ -3003,6 +3143,10 @@
     }
     section.style.display = '';
     countEl.textContent = llamados.length + ' llamada' + (llamados.length !== 1 ? 's' : '');
+    if (pill) {
+      pill.innerHTML = '<i class="ti ti-phone-check" style="font-size:13px"></i>' +
+        (isToday ? 'Gestionados hoy' : 'Gestionados · ' + viewStr);
+    }
 
     const estadoLabel = (est) => {
       if (est === 'atendida')    return '<span style="display:inline-flex;align-items:center;gap:4px;background:var(--success-bg);color:var(--success);border-radius:99px;padding:3px 10px;font-size:11px;font-weight:700"><i class="ti ti-phone-check" style="font-size:12px"></i>Atendida</span>';
@@ -3012,7 +3156,22 @@
 
     container.innerHTML = '<div class="cards-grid">' + llamados.map((r, i) => {
       const prio = r.prioridad || 'medio';
-      return `<div class="caso-card" style="border-top:3px solid ${prio==='alto'?'#E03131':prio==='medio'?'#B87000':'#1A7A45'};opacity:0.88">
+      const prioBorderColor = prio==='alto'?'#E03131':prio==='medio'?'#B87000':'#1A7A45';
+      const isBO = tienePermiso();
+
+      const estadoBtnG = (estado, label, icon, cls) => {
+        const active = (r.estadoLlamada||'no_contesta') === estado;
+        if (isBO) {
+          return `<button class="estado-btn ${active?cls:''}" onclick="window._boEstado('${r.id}','${estado}')"><i class="ti ${icon}"></i><span>${label}</span></button>`;
+        }
+        return `<button class="estado-btn ${active?cls:''}" disabled style="opacity:${active?'1':'0.4'};cursor:default"><i class="ti ${icon}"></i><span>${label}</span></button>`;
+      };
+
+      const descSection = isBO
+        ? `<textarea class="bo-desc-textarea" id="gdesc-${r.id}" placeholder="Comentario de gestión BO..." onblur="window._boDesc2('${r.id}')">${r.descripcionBo||''}</textarea>`
+        : (r.descripcionBo ? `<div class="bo-desc-readonly">${r.descripcionBo}</div>` : '');
+
+      return `<div class="caso-card" style="border-top:3px solid ${prioBorderColor}">
         <div class="card-header">
           <div class="card-header-left">
             <div class="card-case-num">Cód. ${r.codigo||'—'} · ${r.horaRegistro||'—'}</div>
@@ -3026,10 +3185,17 @@
             ${estadoLabel(r.estadoLlamada)}
           </div>
         </div>
-        <div class="card-body">
+        <div class="card-body" style="padding-bottom:0">
           <div class="card-motivo-label">Motivo</div>
           <div class="card-motivo">${r.motivo||'—'}</div>
-          ${r.descripcionBo ? `<div class="card-motivo-label" style="margin-top:8px">Gestión BO</div><div class="card-motivo" style="color:#555;font-style:italic">${r.descripcionBo}</div>` : ''}
+        </div>
+        <div class="card-bo-section">
+          <div class="bo-section-title"><i class="ti ti-headset"></i>Actualizar estado${isBO?'':' <span style="font-weight:400;color:#bbb">(solo lectura)</span>'}</div>
+          <div class="estado-options">
+            ${estadoBtnG('no_contesta','No contesta','ti-phone-off','no-contesta-active')}
+            ${estadoBtnG('atendida',   'Atendida',   'ti-phone-check','atendida-active')}
+          </div>
+          ${descSection}
         </div>
       </div>`;
     }).join('') + '</div>';
@@ -3045,6 +3211,13 @@
     const orig = allCasos.find(c=>c.id===id)?.descripcionBo||'';
     if (v !== orig) actualizarDescripcion(id, v);
   };
+  // Handler para textarea en sección "Gestionados del día"
+  window._boDesc2 = (id) => {
+    if (!tienePermiso()) return;
+    const v    = document.getElementById('gdesc-'+id)?.value||'';
+    const orig = allCasos.find(c=>c.id===id)?.descripcionBo||'';
+    if (v !== orig) actualizarDescripcion(id, v);
+  };
   window._boEdit = (id) => { const r = allCasos.find(x=>x.id===id); if (r) openBoModal('editar', r); };
   window._boDel  = (id) => eliminarCaso(id);
 
@@ -3057,23 +3230,75 @@
     const d = boViewDay;
     let data = allCasos.filter(r => (r.fechaRegistro||'') === viewStr);
     if (!data.length) { showToast('No hay casos para exportar', 'error'); return; }
-    const rows = data.map((r,i) => ({
-      '#': i+1,
-      'Fecha Registro': fmtDate(r.fechaRegistro||''),
-      'Alumno': r.nombre||'',
-      'Código': r.codigo||'',
-      'Celular': r.celular||'',
-      'Asesor WSP': r.asesorWsp||'',
-      'Motivo': r.motivo||'',
-      'Estado': r.estadoLlamada||'pendiente',
-      'Gestión BO': r.descripcionBo||'',
-    }));
+
     const wb = XLSX.utils.book_new();
-    const ws = XLSX.utils.json_to_sheet(rows);
-    ws['!cols'] = [{wch:4},{wch:14},{wch:22},{wch:10},{wch:14},{wch:16},{wch:40},{wch:14},{wch:40}];
+
+    // ── Hoja principal: todos los casos ──
+    const titleRow   = [['SISE · Portal SAES — Reporte BO Llamadas']];
+    const subtitleRow = [['Fecha: ' + d.getDate() + ' de ' + MESES[d.getMonth()] + ' ' + d.getFullYear() + '   |   Generado: ' + new Date().toLocaleDateString('es-PE','es-PE') + '   |   Total casos: ' + data.length]];
+    const blankRow   = [[]];
+    const headerRow  = [['#','Fecha Registro','Nombre Alumno','Código','Celular','Asesor WSP','Prioridad','Estado','Motivo de Derivación','Gestión BO']];
+    const dataRows   = data.map((r,i) => [
+      i+1,
+      fmtDate(r.fechaRegistro||''),
+      r.nombre||'',
+      r.codigo||'',
+      r.celular||'',
+      r.asesorWsp||'',
+      (r.prioridad||'medio').charAt(0).toUpperCase()+(r.prioridad||'medio').slice(1),
+      (r.estadoLlamada||'pendiente')==='pendiente'?'Pendiente':(r.estadoLlamada==='atendida'?'Atendida':'No contesta'),
+      r.motivo||'',
+      r.descripcionBo||'',
+    ]);
+
+    const wsData = [...titleRow, ...subtitleRow, ...blankRow, ...headerRow, ...dataRows];
+    const ws = XLSX.utils.aoa_to_sheet(wsData);
+
+    // Anchos de columna
+    ws['!cols'] = [{wch:4},{wch:16},{wch:24},{wch:10},{wch:14},{wch:18},{wch:10},{wch:14},{wch:44},{wch:44}];
+
+    // Combinar celdas del título y subtítulo
+    ws['!merges'] = [
+      {s:{r:0,c:0},e:{r:0,c:9}},
+      {s:{r:1,c:0},e:{r:1,c:9}},
+    ];
+
+    // Estilos básicos con XLSX (limitado sin librería de estilos)
+    // Fila 1 (título)
+    if (!ws['A1']) ws['A1'] = {};
+    ws['A1'].s = { font:{bold:true,sz:14,color:{rgb:'F26522'}}, fill:{fgColor:{rgb:'0D0D0D'}}, alignment:{horizontal:'center'} };
+
     XLSX.utils.book_append_sheet(wb, ws, 'BO Llamadas');
-    XLSX.writeFile(wb, 'bo_llamadas_' + d.getDate() + '_' + MESES[d.getMonth()] + '_' + d.getFullYear() + '.xlsx');
-    showToast('Excel descargado');
+
+    // ── Hoja resumen ──
+    const pendientes   = data.filter(r=>(r.estadoLlamada||'pendiente')==='pendiente').length;
+    const atendidas    = data.filter(r=>r.estadoLlamada==='atendida').length;
+    const noContesta   = data.filter(r=>r.estadoLlamada==='no_contesta').length;
+    const alto         = data.filter(r=>(r.prioridad||'medio')==='alto').length;
+    const medio        = data.filter(r=>(r.prioridad||'medio')==='medio').length;
+    const bajo         = data.filter(r=>(r.prioridad||'medio')==='bajo').length;
+
+    const wsRes = XLSX.utils.aoa_to_sheet([
+      ['RESUMEN DEL DÍA'],
+      [''],
+      ['Fecha', d.getDate() + ' de ' + MESES[d.getMonth()] + ' ' + d.getFullYear()],
+      ['Total casos', data.length],
+      [''],
+      ['ESTADO DE LLAMADAS'],
+      ['Pendientes',   pendientes],
+      ['Atendidas',    atendidas],
+      ['No contesta',  noContesta],
+      [''],
+      ['PRIORIDAD'],
+      ['Alta',  alto],
+      ['Media', medio],
+      ['Baja',  bajo],
+    ]);
+    wsRes['!cols'] = [{wch:20},{wch:16}];
+    XLSX.utils.book_append_sheet(wb, wsRes, 'Resumen');
+
+    XLSX.writeFile(wb, 'BO_Llamadas_' + d.getDate() + '_' + MESES[d.getMonth()] + '_' + d.getFullYear() + '.xlsx');
+    showToast('Excel descargado ✓');
   });
 
   // ── BO EXPORT PDF ──
@@ -3083,30 +3308,151 @@
     const d = boViewDay;
     let data = allCasos.filter(r => (r.fechaRegistro||'') === viewStr);
     if (!data.length) { showToast('No hay casos para exportar', 'error'); return; }
+
     const pdf = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
-    pdf.setFillColor(13,13,13); pdf.rect(0,0,297,20,'F');
-    pdf.setTextColor(255,255,255); pdf.setFontSize(12); pdf.setFont('helvetica','bold');
-    pdf.text('SISE · Portal SAES — BO Llamadas', 14, 13);
-    pdf.setFontSize(9); pdf.setFont('helvetica','normal');
-    pdf.text(d.getDate() + ' de ' + MESES[d.getMonth()] + ' ' + d.getFullYear(), 14, 18);
-    pdf.text('Generado: ' + new Date().toLocaleDateString('es-PE'), 240, 18);
-    pdf.autoTable({
-      startY: 26,
-      head: [['#','Alumno','Código','Celular','Asesor WSP','Motivo','Estado','Gestión BO']],
-      body: data.map((r,i) => [i+1, r.nombre||'—', r.codigo||'—', r.celular||'—', r.asesorWsp||'—', r.motivo||'—', r.estadoLlamada||'pendiente', r.descripcionBo||'—']),
-      styles: { font: 'helvetica', fontSize: 8, cellPadding: 3 },
-      headStyles: { fillColor: [242,101,34], textColor: 255, fontStyle: 'bold' },
-      columnStyles: {
-        0:{cellWidth:8,halign:'center'}, 1:{cellWidth:28}, 2:{cellWidth:16},
-        3:{cellWidth:20}, 4:{cellWidth:20}, 5:{cellWidth:60}, 6:{cellWidth:20}, 7:{cellWidth:80}
-      },
-      alternateRowStyles: { fillColor: [250,250,248] },
-      margin: { left:14, right:14 },
+    const pw = pdf.internal.pageSize.width;   // 297
+    const ph = pdf.internal.pageSize.height;  // 210
+
+    // ── Barra superior degradada (negro)
+    pdf.setFillColor(13,13,13);
+    pdf.rect(0, 0, pw, 26, 'F');
+
+    // Línea acento naranja
+    pdf.setFillColor(242, 101, 34);
+    pdf.rect(0, 26, pw, 2, 'F');
+
+    // Logo placeholder (círculo naranja con S)
+    pdf.setFillColor(242, 101, 34);
+    pdf.circle(18, 13, 6, 'F');
+    pdf.setTextColor(255,255,255);
+    pdf.setFontSize(10); pdf.setFont('helvetica','bold');
+    pdf.text('S', 18, 16.5, {align:'center'});
+
+    // Título principal
+    pdf.setFontSize(14); pdf.setFont('helvetica','bold');
+    pdf.setTextColor(255,255,255);
+    pdf.text('SISE · Portal SAES', 28, 11);
+    pdf.setFontSize(8); pdf.setFont('helvetica','normal');
+    pdf.setTextColor(170,170,170);
+    pdf.text('Reporte de Gestión BO — Llamadas', 28, 17);
+
+    // Fecha en el lado derecho
+    pdf.setFontSize(9); pdf.setFont('helvetica','bold');
+    pdf.setTextColor(242,101,34);
+    pdf.text(d.getDate() + ' de ' + MESES[d.getMonth()] + ' ' + d.getFullYear(), pw - 14, 10, {align:'right'});
+    pdf.setFontSize(7.5); pdf.setFont('helvetica','normal');
+    pdf.setTextColor(150,150,150);
+    pdf.text('Generado: ' + new Date().toLocaleDateString('es-PE'), pw - 14, 17, {align:'right'});
+
+    // ── Bloque de KPIs ──
+    const pendientes = data.filter(r=>(r.estadoLlamada||'pendiente')==='pendiente').length;
+    const atendidas  = data.filter(r=>r.estadoLlamada==='atendida').length;
+    const noContesta = data.filter(r=>r.estadoLlamada==='no_contesta').length;
+    const kpis = [
+      {label:'Total Casos',  val: data.length,  color:[13,13,13]},
+      {label:'Pendientes',   val: pendientes,   color:[91,33,182]},
+      {label:'Atendidas',    val: atendidas,    color:[26,122,69]},
+      {label:'No Contesta',  val: noContesta,   color:[224,49,49]},
+    ];
+    const kpiW = 40, kpiH = 14, kpiY = 31, kpiGap = 4;
+    const kpiStartX = 14;
+    kpis.forEach((k, idx) => {
+      const x = kpiStartX + idx * (kpiW + kpiGap);
+      pdf.setFillColor(k.color[0], k.color[1], k.color[2]);
+      pdf.roundedRect(x, kpiY, kpiW, kpiH, 2, 2, 'F');
+      pdf.setTextColor(255,255,255);
+      pdf.setFontSize(14); pdf.setFont('helvetica','bold');
+      pdf.text(String(k.val), x + kpiW/2, kpiY + 9, {align:'center'});
+      pdf.setFontSize(6.5); pdf.setFont('helvetica','normal');
+      pdf.text(k.label, x + kpiW/2, kpiY + 13, {align:'center'});
     });
+
+    // ── Tabla de datos ──
+    const estadoStr = (est) => {
+      if (est === 'atendida')    return 'Atendida';
+      if (est === 'no_contesta') return 'No contesta';
+      return 'Pendiente';
+    };
+    const prioStr = (p) => p ? p.charAt(0).toUpperCase()+p.slice(1) : 'Medio';
+
+    pdf.autoTable({
+      startY: kpiY + kpiH + 6,
+      head: [['#','Alumno','Código','Celular','Asesor WSP','Prioridad','Estado','Motivo','Gestión BO']],
+      body: data.map((r,i) => [
+        i+1,
+        r.nombre||'—',
+        r.codigo||'—',
+        r.celular||'—',
+        r.asesorWsp||'—',
+        prioStr(r.prioridad),
+        estadoStr(r.estadoLlamada),
+        r.motivo||'—',
+        r.descripcionBo||'—'
+      ]),
+      styles: {
+        font: 'helvetica', fontSize: 7.5, cellPadding: {top:3,bottom:3,left:3,right:3},
+        lineColor: [230,230,225], lineWidth: 0.2, overflow: 'linebreak',
+      },
+      headStyles: {
+        fillColor: [13,13,13], textColor: [255,255,255],
+        fontStyle: 'bold', fontSize: 7.5, halign: 'left',
+        cellPadding: {top:4,bottom:4,left:3,right:3},
+      },
+      columnStyles: {
+        0:{cellWidth:7,halign:'center'},
+        1:{cellWidth:26},
+        2:{cellWidth:16},
+        3:{cellWidth:20},
+        4:{cellWidth:20},
+        5:{cellWidth:16},
+        6:{cellWidth:20},
+        7:{cellWidth:60},
+        8:{cellWidth:'auto'},
+      },
+      alternateRowStyles: { fillColor: [250,249,247] },
+      margin: { left:14, right:14 },
+      didDrawCell: (hookData) => {
+        // Colorear badge de estado
+        if (hookData.section === 'body' && hookData.column.index === 6) {
+          const val = hookData.cell.raw;
+          const x = hookData.cell.x + 2;
+          const y = hookData.cell.y + 2;
+          const w = hookData.cell.width - 4;
+          const h = hookData.cell.height - 4;
+          if (val === 'Atendida')    { pdf.setFillColor(232,250,240); pdf.roundedRect(x,y,w,h,1.5,1.5,'F'); pdf.setTextColor(26,122,69); }
+          else if (val === 'No contesta') { pdf.setFillColor(255,240,240); pdf.roundedRect(x,y,w,h,1.5,1.5,'F'); pdf.setTextColor(224,49,49); }
+          else                       { pdf.setFillColor(245,240,255); pdf.roundedRect(x,y,w,h,1.5,1.5,'F'); pdf.setTextColor(91,33,182); }
+          pdf.setFontSize(7); pdf.setFont('helvetica','bold');
+          pdf.text(val, x + w/2, y + h/2 + 2, {align:'center'});
+        }
+        // Colorear prioridad
+        if (hookData.section === 'body' && hookData.column.index === 5) {
+          const val = (hookData.cell.raw||'').toLowerCase();
+          const x = hookData.cell.x + 2; const y = hookData.cell.y + 2;
+          const w = hookData.cell.width - 4; const h = hookData.cell.height - 4;
+          if (val === 'alto')   { pdf.setFillColor(255,240,240); pdf.roundedRect(x,y,w,h,1.5,1.5,'F'); pdf.setTextColor(224,49,49); }
+          else if (val === 'bajo') { pdf.setFillColor(232,250,240); pdf.roundedRect(x,y,w,h,1.5,1.5,'F'); pdf.setTextColor(26,122,69); }
+          else                    { pdf.setFillColor(255,247,230); pdf.roundedRect(x,y,w,h,1.5,1.5,'F'); pdf.setTextColor(184,112,0); }
+          pdf.setFontSize(7); pdf.setFont('helvetica','bold');
+          pdf.text(hookData.cell.raw||'', x + w/2, y + h/2 + 2, {align:'center'});
+        }
+      },
+    });
+
+    // ── Footer ──
     const pages = pdf.internal.getNumberOfPages();
-    for (let i=1;i<=pages;i++) { pdf.setPage(i); pdf.setFontSize(8); pdf.setTextColor(150); pdf.text('Página '+i+' de '+pages, 14, pdf.internal.pageSize.height-8); }
-    pdf.save('bo_llamadas_' + d.getDate() + '_' + MESES[d.getMonth()] + '_' + d.getFullYear() + '.pdf');
-    showToast('PDF descargado');
+    for (let i=1;i<=pages;i++) {
+      pdf.setPage(i);
+      pdf.setFillColor(245,244,242);
+      pdf.rect(0, ph-10, pw, 10, 'F');
+      pdf.setFontSize(7); pdf.setTextColor(154,150,144);
+      pdf.setFont('helvetica','normal');
+      pdf.text('SISE · Portal SAES — Documento de uso interno confidencial', 14, ph-4);
+      pdf.text('Página ' + i + ' de ' + pages, pw-14, ph-4, {align:'right'});
+    }
+
+    pdf.save('BO_Llamadas_' + d.getDate() + '_' + MESES[d.getMonth()] + '_' + d.getFullYear() + '.pdf');
+    showToast('PDF descargado ✓');
   });
 
   // ── PLANTILLAS — Firestore en tiempo real ──
@@ -3222,7 +3568,23 @@
   window._copiarPlantillaId = (id) => {
     const p = PLANTILLAS.find(x => x.id === id);
     if (!p) return;
-    navigator.clipboard.writeText(p.texto).then(() => showToast('Plantilla copiada al portapapeles'));
+    navigator.clipboard.writeText(p.texto).then(() => {
+      showToast('Plantilla copiada al portapapeles');
+      // Sonido al copiar si preferencia activa
+      const sonidoOn = (localStorage.getItem('pref_sonido') || 'false') === 'true';
+      if (sonidoOn) {
+        try {
+          const ctx = new (window.AudioContext || window.webkitAudioContext)();
+          const osc = ctx.createOscillator();
+          const gain = ctx.createGain();
+          osc.connect(gain); gain.connect(ctx.destination);
+          osc.type = 'sine'; osc.frequency.setValueAtTime(880, ctx.currentTime);
+          gain.gain.setValueAtTime(0.15, ctx.currentTime);
+          gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.18);
+          osc.start(ctx.currentTime); osc.stop(ctx.currentTime + 0.18);
+        } catch(e) {}
+      }
+    });
   };
 
   // ── Modal nueva/editar plantilla (solo Formador) ──
@@ -3330,7 +3692,7 @@
   window.eliminarPlt = async function(id) {
     const p = PLANTILLAS.find(x => x.id === id);
     if (!p) return;
-    if (!confirm(`¿Eliminar la plantilla "${p.nombre}"? Esta acción no se puede deshacer.`)) return;
+    if (!confirmarAccion(`¿Eliminar la plantilla "${p.nombre}"? Esta acción no se puede deshacer.`)) return;
     try {
       await deleteDoc(doc(db, 'plantillas', id));
       showToast('Plantilla eliminada', 'error');
@@ -3348,9 +3710,21 @@
   // ── PENDIENTES ──
   const pendOverlay = document.getElementById('modal-pend-overlay');
 
+  // Tipo selector en modal (Supervisor / BO)
+  let _pendTipoSelected = '';
+  window.selPendTipo = function(tipo) {
+    const supBtn = document.getElementById('fp-tipo-supervisor');
+    const boBtn  = document.getElementById('fp-tipo-bo');
+    _pendTipoSelected = tipo;
+    document.getElementById('fp-tipo').value = tipo;
+    supBtn.classList.toggle('supervisor-active', tipo === 'supervisor');
+    boBtn.classList.toggle('bo-active', tipo === 'backoffice');
+  };
+
   function openPendModal(data) {
     pendEditId = data ? data.id : null;
     const isEdit = !!data;
+    _pendTipoSelected = data ? (data.tipoCaso || '') : '';
     document.getElementById('modal-pend-title').textContent   = isEdit ? 'Editar caso pendiente' : 'Registrar caso pendiente';
     document.getElementById('btn-pend-save-text').textContent = isEdit ? 'Guardar cambios' : 'Registrar caso pendiente';
     const today = new Date().toISOString().split('T')[0];
@@ -3358,9 +3732,28 @@
     document.getElementById('fp-fecha').value       = data ? (data.fechaCaso   || today) : '';
     document.getElementById('fp-descripcion').value = data ? (data.descripcion || '') : '';
     document.getElementById('fp-asesor').value      = data ? (data.asesor      || '') : '';
+    document.getElementById('fp-tipo').value        = _pendTipoSelected;
+
+    // Render tipo selector state
+    const supBtn = document.getElementById('fp-tipo-supervisor');
+    const boBtn  = document.getElementById('fp-tipo-bo');
+    supBtn.classList.toggle('supervisor-active', _pendTipoSelected === 'supervisor');
+    boBtn.classList.toggle('bo-active', _pendTipoSelected === 'backoffice');
+
+    // Si ya tiene tipo y es asesor: bloquear selector
+    const puedeModTipo = tienePermiso(); // BO, Supervisor, Formador
+    const yaSeleccionado = isEdit && !!data.tipoCaso;
+    if (yaSeleccionado && !puedeModTipo) {
+      supBtn.disabled = true; boBtn.disabled = true;
+      document.getElementById('fp-tipo-locked-msg').style.display = '';
+    } else {
+      supBtn.disabled = false; boBtn.disabled = false;
+      document.getElementById('fp-tipo-locked-msg').style.display = 'none';
+    }
+
     pendOverlay.classList.add('open');
   }
-  function closePendModal() { pendOverlay.classList.remove('open'); pendEditId = null; }
+  function closePendModal() { pendOverlay.classList.remove('open'); pendEditId = null; _pendTipoSelected = ''; }
 
   document.getElementById('btn-nuevo-pendiente').addEventListener('click', () => openPendModal(null));
   document.getElementById('modal-pend-close').addEventListener('click', closePendModal);
@@ -3372,11 +3765,13 @@
     const fecha  = document.getElementById('fp-fecha').value;
     const desc   = document.getElementById('fp-descripcion').value.trim();
     const asesor = document.getElementById('fp-asesor').value.trim();
+    const tipo   = document.getElementById('fp-tipo').value;
     if (!numero || !fecha || !desc || !asesor) { showToast('Completa todos los campos obligatorios', 'error'); return; }
+    if (!tipo) { showToast('Selecciona el tipo de escalamiento (Supervisor o Back Office)', 'error'); return; }
     const btn = document.getElementById('btn-pend-save');
     const txt = document.getElementById('btn-pend-save-text');
     btn.disabled = true; txt.textContent = 'Guardando...';
-    const payload = { numeroCaso: numero, fechaCaso: fecha, fechaRegistro: new Date().toISOString().split('T')[0], descripcion: desc, asesor };
+    const payload = { numeroCaso: numero, fechaCaso: fecha, fechaRegistro: new Date().toISOString().split('T')[0], descripcion: desc, asesor, tipoCaso: tipo };
     try {
       if (pendEditId) {
         await updateDoc(doc(db, 'casos_pendientes', pendEditId), { ...payload, actualizadoPor: currentUser.email, actualizadoEn: serverTimestamp() });
@@ -3400,7 +3795,7 @@
     if (!tienePermiso()) {
       showToast('Solo BO, Supervisor o Formador pueden eliminar casos', 'error'); return;
     }
-    if (!confirm('¿Eliminar este caso pendiente?')) return;
+    if (!confirmarAccion('¿Eliminar este caso pendiente?')) return;
     try { await deleteDoc(doc(db, 'casos_pendientes', id)); showToast('Caso eliminado'); }
     catch (err) { showToast('Error al eliminar', 'error'); }
   }
@@ -3442,6 +3837,34 @@
   document.getElementById('pend-today').addEventListener('click', () => { pendViewDay = new Date(); renderPendientes(); });
   document.getElementById('search-pend').addEventListener('input', renderPendientes);
 
+  // Filtros mis casos / todos
+  document.getElementById('pend-filter-todos').addEventListener('click', () => {
+    pendFilterMode = 'todos';
+    showMisAlertados = false;
+    document.getElementById('pend-filter-todos').classList.add('active');
+    document.getElementById('pend-filter-mios').classList.remove('active');
+    document.getElementById('btn-mis-alertados').classList.remove('active');
+    renderPendientes();
+  });
+  document.getElementById('pend-filter-mios').addEventListener('click', () => {
+    pendFilterMode = 'mios';
+    showMisAlertados = false;
+    document.getElementById('pend-filter-mios').classList.add('active');
+    document.getElementById('pend-filter-todos').classList.remove('active');
+    document.getElementById('btn-mis-alertados').classList.remove('active');
+    renderPendientes();
+  });
+  document.getElementById('btn-mis-alertados').addEventListener('click', () => {
+    showMisAlertados = !showMisAlertados;
+    document.getElementById('btn-mis-alertados').classList.toggle('active', showMisAlertados);
+    if (showMisAlertados) {
+      document.getElementById('pend-filter-todos').classList.remove('active');
+      document.getElementById('pend-filter-mios').classList.remove('active');
+      pendFilterMode = 'todos';
+    }
+    renderPendientes();
+  });
+
   function fmtDate(f) { if (!f) return '—'; const [y,m,d] = f.split('-'); return d+'/'+m+'/'+y; }
 
   function renderPendientes() {
@@ -3456,12 +3879,22 @@
     document.getElementById('pend-month-label').textContent = dayLabel;
 
     const q = document.getElementById('search-pend').value.toLowerCase().trim();
-    let data = allPendientes.filter(r => (r.fechaRegistro || r.fecha || '') === viewDateStr);
-    if (q) data = data.filter(r =>
-      (r.numeroCaso||'').toLowerCase().includes(q) ||
-      (r.descripcion||'').toLowerCase().includes(q) ||
-      (r.asesor||'').toLowerCase().includes(q)
-    );
+    let data = allPendientes.filter(r => (r.fechaRegistro || r.fecha || '') === viewDateStr && !r.resuelto);
+    let resueltos = allPendientes.filter(r => (r.fechaRegistro || r.fecha || '') === viewDateStr && r.resuelto);
+
+    // Filtrar por modo
+    if (showMisAlertados) {
+      data = allPendientes.filter(r => r.alertado && r.alertadoPor === currentUser?.email);
+      resueltos = [];
+    } else if (pendFilterMode === 'mios') {
+      data = data.filter(r => r.creadoPor === currentUser?.email);
+      resueltos = resueltos.filter(r => r.creadoPor === currentUser?.email);
+    }
+
+    if (q) {
+      data = data.filter(r => (r.numeroCaso||'').toLowerCase().includes(q)||(r.descripcion||'').toLowerCase().includes(q)||(r.asesor||'').toLowerCase().includes(q));
+      resueltos = resueltos.filter(r => (r.numeroCaso||'').toLowerCase().includes(q)||(r.descripcion||'').toLowerCase().includes(q)||(r.asesor||'').toLowerCase().includes(q));
+    }
 
     const isSupervisor = tienePermiso();
     const delBtn = (id) => isSupervisor
@@ -3482,40 +3915,105 @@
       }
     };
 
-    if (!data.length) {
-      container.innerHTML = '<div class="empty-state"><i class="ti ti-calendar-off"></i><p>No hay casos el ' + d.getDate() + ' de ' + MESES[d.getMonth()] + ' ' + d.getFullYear() + '.</p><p class="empty-hint">Usa &quot;Nuevo caso&quot; para registrar uno.</p></div>';
-      return;
-    }
-    container.innerHTML =
-      '<div class="pend-day-block">' +
-        '<div class="pend-day-header">' +
-          '<div class="pend-day-pill' + (isToday?' today':'') + '">' +
-            '<i class="ti ti-calendar-event" style="font-size:13px"></i>' +
-            (isToday ? 'Hoy — ' : '') + dias[d.getDay()] + ' ' + d.getDate() + ' ' + MESES_C[d.getMonth()] +
+    const resueltoBtn = (r) => {
+      if (!isSupervisor) return '';
+      return r.resuelto
+        ? '<button class="btn-alertado" style="border-color:var(--success);color:var(--success);background:var(--success-bg)" onclick="window._pendResuelto(\'' + r.id + '\',false)"><i class="ti ti-rotate-clockwise"></i>Reabrir</button>'
+        : '<button class="btn-alertado" style="border-color:var(--success);color:var(--success)" onclick="window._pendResuelto(\'' + r.id + '\',true)"><i class="ti ti-check-circle"></i>Resolver</button>';
+    };
+
+    const tipoBadge = (r) => {
+      if (!r.tipoCaso) return '';
+      if (r.tipoCaso === 'supervisor') return '<span class="pend-tipo-badge supervisor"><i class="ti ti-shield-check" style="font-size:10px"></i>Supervisor</span>';
+      return '<span class="pend-tipo-badge backoffice"><i class="ti ti-headset" style="font-size:10px"></i>Back Office</span>';
+    };
+
+    const tipoClass = (r) => {
+      if (r.tipoCaso === 'supervisor') return ' tipo-supervisor';
+      if (r.tipoCaso === 'backoffice') return ' tipo-backoffice';
+      return '';
+    };
+
+    const renderCard = (r, isResolved = false) => {
+      const comments = (r.comentarios || []);
+      const commentsHtml = comments.map(c => {
+        const rolClass = (c.rol||'').toLowerCase() === 'supervisor' ? 'supervisor' : (c.rol||'').toLowerCase() === 'bo' ? 'bo' : (c.rol||'').toLowerCase() === 'formador' ? 'formador' : '';
+        const initials = (c.autor || '??').substring(0,2).toUpperCase();
+        return '<div class="pend-comment-item">' +
+          '<div class="pend-comment-av ' + rolClass + '">' + initials + '</div>' +
+          '<div class="pend-comment-bubble">' +
+            '<div class="pend-comment-meta"><strong>' + escH(c.autor||'?') + '</strong><span>' + escH(c.rol||'Asesor') + '</span><span>' + escH(c.hora||'') + '</span></div>' +
+            '<div class="pend-comment-text">' + escH(c.texto||'') + '</div>' +
           '</div>' +
-          '<div class="pend-day-line"></div>' +
-          '<span class="pend-day-count">' + data.length + ' caso' + (data.length!==1?'s':'') + '</span>' +
+        '</div>';
+      }).join('');
+
+      const canComment = !!currentUser;
+      const addCommentHtml = canComment && !isResolved ? (
+        '<div class="pend-add-comment">' +
+          '<textarea id="comment-ta-' + r.id + '" placeholder="Escribe un comentario o respuesta…" rows="1" oninput="this.style.height=\'auto\';this.style.height=this.scrollHeight+\'px\'"></textarea>' +
+          '<button class="btn-send-comment" onclick="window._pendAddComment(\'' + r.id + '\')"><i class="ti ti-send"></i>Enviar</button>' +
+        '</div>'
+      ) : '';
+
+      return '<div class="pend-case-wrapper">' +
+        '<div class="pend-case-card' + (r.alertado?' alertado':'') + tipoClass(r) + '">' +
+          '<div class="pend-num-badge"><i class="ti ti-alert-triangle" style="font-size:11px;margin-right:3px"></i>Caso ' + escH(r.numeroCaso||'—') + '</div>' +
+          '<div class="pend-case-body">' +
+            '<div class="pend-case-desc">' + escH(r.descripcion||'—') + '</div>' +
+            '<div class="pend-case-meta">' +
+              '<span class="pend-case-meta-item"><i class="ti ti-user"></i>' + escH(r.asesor||'—') + '</span>' +
+              (r.fechaCaso ? '<span class="pend-case-meta-item"><i class="ti ti-calendar-x"></i>Caso desde: ' + fmtDate(r.fechaCaso) + '</span>' : '') +
+              (r.creadoPor ? '<span class="pend-case-meta-item"><i class="ti ti-mail"></i>' + escH(r.creadoPor.split('@')[0]) + '</span>' : '') +
+              tipoBadge(r) +
+              (r.alertado && r.alertadoPor ? '<span class="pend-case-meta-item" style="color:var(--success);font-weight:600"><i class="ti ti-check-circle"></i>Alertado por ' + escH(r.alertadoPor.split('@')[0]) + (r.alertadoEn ? ' · ' + r.alertadoEn : '') + '</span>' : '') +
+              (comments.length ? '<span class="pend-case-meta-item" style="color:var(--info)"><i class="ti ti-message-circle"></i>' + comments.length + ' comentario' + (comments.length!==1?'s':'') + '</span>' : '') +
+            '</div>' +
+          '</div>' +
+          '<div class="pend-case-actions" style="align-items:center">' +
+            alertadoBtn(r) +
+            resueltoBtn(r) +
+            '<button class="btn-row edit" onclick="window._pendEdit(\'' + r.id + '\')"><i class="ti ti-pencil"></i></button>' +
+            delBtn(r.id) +
+          '</div>' +
         '</div>' +
-        data.map(r =>
-          '<div class="pend-case-card' + (r.alertado?' alertado':'') + '">' +
-            '<div class="pend-num-badge"><i class="ti ti-alert-triangle" style="font-size:11px;margin-right:3px"></i>Caso ' + escH(r.numeroCaso||'—') + '</div>' +
-            '<div class="pend-case-body">' +
-              '<div class="pend-case-desc">' + escH(r.descripcion||'—') + '</div>' +
-              '<div class="pend-case-meta">' +
-                '<span class="pend-case-meta-item"><i class="ti ti-user"></i>' + escH(r.asesor||'—') + '</span>' +
-                (r.fechaCaso ? '<span class="pend-case-meta-item"><i class="ti ti-calendar-x"></i>Caso desde: ' + fmtDate(r.fechaCaso) + '</span>' : '') +
-                (r.creadoPor ? '<span class="pend-case-meta-item"><i class="ti ti-mail"></i>' + escH(r.creadoPor.split('@')[0]) + '</span>' : '') +
-                (r.alertado && r.alertadoPor ? '<span class="pend-case-meta-item" style="color:var(--success);font-weight:600"><i class="ti ti-check-circle"></i>Alertado por ' + escH(r.alertadoPor.split('@')[0]) + (r.alertadoEn ? ' · ' + r.alertadoEn : '') + '</span>' : '') +
-              '</div>' +
-            '</div>' +
-            '<div class="pend-case-actions" style="align-items:center">' +
-              alertadoBtn(r) +
-              '<button class="btn-row edit" onclick="window._pendEdit(\'' + r.id + '\')"><i class="ti ti-pencil"></i></button>' +
-              delBtn(r.id) +
-            '</div>' +
-          '</div>'
-        ).join('') +
+        '<div class="pend-comments-area">' +
+          '<div class="pend-comments-title"><i class="ti ti-message-circle" style="font-size:12px"></i>Comentarios' + (comments.length ? ' (' + comments.length + ')' : '') + '</div>' +
+          (commentsHtml || '<div style="font-size:11px;color:var(--muted);font-style:italic;padding-bottom:4px">Sin comentarios aún.</div>') +
+          addCommentHtml +
+        '</div>' +
       '</div>';
+    };
+
+    if (!data.length && !showMisAlertados) {
+      container.innerHTML = '<div class="empty-state"><i class="ti ti-calendar-off"></i><p>No hay casos el ' + d.getDate() + ' de ' + MESES[d.getMonth()] + ' ' + d.getFullYear() + '.</p><p class="empty-hint">Usa &quot;Nuevo caso&quot; para registrar uno.</p></div>';
+    } else if (!data.length && showMisAlertados) {
+      container.innerHTML = '<div class="empty-state"><i class="ti ti-bell-off"></i><p>No tienes casos alertados por ti.</p></div>';
+    } else {
+      container.innerHTML =
+        '<div class="pend-day-block">' +
+          '<div class="pend-day-header">' +
+            '<div class="pend-day-pill' + (isToday?' today':'') + '">' +
+              '<i class="ti ti-calendar-event" style="font-size:13px"></i>' +
+              (showMisAlertados ? 'Mis alertados' : (isToday ? 'Hoy — ' : '') + dias[d.getDay()] + ' ' + d.getDate() + ' ' + MESES_C[d.getMonth()]) +
+            '</div>' +
+            '<div class="pend-day-line"></div>' +
+            '<span class="pend-day-count">' + data.length + ' caso' + (data.length!==1?'s':'') + '</span>' +
+          '</div>' +
+          data.map(r => renderCard(r)).join('') +
+        '</div>';
+    }
+
+    // Sección resueltos
+    const secResueltos = document.getElementById('pend-atendidos-section');
+    const contResueltos = document.getElementById('pend-atendidos-container');
+    if (resueltos.length && !showMisAlertados) {
+      secResueltos.style.display = '';
+      document.getElementById('pend-atendidos-count').textContent = resueltos.length + ' caso' + (resueltos.length!==1?'s':'');
+      contResueltos.innerHTML = resueltos.map(r => renderCard(r, true)).join('');
+    } else {
+      secResueltos.style.display = 'none';
+    }
   }
 
   window._pendAlertado = async (id, valor) => {
@@ -3539,6 +4037,41 @@
         showToast('Alerta removida');
       }
     } catch(e) { showToast('Error al actualizar', 'error'); }
+  };
+
+  window._pendResuelto = async (id, valor) => {
+    if (!tienePermiso()) { showToast('Solo BO, Supervisor o Formador pueden resolver casos', 'error'); return; }
+    try {
+      await updateDoc(doc(db, 'casos_pendientes', id), {
+        resuelto: valor,
+        resueltoPor: valor ? currentUser.email : '',
+        resueltoEn: valor ? new Date().toTimeString().slice(0,5) : ''
+      });
+      showToast(valor ? 'Caso marcado como resuelto ✓' : 'Caso reabierto');
+    } catch(e) { showToast('Error al actualizar', 'error'); }
+  };
+
+  window._pendAddComment = async (id) => {
+    const ta = document.getElementById('comment-ta-' + id);
+    if (!ta) return;
+    const texto = ta.value.trim();
+    if (!texto) { showToast('Escribe un comentario antes de enviar', 'error'); return; }
+    const ahora = new Date();
+    const hora  = ahora.toTimeString().slice(0,5);
+    const r = allPendientes.find(x => x.id === id);
+    const comentarios = [...(r?.comentarios || []), {
+      texto,
+      autor: currentUser?.email?.split('@')[0] || '?',
+      rol: currentUserRol || 'Asesor',
+      hora,
+      fecha: ahora.toISOString().split('T')[0]
+    }];
+    try {
+      await updateDoc(doc(db, 'casos_pendientes', id), { comentarios });
+      ta.value = '';
+      ta.style.height = 'auto';
+      showToast('Comentario enviado ✓');
+    } catch(e) { showToast('Error al guardar comentario', 'error'); }
   };
 
   // ── EXPORT EXCEL ──
@@ -3732,6 +4265,32 @@
     initToggle('tog-resaltar',  'pref_resaltar',  true);
     initToggle('tog-animaciones', 'pref_animaciones', true);
     initToggle('tog-sidebar-mini', 'pref_sidebar_mini', false);
+
+    // ── Animaciones ──
+    (function() {
+      const applyAnim = (on) => document.body.classList.toggle('no-animations', !on);
+      const savedAnim = localStorage.getItem('pref_animaciones');
+      applyAnim(savedAnim === null ? true : savedAnim === 'true');
+      document.getElementById('tog-animaciones')?.addEventListener('click', () => {
+        setTimeout(() => {
+          const on = document.getElementById('tog-animaciones').classList.contains('active');
+          applyAnim(on);
+        }, 0);
+      });
+    })();
+
+    // ── Sidebar mini ──
+    (function() {
+      const applySidebar = (on) => document.body.classList.toggle('sidebar-mini', on);
+      const savedSidebar = localStorage.getItem('pref_sidebar_mini');
+      applySidebar(savedSidebar === 'true');
+      document.getElementById('tog-sidebar-mini')?.addEventListener('click', () => {
+        setTimeout(() => {
+          const on = document.getElementById('tog-sidebar-mini').classList.contains('active');
+          applySidebar(on);
+        }, 0);
+      });
+    })();
 
     // ── TAMAÑO DE FUENTE ──
     const savedFontSize = localStorage.getItem('sise_fontsize') || 'medium';
@@ -4068,7 +4627,7 @@
     window._faqEditar   = (id) => abrirModalFaq(id);
     window._faqEliminar = async (id) => {
       if (!puedeGestionar()) { showToast('Sin permiso para eliminar preguntas', 'error'); return; }
-      if (!confirm('¿Eliminar esta pregunta de la biblioteca?')) return;
+      if (!confirmarAccion('¿Eliminar esta pregunta de la biblioteca?')) return;
       try { await deleteDoc(doc(db, 'faqs', id)); showToast('Pregunta eliminada'); }
       catch(e) { showToast('Error al eliminar', 'error'); }
     };
@@ -4445,7 +5004,7 @@
 
   // ── Eliminar video ──
   window._capEliminar = async function(id) {
-    if (!confirm('¿Eliminar este video de la biblioteca?')) return;
+    if (!confirmarAccion('¿Eliminar este video de la biblioteca?')) return;
     try {
       await deleteDoc(doc(db, 'capacitate', id));
       showCapToast('Video eliminado');
