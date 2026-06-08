@@ -115,6 +115,11 @@
     .bo-desc-textarea { width: 100%; min-height: 60px; max-height: 120px; border: 1px solid var(--border); border-radius: 8px; padding: 8px 10px; font-family: var(--font); font-size: 12px; color: var(--text); background: var(--white); outline: none; resize: vertical; line-height: 1.5; transition: border-color 0.15s; }
     .bo-desc-textarea:focus { border-color: var(--orange); box-shadow: 0 0 0 3px rgba(242,101,34,0.1); }
     .bo-desc-textarea::placeholder { color: #ccc; }
+    .bo-desc-readonly {
+      font-size: 12px; color: #555; line-height: 1.5; padding: 8px 10px;
+      background: #F5F4F2; border: 1px solid var(--border); border-radius: 8px;
+      min-height: 38px; font-style: italic;
+    }
     .card-footer { padding: 8px 16px 10px; display: flex; align-items: center; justify-content: space-between; gap: 8px; border-top: 1px solid #F0EEE9; }
     .card-date { font-size: 11px; color: var(--muted); display: flex; align-items: center; gap: 4px; }
     .row-actions { display: flex; gap: 6px; }
@@ -192,7 +197,87 @@
     .toast.success { background: var(--success); }
     .toast.error   { background: var(--danger); }
 
-    /* PLANTILLAS */
+    /* HOME */
+    .home-hero {
+      background: var(--black); border-radius: 16px;
+      padding: 32px 36px; display: flex; align-items: center;
+      justify-content: space-between; gap: 24px; margin-bottom: 20px;
+    }
+    .home-hero-left { flex: 1; }
+    .home-hero-tag {
+      display: inline-flex; align-items: center; gap: 6px;
+      background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.12);
+      border-radius: 99px; padding: 4px 12px; font-size: 11px; color: #aaa;
+      margin-bottom: 14px;
+    }
+    .home-hero-title { font-size: 26px; font-weight: 800; color: #fff; margin-bottom: 10px; line-height: 1.2; }
+    .home-hero-sub { font-size: 13px; color: #888; line-height: 1.7; max-width: 520px; margin-bottom: 18px; }
+    .home-hero-chips { display: flex; gap: 8px; flex-wrap: wrap; }
+    .home-chip {
+      display: flex; align-items: center; gap: 6px;
+      border-radius: 99px; padding: 5px 14px; font-size: 12px; font-weight: 600;
+    }
+    .home-chip i { font-size: 13px; }
+    .home-chip.orange { background: rgba(242,101,34,0.15); color: #F26522; border: 1px solid rgba(242,101,34,0.25); }
+    .home-chip.purple { background: rgba(91,33,182,0.15); color: #7C3AED; border: 1px solid rgba(91,33,182,0.25); }
+    .home-chip.green  { background: rgba(26,122,69,0.15);  color: #22C55E; border: 1px solid rgba(26,122,69,0.25); }
+    .home-hero-right { flex-shrink: 0; }
+    .home-hero-icon-wrap {
+      width: 100px; height: 100px; border-radius: 24px;
+      background: rgba(242,101,34,0.12); border: 1px solid rgba(242,101,34,0.2);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 48px; color: var(--orange);
+    }
+
+    .home-cards-grid {
+      display: grid; grid-template-columns: repeat(auto-fill, minmax(280px,1fr));
+      gap: 12px; margin-bottom: 20px;
+    }
+    .home-info-card {
+      background: var(--white); border: 1px solid var(--border); border-radius: 14px;
+      padding: 18px 18px 18px 16px; display: flex; align-items: center; gap: 14px;
+      cursor: pointer; transition: box-shadow 0.15s, transform 0.15s;
+    }
+    .home-info-card:hover { box-shadow: 0 4px 20px rgba(0,0,0,0.08); transform: translateY(-1px); }
+    .home-card-icon {
+      width: 44px; height: 44px; border-radius: 12px; flex-shrink: 0;
+      display: flex; align-items: center; justify-content: center; font-size: 22px;
+    }
+    .home-card-body { flex: 1; min-width: 0; }
+    .home-card-title { font-size: 13px; font-weight: 700; color: var(--black); margin-bottom: 3px; }
+    .home-card-desc  { font-size: 12px; color: var(--muted); line-height: 1.5; }
+    .home-card-arrow { font-size: 16px; color: var(--muted); flex-shrink: 0; transition: color 0.12s; }
+    .home-info-card:hover .home-card-arrow { color: var(--orange); }
+
+    .home-roles-banner {
+      background: var(--white); border: 1px solid var(--border); border-radius: 14px;
+      padding: 20px 22px; margin-bottom: 16px;
+    }
+    .home-roles-title {
+      font-size: 13px; font-weight: 700; color: var(--text);
+      margin-bottom: 14px; display: flex; align-items: center; gap: 7px;
+    }
+    .home-roles-title i { font-size: 16px; color: var(--orange); }
+    .home-roles-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px,1fr)); gap: 12px; }
+    .home-role-card { background: var(--surface); border-radius: 10px; padding: 14px 16px; }
+    .home-role-badge {
+      display: inline-flex; align-items: center; gap: 6px;
+      border-radius: 8px; padding: 5px 12px; font-size: 12px; font-weight: 700;
+      margin-bottom: 10px;
+    }
+    .home-role-list { list-style: none; display: flex; flex-direction: column; gap: 5px; }
+    .home-role-list li {
+      display: flex; align-items: center; gap: 6px;
+      font-size: 12px; color: #555; line-height: 1.4;
+    }
+    .home-role-list i { font-size: 13px; color: var(--success); flex-shrink: 0; }
+
+    .home-footer-note {
+      background: var(--info-bg); border: 1px solid rgba(29,95,189,0.2);
+      border-radius: 10px; padding: 12px 16px; font-size: 12px; color: var(--info);
+      display: flex; align-items: flex-start; gap: 8px; line-height: 1.6;
+    }
+    .home-footer-note i { font-size: 15px; flex-shrink: 0; margin-top: 1px; }
     .plantillas-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 14px; }
     .plantilla-card { background: var(--white); border: 1px solid var(--border); border-radius: 14px; overflow: hidden; cursor: pointer; transition: box-shadow 0.15s, transform 0.15s; }
     .plantilla-card:hover { box-shadow: 0 6px 24px rgba(0,0,0,0.09); transform: translateY(-2px); }
@@ -213,49 +298,125 @@
     .plantilla-upload-btn:hover { background: var(--orange); }
     .plantilla-card > div:first-child { position: relative; cursor: pointer; }
 
-    /* ── TIPIFICACIONES ── */
-    .tipi-header { margin-bottom: 18px; }
-    .tipi-header h2 { font-size: 18px; font-weight: 800; color: var(--text); }
-    .tipi-header p  { font-size: 12px; color: var(--muted); margin-top: 2px; }
+    /* ── TIPIFICACIONES (sistema acordeones + chips) ── */
+    .tipi-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 18px; flex-wrap: wrap; gap: 12px; }
+    .tipi-title-wrap h2 { font-size: 18px; font-weight: 800; color: var(--text); }
+    .tipi-title-wrap p  { font-size: 12px; color: var(--muted); margin-top: 2px; }
+
+    /* chips de filtro rápido */
+    .tipi-chips-container { display: flex; gap: 6px; overflow-x: auto; padding: 4px 0 12px; margin-bottom: 12px; scrollbar-width: thin; -webkit-overflow-scrolling: touch; }
+    .tipi-chip-btn { background: var(--white); border: 1px solid var(--border); color: var(--text); padding: 6px 12px; border-radius: 8px; font-size: 11px; font-weight: 600; cursor: pointer; white-space: nowrap; transition: all 0.15s; display: flex; align-items: center; gap: 4px; font-family: var(--font); }
+    .tipi-chip-btn:hover { border-color: var(--orange); color: var(--orange); }
+    .tipi-chip-btn.active { background: var(--orange); border-color: var(--orange); color: var(--white); }
 
     .tipi-search-bar { display: flex; align-items: center; gap: 10px; margin-bottom: 20px; flex-wrap: wrap; }
     .tipi-count { font-size: 12px; color: var(--muted); margin-left: auto; white-space: nowrap; }
 
-    .tipi-table-wrap { background: var(--white); border: 1px solid var(--border); border-radius: 12px; overflow: hidden; }
-    .tipi-table { width: 100%; border-collapse: collapse; }
+    /* acordeones por categoría */
+    .tipi-category-accordion { background: var(--white); border: 1px solid var(--border); border-radius: 12px; overflow: hidden; margin-bottom: 12px; transition: box-shadow 0.15s; }
+    .tipi-category-accordion:hover { box-shadow: 0 4px 12px rgba(0,0,0,0.04); }
+    .tipi-category-header { display: flex; align-items: center; justify-content: space-between; padding: 14px 18px; cursor: pointer; user-select: none; background: var(--white); }
+    .tipi-category-title { display: flex; align-items: center; gap: 10px; font-size: 13px; font-weight: 700; color: var(--black); text-transform: uppercase; letter-spacing: 0.03em; }
+    .tipi-category-title i { font-size: 16px; color: var(--orange); }
+    .tipi-category-counter { background: var(--surface); color: var(--muted); font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 20px; border: 1px solid var(--border); }
+    .tipi-category-chevron { font-size: 16px; color: var(--muted); transition: transform 0.2s; }
+    .tipi-category-accordion.open .tipi-category-chevron { transform: rotate(180deg); }
+    .tipi-category-accordion.open .tipi-category-content { display: block; }
+    .tipi-category-content { display: none; border-top: 1px solid #F0EEE9; background: #FAFAF9; }
+
+    /* tabla dentro de cada acordeón */
+    .tipi-table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+    .tipi-table { width: 100%; border-collapse: collapse; min-width: 900px; table-layout: fixed; }
+
+    /* anchos de columna fijos para que aplica tenga espacio cómodo */
+    .tipi-table colgroup col.col-num      { width: 36px; }
+    .tipi-table colgroup col.col-modal    { width: 165px; }
+    .tipi-table colgroup col.col-sub      { width: 165px; }
+    .tipi-table colgroup col.col-asunto   { width: 175px; }
+    .tipi-table colgroup col.col-aplica   { width: auto; }
+    .tipi-table colgroup col.col-tipo     { width: 125px; }
+    .tipi-table colgroup col.col-plazo    { width: 115px; }
+    .tipi-table colgroup col.col-acc      { width: 70px; }
+
     .tipi-table thead th {
-      background: var(--black); color: #fff;
-      font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.07em;
-      padding: 11px 14px; text-align: left;
+      background: #1C1C1A; color: #fff; font-size: 10px; font-weight: 600;
+      text-transform: uppercase; letter-spacing: 0.07em; padding: 10px 12px;
+      text-align: left; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
     }
-    .tipi-table thead th:first-child { border-radius: 0; }
-    .tipi-table tbody tr { border-bottom: 1px solid #F0EEE9; transition: background 0.1s; }
+    .tipi-table tbody tr { border-bottom: 1px solid #F0EEE9; transition: background 0.1s; background: var(--white); }
     .tipi-table tbody tr:last-child { border-bottom: none; }
     .tipi-table tbody tr:hover { background: var(--orange-light); }
-    .tipi-table tbody td { padding: 10px 14px; font-size: 12px; color: var(--text); vertical-align: middle; }
+    .tipi-table tbody td { padding: 10px 12px; font-size: 12px; color: var(--text); vertical-align: top; overflow: hidden; }
 
-    .tipi-badge {
-      display: inline-flex; align-items: center; gap: 4px;
-      border-radius: 99px; padding: 3px 10px;
-      font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em;
-      white-space: nowrap;
-    }
-    .tipi-badge.modalidad { background: var(--info-bg); color: var(--info); }
-    .tipi-badge.proceso   { background: var(--orange-light); color: var(--orange-dark); }
-    .tipi-badge.sub       { background: var(--surface); color: var(--muted); border: 1px solid var(--border); }
+    .tipi-badge { display: inline-flex; align-items: center; gap: 4px; border-radius: 99px; padding: 3px 10px; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
+    .tipi-badge.modalidad     { background: var(--info-bg); color: var(--info); }
+    .tipi-badge.proceso       { background: var(--orange-light); color: var(--orange-dark); }
+    .tipi-badge.sub           { background: var(--surface); color: var(--muted); border: 1px solid var(--border); }
     .tipi-badge.consulta      { background: #EBF2FF; color: #1D5FBD; }
     .tipi-badge.requerimiento { background: #FFF7E6; color: #B87000; }
     .tipi-badge.queja         { background: #FFF0F0; color: #E03131; }
     .tipi-badge.mixto         { background: var(--pending-bg); color: var(--pending); }
     .tipi-badge.plazo         { background: #E8FAF0; color: #1A7A45; font-size: 10px; }
 
-    .tipi-aplica { font-size: 11px; color: #555; line-height: 1.5; }
+    /* columna "En qué casos aplica" — texto cómodo, con límite de líneas y tooltip al pasar */
+    .tipi-aplica {
+      font-size: 11px; color: #555; line-height: 1.6;
+      word-break: break-word; overflow-wrap: break-word;
+      display: -webkit-box; -webkit-line-clamp: 4; -webkit-box-orient: vertical;
+      overflow: hidden; cursor: default;
+      transition: -webkit-line-clamp 0s;
+    }
+    /* Al hacer hover en la fila, el texto se expande por completo */
+    .tipi-table tbody tr:hover .tipi-aplica {
+      -webkit-line-clamp: unset;
+      overflow: visible;
+    }
 
     .tipi-num { font-size: 10px; font-weight: 700; color: var(--muted); }
 
     .tipi-empty { padding: 48px 24px; text-align: center; color: var(--muted); }
     .tipi-empty i { font-size: 36px; display: block; margin-bottom: 10px; opacity: 0.3; }
     .tipi-empty p { font-size: 13px; }
+
+    /* ── EDICIÓN FORMADOR ── */
+    /* banner de modo edición */
+    .tipi-formador-bar { display: none; align-items: center; gap: 10px; background: #FFFBF0; border: 1.5px solid #F0C040; border-radius: 10px; padding: 10px 16px; margin-bottom: 16px; font-size: 12px; color: #7A5800; flex-wrap: wrap; }
+    .tipi-formador-bar.visible { display: flex; }
+    .tipi-formador-bar i { font-size: 15px; color: #B87000; flex-shrink: 0; }
+    .tipi-formador-bar strong { font-weight: 700; }
+    .tipi-formador-bar .fb-actions { display: flex; gap: 8px; margin-left: auto; flex-wrap: wrap; }
+    .btn-tipi-add-cat { display: flex; align-items: center; gap: 6px; background: var(--black); color: #fff; border: none; border-radius: 8px; padding: 7px 14px; font-size: 12px; font-weight: 700; font-family: var(--font); cursor: pointer; transition: background 0.15s; }
+    .btn-tipi-add-cat:hover { background: #333; }
+    .btn-tipi-add-row { display: flex; align-items: center; gap: 5px; background: var(--orange); color: #fff; border: none; border-radius: 8px; padding: 7px 14px; font-size: 12px; font-weight: 700; font-family: var(--font); cursor: pointer; transition: background 0.15s; }
+    .btn-tipi-add-row:hover { background: var(--orange-dark); }
+
+    /* header del acordeón con acciones extra para formador */
+    .tipi-cat-formador-actions { display: none; align-items: center; gap: 6px; }
+    .is-formador .tipi-cat-formador-actions { display: flex; }
+    .btn-tipi-cat-edit { background: var(--warning-bg); color: var(--warning); border: none; border-radius: 6px; width: 26px; height: 26px; display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 13px; transition: background 0.12s; }
+    .btn-tipi-cat-edit:hover { background: #FFECB3; }
+    .btn-tipi-cat-del  { background: var(--danger-bg); color: var(--danger); border: none; border-radius: 6px; width: 26px; height: 26px; display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 13px; transition: background 0.12s; }
+    .btn-tipi-cat-del:hover { background: #FFCDD2; }
+
+    /* acciones por fila: editar / borrar */
+    .tipi-row-actions { display: none; gap: 4px; }
+    .is-formador .tipi-row-actions { display: flex; }
+    .btn-tr-edit { background: var(--orange-light); color: var(--orange-dark); border: none; border-radius: 6px; width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 12px; transition: background 0.12s; }
+    .btn-tr-edit:hover { background: var(--orange-mid); }
+    .btn-tr-del  { background: var(--danger-bg); color: var(--danger); border: none; border-radius: 6px; width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 12px; transition: background 0.12s; }
+    .btn-tr-del:hover  { background: #FFCDD2; }
+
+    /* modal tipi (añadir / editar tipificación) */
+    .modal-tipi { max-width: 600px; }
+    .tipi-tipo-selector { display: flex; gap: 8px; flex-wrap: wrap; }
+    .tipi-tipo-btn { flex: 1; min-width: 80px; padding: 8px 10px; border-radius: 8px; border: 1.5px solid var(--border); background: var(--white); font-family: var(--font); font-size: 12px; font-weight: 600; cursor: pointer; transition: all 0.15s; color: var(--muted); text-align: center; }
+    .tipi-tipo-btn:hover { border-color: var(--muted); color: var(--text); }
+    .tipi-tipo-btn.sel-consulta      { border-color: #1D5FBD; background: #EBF2FF; color: #1D5FBD; }
+    .tipi-tipo-btn.sel-requerimiento { border-color: #B87000; background: #FFF7E6; color: #B87000; }
+    .tipi-tipo-btn.sel-queja         { border-color: #E03131; background: #FFF0F0; color: #E03131; }
+
+    /* modal añadir categoría */
+    .modal-cat { max-width: 420px; }
 
     #mp-img-wrap { cursor: zoom-in; overflow: hidden; border-radius: 10px; border: 1px solid var(--border); background: #111; max-height: 240px; display: flex; align-items: center; justify-content: center; margin-bottom: 14px; }
     #mp-img { width: 100%; max-height: 240px; object-fit: contain; display: block; user-select: none; }
@@ -312,9 +473,11 @@
         <div class="nav-label">Recursos</div>
         <div class="nav-item" data-view="plantillas"><i class="ti ti-file-text"></i>Plantillas<span class="nav-badge">11</span></div>
         <div class="nav-item" data-view="tipificaciones"><i class="ti ti-tags"></i>Tipificaciones</div>
-        <div class="nav-item" data-view="pendientes"><i class="ti ti-alert-circle"></i>Casos pendientes<span class="nav-badge danger" id="badge-pendientes">0</span></div>
         <div class="nav-item" data-view="preguntas"><i class="ti ti-award"></i>Preguntas frecuentes</div>
-        <div class="nav-item" data-view="bo-llamadas"><i class="ti ti-phone-call"></i>BO Llamadas</div>
+        <div class="nav-label">Recursos</div>
+        <div class="nav-item" data-view="bo-llamadas"><i class="ti ti-phone-call"></i>Registro de llamadas(BackOffice)</div>
+        <div class="nav-label">Seguimiento</div>
+        <div class="nav-item" data-view="pendientes"><i class="ti ti-alert-circle"></i>Casos pendientes fuera de plazo<span class="nav-badge danger" id="badge-pendientes">0</span></div>
       </div>
       <div>
         <div class="nav-label">Cuenta</div>
@@ -326,36 +489,131 @@
 
       <!-- INICIO -->
       <div class="view active" id="view-inicio">
-        <div class="hero">
-          <h1>¡Bienvenido/a al Portal SAES! 👋</h1>
-          <p>Portal de atención al alumno — Canal WhatsApp · Instituto SISE</p>
+
+        <!-- HERO BANNER -->
+        <div class="home-hero">
+          <div class="home-hero-left">
+            <div class="home-hero-tag"><span class="dot" style="background:#3DBD72"></span>Portal activo</div>
+            <h1 class="home-hero-title">Portal SAES <span style="color:var(--orange)">·</span> Canal WhatsApp</h1>
+            <p class="home-hero-sub">Plataforma interna para asesores y supervisores del Contact Center del <strong>Instituto SISE</strong>. Gestiona casos, registra llamadas y centraliza el seguimiento de alumnos en un solo lugar.</p>
+            <div class="home-hero-chips">
+              <span class="home-chip orange"><i class="ti ti-phone-call"></i>BO Llamadas</span>
+              <span class="home-chip purple"><i class="ti ti-alert-circle"></i>Casos pendientes</span>
+              <span class="home-chip green"><i class="ti ti-file-text"></i>Plantillas</span>
+            </div>
+          </div>
+          <div class="home-hero-right">
+            <div class="home-hero-icon-wrap">
+              <i class="ti ti-headset"></i>
+            </div>
+          </div>
         </div>
+
+        <!-- CARDS INFO -->
+        <div class="home-cards-grid">
+          <div class="home-info-card" onclick="document.querySelector('[data-view=bo-llamadas]').click()">
+            <div class="home-card-icon" style="background:#FFF0E8;color:var(--orange-dark)"><i class="ti ti-phone-call"></i></div>
+            <div class="home-card-body">
+              <div class="home-card-title">Registro de Llamadas BO</div>
+              <div class="home-card-desc">Deriva casos desde WhatsApp al equipo BackOffice. Las asesoras BO gestionan el estado: pendiente, no contesta o atendida.</div>
+            </div>
+            <i class="ti ti-arrow-right home-card-arrow"></i>
+          </div>
+          <div class="home-info-card" onclick="document.querySelector('[data-view=pendientes]').click()">
+            <div class="home-card-icon" style="background:#FFF0F0;color:var(--danger)"><i class="ti ti-alert-circle"></i></div>
+            <div class="home-card-body">
+              <div class="home-card-title">Casos Pendientes Fuera de Plazo</div>
+              <div class="home-card-desc">Registra casos que superaron el plazo de atención. Vista de calendario día a día para supervisores del Contact Center.</div>
+            </div>
+            <i class="ti ti-arrow-right home-card-arrow"></i>
+          </div>
+          <div class="home-info-card" onclick="document.querySelector('[data-view=plantillas]').click()">
+            <div class="home-card-icon" style="background:#EBF2FF;color:var(--info)"><i class="ti ti-file-text"></i></div>
+            <div class="home-card-body">
+              <div class="home-card-title">Plantillas de Derivación</div>
+              <div class="home-card-desc">10 plantillas listas para copiar y pegar en WhatsApp. Solicita la información correcta al alumno según el tipo de caso.</div>
+            </div>
+            <i class="ti ti-arrow-right home-card-arrow"></i>
+          </div>
+          <div class="home-info-card" onclick="document.querySelector('[data-view=preguntas]').click()">
+            <div class="home-card-icon" style="background:#E8FAF0;color:var(--success)"><i class="ti ti-award"></i></div>
+            <div class="home-card-body">
+              <div class="home-card-title">Preguntas Frecuentes</div>
+              <div class="home-card-desc">Guía de respuestas rápidas para las consultas más comunes de los alumnos en el canal WhatsApp.</div>
+            </div>
+            <i class="ti ti-arrow-right home-card-arrow"></i>
+          </div>
+        </div>
+
+        <!-- ROLES BANNER -->
+        <div class="home-roles-banner">
+          <div class="home-roles-title"><i class="ti ti-users-group"></i> ¿Quién puede hacer qué?</div>
+          <div class="home-roles-grid">
+            <div class="home-role-card">
+              <div class="home-role-badge" style="background:#FFF0E8;color:var(--orange-dark)"><i class="ti ti-brand-whatsapp"></i>Asesor WSP</div>
+              <ul class="home-role-list">
+                <li><i class="ti ti-check"></i>Registrar casos para BO Llamadas</li>
+                <li><i class="ti ti-check"></i>Usar y copiar plantillas</li>
+                <li><i class="ti ti-check"></i>Consultar casos pendientes</li>
+                <li><i class="ti ti-x" style="color:var(--danger)"></i>No puede gestionar estados BO</li>
+                <li><i class="ti ti-x" style="color:var(--danger)"></i>No puede borrar casos pendientes</li>
+
+              </ul>
+            </div>
+            <div class="home-role-card">
+              <div class="home-role-badge" style="background:#F5F0FF;color:var(--pending)"><i class="ti ti-headset"></i>Rol BO</div>
+              <ul class="home-role-list">
+                <li><i class="ti ti-check"></i>Cambiar estado de llamadas</li>
+                <li><i class="ti ti-check"></i>Comentar gestión de casos</li>
+                <li><i class="ti ti-check"></i>Eliminar casos de llamadas</li>
+                <li><i class="ti ti-check"></i>Puede eliminar casos pendientes</li>
+              </ul>
+            </div>
+            <div class="home-role-card">
+              <div class="home-role-badge" style="background:#FFF0F0;color:var(--danger)"><i class="ti ti-shield-check"></i>Supervisor</div>
+              <ul class="home-role-list">
+                <li><i class="ti ti-check"></i>Eliminar casos pendientes</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+
+        <!-- FOOTER NOTE -->
+        <div class="home-footer-note">
+          <i class="ti ti-info-circle"></i>
+          Para obtener acceso o reportar inconvenientes, contacta al formador <strong>Gerardo Chacón</strong> o al asesor <strong>Jhon Ruiz</strong> a través de <strong>Microsoft Teams</strong>.
+        </div>
+
       </div>
 
       <!-- BO LLAMADAS -->
       <div class="view" id="view-bo-llamadas">
         <div class="bo-header">
           <div class="bo-title-wrap">
-            <h2>BO Llamadas</h2>
-            <p>Los asesores registran casos · Las asesoras BO gestionan y actualizan el estado</p>
+            <h2>Registro de Llamadas — BackOffice</h2>
+            <p>Prioridad: más antiguos primero · Solo rol BO puede gestionar estados y comentar</p>
           </div>
-          <button class="btn-nuevo" id="btn-nuevo-registro"><i class="ti ti-plus"></i>Registrar caso</button>
+          <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+            <button class="btn-export excel" id="btn-bo-export-excel"><i class="ti ti-table-export"></i>Excel</button>
+            <button class="btn-export pdf"   id="btn-bo-export-pdf"><i class="ti ti-file-type-pdf"></i>PDF</button>
+            <button class="btn-nuevo" id="btn-nuevo-registro"><i class="ti ti-plus"></i>Registrar caso</button>
+          </div>
         </div>
-        <div class="filters-bar">
-          <div class="filter-search">
+        <div class="pend-filters" style="margin-bottom:14px">
+          <button class="month-nav" id="bo-prev"><i class="ti ti-chevron-left"></i></button>
+          <span class="month-label" id="bo-day-label">Hoy</span>
+          <button class="month-nav" id="bo-next"><i class="ti ti-chevron-right"></i></button>
+          <button class="month-nav" id="bo-today" style="width:auto;padding:0 10px;font-size:11px;font-weight:700;color:var(--orange);border-color:var(--orange)">Hoy</button>
+          <div style="flex:1"></div>
+          <div class="filter-search" style="max-width:260px">
             <i class="ti ti-search"></i>
-            <input type="text" id="search-bo" placeholder="Buscar por alumno, código, celular o asesor…"/>
+            <input type="text" id="search-bo" placeholder="Buscar alumno, código, celular…"/>
           </div>
           <select class="filter-select" id="filter-estado">
             <option value="">Todos los estados</option>
-            <option value="pendiente">Pendiente de llamar</option>
+            <option value="pendiente">Pendiente</option>
             <option value="no_contesta">No contesta</option>
-            <option value="atendida">Llamada atendida</option>
-          </select>
-          <select class="filter-select" id="filter-fecha">
-            <option value="">Todas las fechas</option>
-            <option value="hoy">Hoy</option>
-            <option value="semana">Esta semana</option>
+            <option value="atendida">Atendida</option>
           </select>
         </div>
         <div id="cards-container"><div class="loading-state">Cargando casos...</div></div>
@@ -376,8 +634,9 @@
         </div>
         <div class="pend-filters">
           <button class="month-nav" id="pend-prev"><i class="ti ti-chevron-left"></i></button>
-          <span class="month-label" id="pend-month-label">Junio 2026</span>
+          <span class="month-label" id="pend-month-label">Hoy</span>
           <button class="month-nav" id="pend-next"><i class="ti ti-chevron-right"></i></button>
+          <button class="month-nav" id="pend-today" title="Ir a hoy" style="width:auto;padding:0 10px;font-size:11px;font-weight:700;color:var(--orange);border-color:var(--orange)">Hoy</button>
           <div style="flex:1"></div>
           <div class="filter-search" style="max-width:260px">
             <i class="ti ti-search"></i>
@@ -390,33 +649,36 @@
       <!-- TIPIFICACIONES -->
       <div class="view" id="view-tipificaciones">
         <div class="tipi-header">
-          <h2>Tipificaciones</h2>
-          <p>Clasificación de motivos de contacto para una correcta gestión de casos</p>
+          <div class="tipi-title-wrap">
+            <h2>Tipificaciones</h2>
+            <p>Clasificación de motivos de contacto para una correcta gestión de casos</p>
+          </div>
         </div>
+
+        <!-- banner modo formador (visible solo si rol = Formador) -->
+        <div class="tipi-formador-bar" id="tipi-formador-bar">
+          <i class="ti ti-shield-check"></i>
+          <span><strong>Modo Formador activo</strong> — Puedes editar celdas, añadir o eliminar tipificaciones y categorías.</span>
+          <div class="fb-actions">
+            <button class="btn-tipi-add-cat" id="btn-tipi-add-cat"><i class="ti ti-folder-plus"></i>Nueva categoría</button>
+            <button class="btn-tipi-add-row" id="btn-tipi-add-row"><i class="ti ti-plus"></i>Nueva tipificación</button>
+          </div>
+        </div>
+
+        <!-- chips filtro rápido por categoría -->
+        <div class="tipi-chips-container" id="tipi-chips-bar"></div>
+
+        <!-- buscador + contador -->
         <div class="tipi-search-bar">
-          <div class="filter-search" style="max-width:380px">
+          <div class="filter-search" style="max-width:480px">
             <i class="ti ti-search"></i>
-            <input type="text" id="search-tipi" placeholder="Buscar por proceso, sub-proceso o asunto…"/>
+            <input type="text" id="search-tipi" placeholder="Buscar por proceso, sub-proceso, asunto o tipo de atención…"/>
           </div>
           <span class="tipi-count" id="tipi-count">10 tipificaciones</span>
         </div>
-        <div class="tipi-table-wrap">
-          <table class="tipi-table" id="tipi-table">
-            <thead>
-              <tr>
-                <th style="width:40px">#</th>
-                <th style="width:90px">Modalidad</th>
-                <th style="width:110px">Proceso</th>
-                <th style="width:180px">Sub-Proceso</th>
-                <th style="width:200px">Asunto</th>
-                <th>En qué casos aplica</th>
-                <th style="width:140px">Tipo de atención</th>
-                <th style="width:120px">Plazo de atención</th>
-              </tr>
-            </thead>
-            <tbody id="tipi-tbody"></tbody>
-          </table>
-        </div>
+
+        <!-- acordeones por categoría -->
+        <div id="tipi-acordeones-container"></div>
       </div>
 
       <!-- PLANTILLAS -->
@@ -543,6 +805,81 @@
   </div>
 </div>
 
+<!-- MODAL: EDITAR / CREAR TIPIFICACIÓN (solo Formador) -->
+<div class="modal-overlay" id="modal-tipi-overlay">
+  <div class="modal modal-tipi">
+    <div class="modal-header">
+      <div>
+        <div class="modal-title" id="modal-tipi-title">Nueva tipificación</div>
+        <div class="modal-subtitle">Solo visible para el rol Formador</div>
+      </div>
+      <button class="modal-close" id="modal-tipi-close"><i class="ti ti-x"></i></button>
+    </div>
+    <div class="form-grid">
+      <div class="form-group span2">
+        <label>Categoría <span class="req">*</span></label>
+        <select class="form-control" id="ft-categoria"></select>
+      </div>
+      <div class="form-group">
+        <label>Modalidad <span class="req">*</span></label>
+        <input type="text" class="form-control" id="ft-modalidad" placeholder="Ej: TODAS, PRESENCIAL…"/>
+      </div>
+      <div class="form-group">
+        <label>Sub-Proceso <span class="req">*</span></label>
+        <input type="text" class="form-control" id="ft-subproceso" placeholder="Ej: MFA, No le llegan sus accesos…"/>
+      </div>
+      <div class="form-group span2">
+        <label>Asunto <span class="req">*</span></label>
+        <input type="text" class="form-control" id="ft-asunto" placeholder="Describe el asunto específico"/>
+      </div>
+      <div class="form-group span2">
+        <label>En qué casos aplica</label>
+        <textarea class="form-control" id="ft-aplica" style="min-height:70px" placeholder="Describe cuándo aplica esta tipificación…"></textarea>
+      </div>
+      <div class="form-group span2">
+        <label>Tipo de atención</label>
+        <div class="tipi-tipo-selector" id="ft-tipo-selector">
+          <button type="button" class="tipi-tipo-btn" data-tipo="Consulta"      onclick="selTipoAtencion('Consulta')">Consulta</button>
+          <button type="button" class="tipi-tipo-btn" data-tipo="Requerimiento" onclick="selTipoAtencion('Requerimiento')">Requerimiento</button>
+          <button type="button" class="tipi-tipo-btn" data-tipo="Queja"         onclick="selTipoAtencion('Queja')">Queja</button>
+        </div>
+        <input type="hidden" id="ft-tipo" value=""/>
+      </div>
+      <div class="form-group">
+        <label>Plazo de atención</label>
+        <input type="text" class="form-control" id="ft-plazo" placeholder="Ej: 24h, Inmediato…"/>
+      </div>
+    </div>
+    <div class="form-actions">
+      <button class="btn-cancel" id="btn-tipi-cancel">Cancelar</button>
+      <button class="btn-save" id="btn-tipi-save">
+        <i class="ti ti-device-floppy"></i><span id="btn-tipi-save-text">Guardar tipificación</span>
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: NUEVA / EDITAR CATEGORÍA (solo Formador) -->
+<div class="modal-overlay" id="modal-cat-overlay">
+  <div class="modal modal-cat">
+    <div class="modal-header">
+      <div>
+        <div class="modal-title" id="modal-cat-title">Nueva categoría</div>
+        <div class="modal-subtitle">Se añadirá como acordeón en el módulo de tipificaciones</div>
+      </div>
+      <button class="modal-close" id="modal-cat-close"><i class="ti ti-x"></i></button>
+    </div>
+    <div class="form-group" style="margin-bottom:0">
+      <label>Nombre de la categoría <span class="req">*</span></label>
+      <input type="text" class="form-control" id="fc-nombre" placeholder="Ej: COBRANZAS, MATRÍCULA…" style="text-transform:uppercase"/>
+    </div>
+    <div class="form-actions">
+      <button class="btn-cancel" id="btn-cat-cancel">Cancelar</button>
+      <button class="btn-save" id="btn-cat-save"><i class="ti ti-folder-plus"></i><span id="btn-cat-save-text">Crear categoría</span></button>
+    </div>
+  </div>
+</div>
+
 <!-- ZOOM OVERLAY -->
 <div class="img-zoom-overlay" id="zoom-overlay">
   <button class="zoom-close-btn" id="zoom-close"><i class="ti ti-x"></i></button>
@@ -563,7 +900,7 @@
     from "https://www.gstatic.com/firebasejs/11.8.1/firebase-auth.js";
   import {
     getFirestore, collection, addDoc, updateDoc, deleteDoc,
-    doc, query, orderBy, serverTimestamp, onSnapshot, getDoc, setDoc
+    doc, query, orderBy, serverTimestamp, onSnapshot, getDoc, setDoc, getDocs, where
   } from "https://www.gstatic.com/firebasejs/11.8.1/firebase-firestore.js";
 
   const app  = initializeApp({
@@ -579,31 +916,72 @@
   const auth = getAuth(app);
   const db   = getFirestore(app);
 
-  let currentUser   = null;
-  let allCasos      = [];
-  let boEditId      = null;
-  let allPendientes = [];
-  let pendEditId    = null;
-  let pendViewMonth = new Date();
+  let currentUser    = null;
+  let currentUserRol = "";          // cargado de Firestore: "Supervisor", "Formador", etc.
+  let allCasos       = [];
+  let boEditId       = null;
+  let allPendientes  = [];
+  let pendEditId     = null;
+  let pendViewDay    = new Date();   // día visible en pendientes (navegación día a día)
 
   const MESES = ['Enero','Febrero','Marzo','Abril','Mayo','Junio',
                  'Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
 
-  // ── TIPIFICACIONES DATA (primeras 10) ──
-  const TIPIFICACIONES = [
-    { id: 1,  modalidad: 'TODAS', proceso: 'ACCESOS', subProceso: 'MFA', asunto: 'Restablecimiento MFA por cambio de celular',                                          aplica: 'Si es un estudiante antiguo que debemos mandar activar su código para que pague su trámite (FECHA NACIMIENTO + DIRECCIÓN + DNI) COLA DE PROCESOS', tipoAtencion: 'Requerimiento', plazo: '' },
-    { id: 2,  modalidad: 'TODAS', proceso: 'ACCESOS', subProceso: 'MFA', asunto: 'Desinstalación de app Authenticator',                                                  aplica: 'Cuando un estudiante ingresa a la cola de accesos, matrícula o reincorporaciones para consultas generales', tipoAtencion: 'Consulta', plazo: '' },
-    { id: 3,  modalidad: 'TODAS', proceso: 'ACCESOS', subProceso: 'MFA', asunto: 'Desinstalación de app Authenticator para restablecimiento de contraseña',               aplica: '', tipoAtencion: 'Consulta', plazo: '' },
-    { id: 4,  modalidad: 'TODAS', proceso: 'ACCESOS', subProceso: 'MFA', asunto: 'Proceso MFA',                                                                           aplica: 'Cuando se le brinda la información del proceso de autenticación.', tipoAtencion: 'Consulta', plazo: '' },
-    { id: 5,  modalidad: 'TODAS', proceso: 'ACCESOS', subProceso: 'No le llegan sus accesos', asunto: 'No tiene correo institucional',                                     aplica: '', tipoAtencion: 'Requerimiento', plazo: '' },
-    { id: 6,  modalidad: 'TODAS', proceso: 'ACCESOS', subProceso: 'No le llegan sus accesos', asunto: 'Venta nueva aún no tiene matrícula',                                aplica: 'Aplica para estudiantes de venta nueva (Ciclo 1, Bloque 1) que, al momento de la validación en PeopleSoft, no registran cursos matriculados para el inicio de clases.', tipoAtencion: 'Requerimiento', plazo: '' },
-    { id: 7,  modalidad: 'TODAS', proceso: 'ACCESOS', subProceso: 'No le llegan sus accesos', asunto: 'No le llegan sus accesos a su correo personal',                     aplica: 'Cuando le brindamos la información de sus accesos correctos.', tipoAtencion: 'Consulta', plazo: '' },
-    { id: 8,  modalidad: 'TODAS', proceso: 'ACCESOS', subProceso: 'No le llegan sus accesos', asunto: 'Error de correo personal',                                          aplica: 'Cuando el área de ventas crea con el DNI el ID (Código), derivar al back', tipoAtencion: 'Queja', plazo: '' },
-    { id: 9,  modalidad: 'TODAS', proceso: 'ACCESOS', subProceso: 'No le llegan sus accesos', asunto: 'Estudiante antiguo quiere saber su acceso',                         aplica: 'Cuando a pesar de tener el correo correcto y tiene matrícula indica que no llegó sus accesos. Lo cierra el CONTACT', tipoAtencion: 'Queja', plazo: '' },
-    { id: 10, modalidad: 'TODAS', proceso: 'ACCESOS', subProceso: 'No le llegan sus accesos', asunto: 'e',                                                                 aplica: 'Cuando no le figura correo institucional a pesar de que ya tiene matrícula (EVIDENCIA) - COLA DE BACK', tipoAtencion: 'Queja', plazo: '' },
+  // ── TIPIFICACIONES DATA — ahora viene de Firestore en tiempo real ──
+  let TIPIFICACIONES    = [];
+  let CATEGORIAS_EXTRA  = [];   // categorías vacías (sin tipis) en Firestore
+  let _tipiActiveCat    = null;
+  let _tipiEditId       = null;   // null = crear, string docId = editar
+  let _catEditOld       = null;   // null = crear, string = renombrar
+
+  // ── Semilla inicial si Firestore está vacío ──
+  const TIPI_SEMILLA = [
+    { categoria: 'ACCESOS', modalidad: 'TODAS', proceso: 'ACCESOS', subProceso: 'MFA',                      asunto: 'Restablecimiento MFA por cambio de celular',                                        aplica: 'Si es un estudiante antiguo que debemos mandar activar su código para que pague su trámite (FECHA NACIMIENTO + DIRECCIÓN + DNI) COLA DE PROCESOS', tipoAtencion: 'Requerimiento', plazo: '' },
+    { categoria: 'ACCESOS', modalidad: 'TODAS', proceso: 'ACCESOS', subProceso: 'MFA',                      asunto: 'Desinstalación de app Authenticator',                                                aplica: 'Cuando un estudiante ingresa a la cola de accesos, matrícula o reincorporaciones para consultas generales',                                         tipoAtencion: 'Consulta',      plazo: '' },
+    { categoria: 'ACCESOS', modalidad: 'TODAS', proceso: 'ACCESOS', subProceso: 'MFA',                      asunto: 'Desinstalación de app Authenticator para restablecimiento de contraseña',             aplica: '',                                                                                                                                               tipoAtencion: 'Consulta',      plazo: '' },
+    { categoria: 'ACCESOS', modalidad: 'TODAS', proceso: 'ACCESOS', subProceso: 'MFA',                      asunto: 'Proceso MFA',                                                                       aplica: 'Cuando se le brinda la información del proceso de autenticación.',                                                                                  tipoAtencion: 'Consulta',      plazo: '' },
+    { categoria: 'ACCESOS', modalidad: 'TODAS', proceso: 'ACCESOS', subProceso: 'No le llegan sus accesos', asunto: 'No tiene correo institucional',                                                      aplica: '',                                                                                                                                               tipoAtencion: 'Requerimiento', plazo: '' },
+    { categoria: 'ACCESOS', modalidad: 'TODAS', proceso: 'ACCESOS', subProceso: 'No le llegan sus accesos', asunto: 'Venta nueva aún no tiene matrícula',                                                  aplica: 'datos',                                                                                                                                          tipoAtencion: 'Requerimiento', plazo: '' },
+    { categoria: 'ACCESOS', modalidad: 'TODAS', proceso: 'ACCESOS', subProceso: 'No le llegan sus accesos', asunto: 'No le llegan sus accesos a su correo personal',                                       aplica: 'Cuando le brindamos la información de sus accesos correctos.',                                                                                      tipoAtencion: 'Consulta',      plazo: '' },
+    { categoria: 'ACCESOS', modalidad: 'TODAS', proceso: 'ACCESOS', subProceso: 'No le llegan sus accesos', asunto: 'Error de correo personal',                                                           aplica: 'Cuando el área de ventas crea con el DNI el ID (Código), derivar al back',                                                                          tipoAtencion: 'Queja',         plazo: '' },
+    { categoria: 'ACCESOS', modalidad: 'TODAS', proceso: 'ACCESOS', subProceso: 'No le llegan sus accesos', asunto: 'Estudiante antiguo quiere saber su acceso',                                           aplica: 'Cuando a pesar de tener el correo correcto y tiene matrícula indica que no llegó sus accesos. Lo cierra el CONTACT',                               tipoAtencion: 'Queja',         plazo: '' },
+    { categoria: 'ACCESOS', modalidad: 'TODAS', proceso: 'ACCESOS', subProceso: 'No le llegan sus accesos', asunto: 'No le figura correo institucional con matrícula',                                     aplica: 'Cuando no le figura correo institucional a pesar de que ya tiene matrícula (EVIDENCIA) - COLA DE BACK',                                            tipoAtencion: 'Queja',         plazo: '' },
   ];
 
+  // ── Iniciar listeners Firestore de tipificaciones ──
+  async function iniciarListenersTipi() {
+    // — Semilla: si colección tipificaciones está vacía, poblar con datos iniciales —
+    const snap0 = await getDocs(collection(db, 'tipificaciones'));
+    if (snap0.empty) {
+      await Promise.all(TIPI_SEMILLA.map(t =>
+        addDoc(collection(db, 'tipificaciones'), { ...t, creadoEn: serverTimestamp() })
+      ));
+    }
+
+    // — Listener tipificaciones en tiempo real —
+    onSnapshot(
+      query(collection(db, 'tipificaciones'), orderBy('creadoEn', 'asc')),
+      snap => {
+        TIPIFICACIONES = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+        refreshTipi();
+      },
+      err => console.error('onSnapshot tipificaciones:', err)
+    );
+
+    // — Listener categorías en tiempo real —
+    onSnapshot(
+      collection(db, 'categorias'),
+      snap => {
+        CATEGORIAS_EXTRA = snap.docs.map(d => d.data().nombre);
+        refreshTipi();
+      },
+      err => console.error('onSnapshot categorias:', err)
+    );
+  }
+
   function escH(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+  function isFormador() { return (currentUserRol || '').toLowerCase() === 'formador'; }
 
   function tipoClass(tipo) {
     if (!tipo) return 'sub';
@@ -617,45 +995,404 @@
     return 'sub';
   }
 
-  function renderTipificaciones(data) {
-    const tbody = document.getElementById('tipi-tbody');
-    const count = document.getElementById('tipi-count');
-    if (!data.length) {
-      tbody.innerHTML = `<tr><td colspan="8"><div class="tipi-empty"><i class="ti ti-tags"></i><p>No se encontraron tipificaciones.</p></div></td></tr>`;
-      count.textContent = '0 tipificaciones';
-      return;
+  function getCategoriasUnicas() {
+    const fromData = [...new Set(TIPIFICACIONES.map(t => t.categoria))];
+    const all = [...new Set([...fromData, ...CATEGORIAS_EXTRA])];
+    return all.sort();
+  }
+
+  // ── Activar panel formador ──
+  function setupTipiFormador() {
+    const bar = document.getElementById('tipi-formador-bar');
+    if (isFormador()) {
+      bar.classList.add('visible');
+      document.getElementById('tipi-acordeones-container').classList.add('is-formador');
     }
-    count.textContent = data.length + ' tipificación' + (data.length !== 1 ? 'es' : '');
-    tbody.innerHTML = data.map(t => `
-      <tr>
-        <td class="tipi-num">${t.id}</td>
-        <td><span class="tipi-badge modalidad">${escH(t.modalidad)}</span></td>
-        <td><span class="tipi-badge proceso">${escH(t.proceso)}</span></td>
-        <td><span class="tipi-badge sub">${escH(t.subProceso)}</span></td>
-        <td style="font-weight:500;font-size:12px">${escH(t.asunto)}</td>
-        <td class="tipi-aplica">${t.aplica ? escH(t.aplica) : '<span style="color:#ccc">—</span>'}</td>
-        <td>${t.tipoAtencion ? `<span class="tipi-badge ${tipoClass(t.tipoAtencion)}">${escH(t.tipoAtencion)}</span>` : '<span style="color:#ccc;font-size:11px">—</span>'}</td>
-        <td>${t.plazo ? `<span class="tipi-badge plazo"><i class="ti ti-clock" style="font-size:10px"></i> ${escH(t.plazo)}</span>` : '<span style="color:#ccc;font-size:11px">—</span>'}</td>
-      </tr>`).join('');
+
+    // Botón nueva categoría
+    document.getElementById('btn-tipi-add-cat').addEventListener('click', () => abrirModalCat(null));
+    // Botón nueva tipificación
+    document.getElementById('btn-tipi-add-row').addEventListener('click', () => abrirModalTipi(null));
+
+    // Modal tipi: guardar
+    document.getElementById('btn-tipi-save').addEventListener('click', guardarTipi);
+    document.getElementById('btn-tipi-cancel').addEventListener('click',  () => cerrarModalTipi());
+    document.getElementById('modal-tipi-close').addEventListener('click', () => cerrarModalTipi());
+    document.getElementById('modal-tipi-overlay').addEventListener('click', e => { if (e.target === document.getElementById('modal-tipi-overlay')) cerrarModalTipi(); });
+
+    // Modal categoría: guardar
+    document.getElementById('btn-cat-save').addEventListener('click', guardarCategoria);
+    document.getElementById('btn-cat-cancel').addEventListener('click',  () => cerrarModalCat());
+    document.getElementById('modal-cat-close').addEventListener('click', () => cerrarModalCat());
+    document.getElementById('modal-cat-overlay').addEventListener('click', e => { if (e.target === document.getElementById('modal-cat-overlay')) cerrarModalCat(); });
   }
 
-  function applyTipiFilter() {
-    const q = document.getElementById('search-tipi').value.toLowerCase().trim();
-    const filtered = q
-      ? TIPIFICACIONES.filter(t =>
-          t.proceso.toLowerCase().includes(q) ||
-          t.subProceso.toLowerCase().includes(q) ||
-          t.asunto.toLowerCase().includes(q) ||
-          t.modalidad.toLowerCase().includes(q) ||
-          (t.aplica||'').toLowerCase().includes(q) ||
+  // ── Modal tipi ──
+  function abrirModalTipi(tipi) {
+    _tipiEditId = tipi ? tipi.id : null;
+    document.getElementById('modal-tipi-title').textContent    = tipi ? 'Editar tipificación' : 'Nueva tipificación';
+    document.getElementById('btn-tipi-save-text').textContent  = tipi ? 'Guardar cambios' : 'Guardar tipificación';
+    // Populate categoria select
+    const sel = document.getElementById('ft-categoria');
+    sel.innerHTML = getCategoriasUnicas().map(c => `<option value="${escH(c)}"${tipi && tipi.categoria===c?' selected':''}>${c}</option>`).join('');
+    // Fill fields
+    document.getElementById('ft-modalidad').value  = tipi ? (tipi.modalidad  || '') : '';
+    document.getElementById('ft-subproceso').value = tipi ? (tipi.subProceso || '') : '';
+    document.getElementById('ft-asunto').value     = tipi ? (tipi.asunto     || '') : '';
+    document.getElementById('ft-aplica').value     = tipi ? (tipi.aplica     || '') : '';
+    document.getElementById('ft-plazo').value      = tipi ? (tipi.plazo      || '') : '';
+    document.getElementById('ft-tipo').value       = tipi ? (tipi.tipoAtencion || '') : '';
+    // Highlight tipo button
+    document.querySelectorAll('.tipi-tipo-btn').forEach(b => {
+      b.className = 'tipi-tipo-btn';
+      if (tipi && tipi.tipoAtencion && b.dataset.tipo === tipi.tipoAtencion) {
+        b.classList.add('sel-' + tipi.tipoAtencion.toLowerCase());
+      }
+    });
+    document.getElementById('modal-tipi-overlay').classList.add('open');
+  }
+
+  function cerrarModalTipi() {
+    document.getElementById('modal-tipi-overlay').classList.remove('open');
+    _tipiEditId = null;
+  }
+
+  window.selTipoAtencion = function(tipo) {
+    document.getElementById('ft-tipo').value = tipo;
+    document.querySelectorAll('.tipi-tipo-btn').forEach(b => {
+      b.className = 'tipi-tipo-btn';
+      if (b.dataset.tipo === tipo) b.classList.add('sel-' + tipo.toLowerCase());
+    });
+  };
+
+  async function guardarTipi() {
+    const cat    = document.getElementById('ft-categoria').value.trim();
+    const mod    = document.getElementById('ft-modalidad').value.trim();
+    const sub    = document.getElementById('ft-subproceso').value.trim();
+    const asunto = document.getElementById('ft-asunto').value.trim();
+    if (!cat || !mod || !sub || !asunto) { showToast('Completa los campos obligatorios (*)', 'error'); return; }
+    const btn = document.getElementById('btn-tipi-save');
+    btn.disabled = true;
+    const payload = {
+      categoria:    cat,
+      modalidad:    mod,
+      proceso:      cat,
+      subProceso:   sub,
+      asunto:       asunto,
+      aplica:       document.getElementById('ft-aplica').value.trim(),
+      tipoAtencion: document.getElementById('ft-tipo').value,
+      plazo:        document.getElementById('ft-plazo').value.trim(),
+    };
+    try {
+      if (_tipiEditId !== null) {
+        await updateDoc(doc(db, 'tipificaciones', _tipiEditId), payload);
+        showToast('Tipificación actualizada');
+      } else {
+        await addDoc(collection(db, 'tipificaciones'), { ...payload, creadoEn: serverTimestamp() });
+        showToast('Tipificación añadida');
+      }
+      cerrarModalTipi();
+    } catch (e) {
+      console.error(e);
+      showToast('Error al guardar: ' + e.message, 'error');
+    } finally {
+      btn.disabled = false;
+    }
+  }
+
+  // ── Modal categoría ──
+  function abrirModalCat(oldName) {
+    _catEditOld = oldName;
+    document.getElementById('modal-cat-title').textContent     = oldName ? 'Renombrar categoría' : 'Nueva categoría';
+    document.getElementById('btn-cat-save-text').textContent   = oldName ? 'Renombrar' : 'Crear categoría';
+    document.getElementById('fc-nombre').value                 = oldName || '';
+    document.getElementById('modal-cat-overlay').classList.add('open');
+  }
+
+  function cerrarModalCat() {
+    document.getElementById('modal-cat-overlay').classList.remove('open');
+    _catEditOld = null;
+  }
+
+  async function guardarCategoria() {
+    const nombre = document.getElementById('fc-nombre').value.trim().toUpperCase();
+    if (!nombre) { showToast('Escribe un nombre para la categoría', 'error'); return; }
+    const btn = document.getElementById('btn-cat-save');
+    btn.disabled = true;
+    try {
+      if (_catEditOld) {
+        // Renombrar: actualizar todas las tipis que pertenecen a esa categoría
+        const batch = TIPIFICACIONES
+          .filter(t => t.categoria === _catEditOld)
+          .map(t => updateDoc(doc(db, 'tipificaciones', t.id), { categoria: nombre, proceso: nombre }));
+        // Renombrar doc de categoria_extra si existe
+        const catSnap = await getDocs(query(collection(db, 'categorias'), where('nombre', '==', _catEditOld)));
+        catSnap.docs.forEach(d => batch.push(updateDoc(doc(db, 'categorias', d.id), { nombre })));
+        await Promise.all(batch);
+        showToast(`Categoría renombrada a "${nombre}"`);
+      } else {
+        if (getCategoriasUnicas().includes(nombre)) { showToast('Esa categoría ya existe', 'error'); btn.disabled = false; return; }
+        await addDoc(collection(db, 'categorias'), { nombre, creadoEn: serverTimestamp() });
+        showToast(`Categoría "${nombre}" creada`);
+      }
+      cerrarModalCat();
+    } catch (e) {
+      console.error(e);
+      showToast('Error al guardar categoría: ' + e.message, 'error');
+    } finally {
+      btn.disabled = false;
+    }
+  }
+
+  // ── Eliminar categoría (con todas sus tipis) ──
+  window.eliminarCategoria = async function(cat) {
+    const n = TIPIFICACIONES.filter(t => t.categoria === cat).length;
+    const msg = n > 0
+      ? `¿Eliminar la categoría "${cat}" y sus ${n} tipificación${n!==1?'es':''}? Esta acción no se puede deshacer.`
+      : `¿Eliminar la categoría vacía "${cat}"?`;
+    if (!confirm(msg)) return;
+    try {
+      const batch = TIPIFICACIONES
+        .filter(t => t.categoria === cat)
+        .map(t => deleteDoc(doc(db, 'tipificaciones', t.id)));
+      const catSnap = await getDocs(query(collection(db, 'categorias'), where('nombre', '==', cat)));
+      catSnap.docs.forEach(d => batch.push(deleteDoc(doc(db, 'categorias', d.id))));
+      await Promise.all(batch);
+      showToast(`Categoría "${cat}" eliminada`, 'error');
+    } catch(e) {
+      console.error(e);
+      showToast('Error al eliminar categoría: ' + e.message, 'error');
+    }
+  };
+
+  window.editarTipi = function(id) {
+    const t = TIPIFICACIONES.find(x => x.id === id);
+    if (t) abrirModalTipi(t);
+  };
+
+  window.eliminarTipi = async function(id) {
+    const t = TIPIFICACIONES.find(x => x.id === id);
+    if (!t) return;
+    if (!confirm(`¿Eliminar la tipificación "${t.asunto}"?`)) return;
+    try {
+      await deleteDoc(doc(db, 'tipificaciones', id));
+      showToast('Tipificación eliminada', 'error');
+    } catch(e) {
+      console.error(e);
+      showToast('Error al eliminar: ' + e.message, 'error');
+    }
+  };
+
+  // ── Edición inline de celda ──
+  window.editarCelda = function(id, campo, el) {
+    if (!isFormador()) return;
+    const t = TIPIFICACIONES.find(x => x.id === id);
+    if (!t) return;
+    const oldVal = el.textContent;
+    el.contentEditable = 'true';
+    el.style.outline = '2px solid var(--orange)';
+    el.style.borderRadius = '4px';
+    el.focus();
+    const range = document.createRange(); range.selectNodeContents(el);
+    window.getSelection().removeAllRanges(); window.getSelection().addRange(range);
+
+    async function guardar() {
+      el.contentEditable = 'false';
+      el.style.outline = '';
+      el.style.borderRadius = '';
+      const newVal = el.textContent.trim();
+      if (newVal !== oldVal) {
+        try {
+          await updateDoc(doc(db, 'tipificaciones', id), { [campo]: newVal });
+          showToast('Celda actualizada ✓');
+        } catch(e) {
+          el.textContent = oldVal;
+          showToast('Error al guardar celda: ' + e.message, 'error');
+        }
+      }
+    }
+    el.addEventListener('blur',    guardar, { once: true });
+    el.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); el.blur(); } if (e.key === 'Escape') { el.textContent = oldVal; el.blur(); } });
+  };
+
+  // ── Render chips ──
+  function renderTipiChips(activeCat) {
+    const bar = document.getElementById('tipi-chips-bar');
+    const cats = getCategoriasUnicas();
+    const total = TIPIFICACIONES.length;
+    bar.innerHTML =
+      `<button class="tipi-chip-btn${!activeCat ? ' active' : ''}" id="tipi-chip-ALL" onclick="filtrarTipiPorChip(null)">
+        <i class="ti ti-layout-grid"></i><span>TODAS (${total})</span>
+      </button>` +
+      cats.map(cat => {
+        const n = TIPIFICACIONES.filter(t => t.categoria === cat).length;
+        const safeId = cat.replace(/\s/g, '-');
+        return `<button class="tipi-chip-btn${activeCat === cat ? ' active' : ''}" id="tipi-chip-${safeId}" onclick="filtrarTipiPorChip('${cat}')">
+          <span>${cat}</span><span style="opacity:.6;font-size:10px">(${n})</span>
+        </button>`;
+      }).join('');
+  }
+
+  // ── Render acordeones ──
+  function renderTipiAcordeones(activeCat, query) {
+    const container = document.getElementById('tipi-acordeones-container');
+    const countEl   = document.getElementById('tipi-count');
+    const cats = activeCat ? [activeCat] : getCategoriasUnicas();
+    const q = (query || '').toLowerCase().trim();
+    const formador = isFormador();
+
+    container.innerHTML = '';
+    let totalVisible = 0;
+
+    cats.forEach(cat => {
+      let items = TIPIFICACIONES.filter(t => t.categoria === cat);
+      if (q) {
+        items = items.filter(t =>
+          (t.modalidad||'').toLowerCase().includes(q)    ||
+          (t.proceso||'').toLowerCase().includes(q)      ||
+          (t.subProceso||'').toLowerCase().includes(q)   ||
+          (t.asunto||'').toLowerCase().includes(q)       ||
+          (t.aplica||'').toLowerCase().includes(q)       ||
           (t.tipoAtencion||'').toLowerCase().includes(q) ||
-          (t.plazo||'').toLowerCase().includes(q))
-      : TIPIFICACIONES;
-    renderTipificaciones(filtered);
+          (t.plazo||'').toLowerCase().includes(q)
+        );
+      }
+      // Si no hay items Y no es formador Y hay búsqueda → ocultar
+      if (!items.length && (!formador || q)) return;
+      totalVisible += items.length;
+
+      const catId  = cat.replace(/\s/g, '-');
+      const isOpen = !!(q || activeCat === cat);
+
+      // Acciones de categoría (solo formador)
+      const catActionsHtml = formador ? `
+        <div class="tipi-cat-formador-actions" onclick="event.stopPropagation()">
+          <button class="btn-tipi-cat-edit" title="Renombrar categoría" onclick="abrirModalCatGlobal('${cat}')"><i class="ti ti-pencil"></i></button>
+          <button class="btn-tipi-cat-del"  title="Eliminar categoría"  onclick="eliminarCategoria('${cat}')"><i class="ti ti-trash"></i></button>
+        </div>` : '';
+
+      // Columna acciones en thead (solo formador)
+      const thAcciones = formador ? `<th style="width:70px">Acciones</th>` : '';
+
+      const rowsHtml = items.map((t, idx) => {
+        const tdAcciones = formador ? `
+          <td>
+            <div class="tipi-row-actions" style="display:flex">
+              <button class="btn-tr-edit" title="Editar" onclick="editarTipi('${t.id}')"><i class="ti ti-pencil"></i></button>
+              <button class="btn-tr-del"  title="Eliminar" onclick="eliminarTipi('${t.id}')"><i class="ti ti-trash"></i></button>
+            </div>
+          </td>` : '';
+
+        // Celdas editables inline solo si formador
+        const editAttr = (campo) => formador
+          ? `onclick="editarCelda('${t.id}','${campo}',this)" title="Clic para editar" style="cursor:text"`
+          : '';
+
+        return `<tr>
+          <td class="tipi-num">${idx + 1}</td>
+          <td><span class="tipi-badge modalidad" ${editAttr('modalidad')}>${escH(t.modalidad)}</span></td>
+          <td><span class="tipi-badge sub" ${editAttr('subProceso')}>${escH(t.subProceso)}</span></td>
+          <td style="font-weight:600;font-size:12px;word-break:break-word" ${editAttr('asunto')}>${escH(t.asunto)}</td>
+          <td class="tipi-aplica" ${editAttr('aplica')} title="${escH(t.aplica)}">${t.aplica ? escH(t.aplica) : '<span style="color:#ccc">—</span>'}</td>
+          <td>${t.tipoAtencion
+            ? `<span class="tipi-badge ${tipoClass(t.tipoAtencion)}" ${editAttr('tipoAtencion')}>${escH(t.tipoAtencion)}</span>`
+            : `<span style="color:#ccc;font-size:11px" ${editAttr('tipoAtencion')}>—</span>`}</td>
+          <td>${t.plazo
+            ? `<span class="tipi-badge plazo" ${editAttr('plazo')}><i class="ti ti-clock" style="font-size:10px"></i> ${escH(t.plazo)}</span>`
+            : `<span style="color:#ccc;font-size:11px" ${editAttr('plazo')}>—</span>`}</td>
+          ${tdAcciones}
+        </tr>`;
+      }).join('');
+
+      const emptyRow = formador && !items.length
+        ? `<tr><td colspan="${formador ? 8 : 7}" style="padding:20px;text-align:center;color:var(--muted);font-size:12px">
+            <i class="ti ti-plus-circle" style="margin-right:5px"></i>Categoría vacía — usa "Nueva tipificación" para añadir.
+           </td></tr>` : '';
+
+      container.innerHTML += `
+        <div class="tipi-category-accordion${isOpen ? ' open' : ''}" id="tipi-acc-${catId}">
+          <div class="tipi-category-header" onclick="toggleTipiAcc('${catId}')">
+            <div class="tipi-category-title">
+              <i class="ti ti-folder"></i>
+              <span>${cat}</span>
+              <span class="tipi-category-counter">${items.length} ítems</span>
+            </div>
+            <div style="display:flex;align-items:center;gap:8px">
+              ${catActionsHtml}
+              <i class="ti ti-chevron-down tipi-category-chevron"></i>
+            </div>
+          </div>
+          <div class="tipi-category-content">
+            <div class="tipi-table-wrap">
+              <table class="tipi-table">
+                <colgroup>
+                  <col class="col-num"/>
+                  <col class="col-modal"/>
+                  <col class="col-sub"/>
+                  <col class="col-asunto"/>
+                  <col class="col-aplica"/>
+                  <col class="col-tipo"/>
+                  <col class="col-plazo"/>
+                  ${formador ? '<col class="col-acc"/>' : ''}
+                </colgroup>
+                <thead>
+                  <tr>
+                    <th>#</th>
+                    <th>Modalidad</th>
+                    <th>Sub-Proceso</th>
+                    <th>Asunto</th>
+                    <th>En qué casos aplica</th>
+                    <th>Tipo de atención</th>
+                    <th>Plazo</th>
+                    ${thAcciones}
+                  </tr>
+                </thead>
+                <tbody>${rowsHtml}${emptyRow}</tbody>
+              </table>
+            </div>
+          </div>
+        </div>`;
+
+      if (activeCat === cat && !q) {
+        setTimeout(() => {
+          const el = document.getElementById(`tipi-acc-${catId}`);
+          if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }, 50);
+      }
+    });
+
+    if (!totalVisible && !formador) {
+      container.innerHTML = `<div class="tipi-empty"><i class="ti ti-tags"></i><p>No se encontraron tipificaciones para esta búsqueda.</p></div>`;
+    }
+    countEl.textContent = `${totalVisible} tipificación${totalVisible !== 1 ? 'es' : ''}`;
   }
 
-  document.getElementById('search-tipi').addEventListener('input', applyTipiFilter);
-  renderTipificaciones(TIPIFICACIONES);
+  window.toggleTipiAcc = function(catId) {
+    const el = document.getElementById(`tipi-acc-${catId}`);
+    if (el) el.classList.toggle('open');
+  };
+
+  window.filtrarTipiPorChip = function(cat) {
+    _tipiActiveCat = cat;
+    renderTipiChips(cat);
+    renderTipiAcordeones(cat, document.getElementById('search-tipi').value);
+  };
+
+  // Exponer función para abrir modal cat desde el botón inline del acordeón
+  window.abrirModalCatGlobal = function(oldName) { abrirModalCat(oldName); };
+
+  function refreshTipi() {
+    renderTipiChips(_tipiActiveCat);
+    renderTipiAcordeones(_tipiActiveCat, document.getElementById('search-tipi').value);
+  }
+
+  // Inicializar módulo tipificaciones con Firestore en tiempo real
+  iniciarListenersTipi();
+  document.getElementById('search-tipi').addEventListener('input', function() {
+    renderTipiAcordeones(_tipiActiveCat, this.value);
+  });
+  // Listeners de los modales (siempre, aunque los botones solo aparezcan para Formador)
+  setupTipiFormador();
 
   // ── TOAST ──
   function showToast(msg, type = 'success') {
@@ -666,11 +1403,21 @@
   }
 
   // ── AUTH ──
-  onAuthStateChanged(auth, user => {
+  onAuthStateChanged(auth, async user => {
     if (!user) { window.location.href = 'index.html'; return; }
     currentUser = user;
     document.getElementById('user-av').textContent   = user.email.substring(0, 2).toUpperCase();
     document.getElementById('user-name').textContent = user.email.split('@')[0];
+    // Cargar rol del usuario desde asesores_autorizados
+    try {
+      const snap = await getDoc(doc(db, 'asesores_autorizados', user.email.toLowerCase()));
+      if (snap.exists()) currentUserRol = snap.data().Rol || '';
+    } catch(e) { currentUserRol = ''; }
+    // Re-render tipificaciones ahora que sabemos el rol
+    refreshTipi();
+    if (isFormador()) {
+      document.getElementById('tipi-formador-bar').classList.add('visible');
+    }
     loadCasos();
     loadPendientes();
   });
@@ -746,6 +1493,7 @@
   });
 
   async function eliminarCaso(id) {
+    if (currentUserRol.toLowerCase() !== 'bo') { showToast('Solo el rol BO puede eliminar casos', 'error'); return; }
     if (!confirm('¿Eliminar este caso?')) return;
     try { await deleteDoc(doc(db, 'bo_llamadas', id)); showToast('Caso eliminado'); }
     catch (err) { showToast('Error al eliminar', 'error'); }
@@ -761,10 +1509,29 @@
     catch (err) { showToast('Error al guardar descripción', 'error'); }
   }
 
+  // ── BO día navegado ──
+  let boViewDay = new Date();
+
+  function updateBoDayLabel() {
+    const today = new Date().toISOString().split('T')[0];
+    const viewStr = boViewDay.toISOString().split('T')[0];
+    const isToday = viewStr === today;
+    const dias = ['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];
+    const d = boViewDay;
+    document.getElementById('bo-day-label').textContent =
+      (isToday ? 'Hoy · ' : '') + dias[d.getDay()] + ' ' + d.getDate() + ' ' + MESES[d.getMonth()] + ' ' + d.getFullYear();
+  }
+
+  document.getElementById('bo-prev').addEventListener('click',  () => { boViewDay.setDate(boViewDay.getDate()-1); updateBoDayLabel(); applyBoFilters(); });
+  document.getElementById('bo-next').addEventListener('click',  () => { boViewDay.setDate(boViewDay.getDate()+1); updateBoDayLabel(); applyBoFilters(); });
+  document.getElementById('bo-today').addEventListener('click', () => { boViewDay = new Date(); updateBoDayLabel(); applyBoFilters(); });
+
   function loadCasos() {
-    const q = query(collection(db, 'bo_llamadas'), orderBy('creadoEn', 'desc'));
+    // Ordenar por creadoEn ASC → más antiguos primero (mayor prioridad)
+    const q = query(collection(db, 'bo_llamadas'), orderBy('creadoEn', 'asc'));
     onSnapshot(q, snap => {
       allCasos = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+      updateBoDayLabel();
       applyBoFilters();
     }, err => {
       console.error(err);
@@ -773,23 +1540,47 @@
   }
 
   function applyBoFilters() {
-    const q     = document.getElementById('search-bo').value.toLowerCase().trim();
-    const est   = document.getElementById('filter-estado').value;
-    const fecha = document.getElementById('filter-fecha').value;
-    const today = new Date().toISOString().split('T')[0];
-    let data = allCasos;
-    if (q) data = data.filter(r => (r.nombre||'').toLowerCase().includes(q) || (r.codigo||'').toLowerCase().includes(q) || (r.celular||'').toLowerCase().includes(q) || (r.asesorWsp||'').toLowerCase().includes(q) || (r.motivo||'').toLowerCase().includes(q));
-    if (est)   data = data.filter(r => (r.estadoLlamada || 'pendiente') === est);
-    if (fecha === 'hoy')    data = data.filter(r => r.fechaRegistro === today);
-    if (fecha === 'semana') { const d = new Date(); d.setDate(d.getDate()-7); const w = d.toISOString().split('T')[0]; data = data.filter(r => r.fechaRegistro >= w); }
+    const q       = document.getElementById('search-bo').value.toLowerCase().trim();
+    const est     = document.getElementById('filter-estado').value;
+    const viewStr = boViewDay.toISOString().split('T')[0];
+
+    // Filtrar por día de registro
+    let data = allCasos.filter(r => (r.fechaRegistro || '') === viewStr);
+    if (q) data = data.filter(r =>
+      (r.nombre||'').toLowerCase().includes(q) ||
+      (r.codigo||'').toLowerCase().includes(q) ||
+      (r.celular||'').toLowerCase().includes(q) ||
+      (r.asesorWsp||'').toLowerCase().includes(q) ||
+      (r.motivo||'').toLowerCase().includes(q)
+    );
+    if (est) data = data.filter(r => (r.estadoLlamada || 'pendiente') === est);
     renderCards(data);
   }
 
   function renderCards(data) {
     const container = document.getElementById('cards-container');
-    if (!data.length) { container.innerHTML = '<div class="empty-state"><i class="ti ti-phone-off"></i><p>No hay casos.</p><p class="empty-hint">Usa "Registrar caso" para crear uno.</p></div>'; return; }
+    const isBO = currentUserRol.toLowerCase() === 'bo';
+
+    if (!data.length) {
+      container.innerHTML = '<div class="empty-state"><i class="ti ti-phone-off"></i><p>No hay casos para este día.</p><p class="empty-hint">Usa \"Registrar caso\" o navega a otro día.</p></div>';
+      return;
+    }
+
+    const estadoBtn = (r, estado, label, icon, cls) => {
+      const active = (r.estadoLlamada||'pendiente') === estado;
+      if (isBO) {
+        return `<button class="estado-btn ${active?cls:''}" onclick="window._boEstado('${r.id}','${estado}')"><i class="ti ${icon}"></i><span>${label}</span></button>`;
+      } else {
+        return `<button class="estado-btn ${active?cls:''}" disabled style="opacity:${active?'1':'0.4'};cursor:default"><i class="ti ${icon}"></i><span>${label}</span></button>`;
+      }
+    };
+
     container.innerHTML = '<div class="cards-grid">' + data.map((r,i) => {
       const est = r.estadoLlamada || 'pendiente';
+      const descArea = isBO
+        ? `<textarea class="bo-desc-textarea" id="desc-${r.id}" placeholder="Comentario de gestión BO..." onblur="window._boDesc('${r.id}')">${r.descripcionBo||''}</textarea>`
+        : `<div class="bo-desc-readonly">${r.descripcionBo || '<span style=\"color:#ccc;font-style:italic\">Sin comentario BO aún</span>'}</div>`;
+
       return `<div class="caso-card">
         <div class="card-header">
           <div class="card-header-left">
@@ -807,44 +1598,112 @@
           <div class="card-motivo">${r.motivo||'—'}</div>
         </div>
         <div class="card-bo-section">
-          <div class="bo-section-title"><i class="ti ti-headset"></i>Gestión BO — Estado de llamada</div>
+          <div class="bo-section-title"><i class="ti ti-headset"></i>Gestión BO — Estado de llamada${isBO?'':' <span style=\"font-weight:400;color:#bbb\">(solo lectura)</span>'}</div>
           <div class="estado-options">
-            <button class="estado-btn ${est==='pendiente'?'pendiente-active':''}" onclick="window._boEstado('${r.id}','pendiente')"><i class="ti ti-clock"></i><span>Pendiente</span></button>
-            <button class="estado-btn ${est==='no_contesta'?'no-contesta-active':''}" onclick="window._boEstado('${r.id}','no_contesta')"><i class="ti ti-phone-off"></i><span>No contesta</span></button>
-            <button class="estado-btn ${est==='atendida'?'atendida-active':''}" onclick="window._boEstado('${r.id}','atendida')"><i class="ti ti-phone-check"></i><span>Atendida</span></button>
+            ${estadoBtn(r,'pendiente',  'Pendiente',   'ti-clock',       'pendiente-active')}
+            ${estadoBtn(r,'no_contesta','No contesta', 'ti-phone-off',   'no-contesta-active')}
+            ${estadoBtn(r,'atendida',   'Atendida',    'ti-phone-check', 'atendida-active')}
           </div>
-          <textarea class="bo-desc-textarea" id="desc-${r.id}" placeholder="Descripción de la gestión BO..." onblur="window._boDesc('${r.id}')">${r.descripcionBo||''}</textarea>
+          ${descArea}
         </div>
         <div class="card-footer">
           <span class="card-date"><i class="ti ti-user"></i>${r.creadoPor?r.creadoPor.split('@')[0]:'—'}</span>
           <div class="row-actions">
             <button class="btn-row edit" onclick="window._boEdit('${r.id}')"><i class="ti ti-pencil"></i></button>
-            <button class="btn-row del"  onclick="window._boDel('${r.id}')"><i class="ti ti-trash"></i></button>
+            ${isBO
+              ? `<button class="btn-row del" onclick="window._boDel('${r.id}')"><i class="ti ti-trash"></i></button>`
+              : `<button class="btn-row del" disabled style="opacity:0.3;cursor:not-allowed" title="Solo rol BO puede eliminar"><i class="ti ti-trash"></i></button>`
+            }
           </div>
         </div>
       </div>`;
     }).join('') + '</div>';
   }
 
-  window._boEstado = (id, estado) => actualizarEstado(id, estado);
-  window._boDesc   = (id) => { const v = document.getElementById('desc-'+id)?.value||''; const orig = allCasos.find(c=>c.id===id)?.descripcionBo||''; if (v !== orig) actualizarDescripcion(id, v); };
-  window._boEdit   = (id) => { const r = allCasos.find(x=>x.id===id); if (r) openBoModal('editar', r); };
-  window._boDel    = (id) => eliminarCaso(id);
+  window._boEstado = (id, estado) => {
+    if (currentUserRol.toLowerCase() !== 'bo') { showToast('Solo el rol BO puede cambiar el estado', 'error'); return; }
+    actualizarEstado(id, estado);
+  };
+  window._boDesc = (id) => {
+    if (currentUserRol.toLowerCase() !== 'bo') return;
+    const v    = document.getElementById('desc-'+id)?.value||'';
+    const orig = allCasos.find(c=>c.id===id)?.descripcionBo||'';
+    if (v !== orig) actualizarDescripcion(id, v);
+  };
+  window._boEdit = (id) => { const r = allCasos.find(x=>x.id===id); if (r) openBoModal('editar', r); };
+  window._boDel  = (id) => eliminarCaso(id);
 
   document.getElementById('search-bo').addEventListener('input', applyBoFilters);
   document.getElementById('filter-estado').addEventListener('change', applyBoFilters);
-  document.getElementById('filter-fecha').addEventListener('change', applyBoFilters);
+
+  // ── BO EXPORT EXCEL ──
+  document.getElementById('btn-bo-export-excel').addEventListener('click', () => {
+    const viewStr = boViewDay.toISOString().split('T')[0];
+    const d = boViewDay;
+    let data = allCasos.filter(r => (r.fechaRegistro||'') === viewStr);
+    if (!data.length) { showToast('No hay casos para exportar', 'error'); return; }
+    const rows = data.map((r,i) => ({
+      '#': i+1,
+      'Fecha Registro': fmtDate(r.fechaRegistro||''),
+      'Alumno': r.nombre||'',
+      'Código': r.codigo||'',
+      'Celular': r.celular||'',
+      'Asesor WSP': r.asesorWsp||'',
+      'Motivo': r.motivo||'',
+      'Estado': r.estadoLlamada||'pendiente',
+      'Gestión BO': r.descripcionBo||'',
+    }));
+    const wb = XLSX.utils.book_new();
+    const ws = XLSX.utils.json_to_sheet(rows);
+    ws['!cols'] = [{wch:4},{wch:14},{wch:22},{wch:10},{wch:14},{wch:16},{wch:40},{wch:14},{wch:40}];
+    XLSX.utils.book_append_sheet(wb, ws, 'BO Llamadas');
+    XLSX.writeFile(wb, 'bo_llamadas_' + d.getDate() + '_' + MESES[d.getMonth()] + '_' + d.getFullYear() + '.xlsx');
+    showToast('Excel descargado');
+  });
+
+  // ── BO EXPORT PDF ──
+  document.getElementById('btn-bo-export-pdf').addEventListener('click', () => {
+    const { jsPDF } = window.jspdf;
+    const viewStr = boViewDay.toISOString().split('T')[0];
+    const d = boViewDay;
+    let data = allCasos.filter(r => (r.fechaRegistro||'') === viewStr);
+    if (!data.length) { showToast('No hay casos para exportar', 'error'); return; }
+    const pdf = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
+    pdf.setFillColor(13,13,13); pdf.rect(0,0,297,20,'F');
+    pdf.setTextColor(255,255,255); pdf.setFontSize(12); pdf.setFont('helvetica','bold');
+    pdf.text('SISE · Portal SAES — BO Llamadas', 14, 13);
+    pdf.setFontSize(9); pdf.setFont('helvetica','normal');
+    pdf.text(d.getDate() + ' de ' + MESES[d.getMonth()] + ' ' + d.getFullYear(), 14, 18);
+    pdf.text('Generado: ' + new Date().toLocaleDateString('es-PE'), 240, 18);
+    pdf.autoTable({
+      startY: 26,
+      head: [['#','Alumno','Código','Celular','Asesor WSP','Motivo','Estado','Gestión BO']],
+      body: data.map((r,i) => [i+1, r.nombre||'—', r.codigo||'—', r.celular||'—', r.asesorWsp||'—', r.motivo||'—', r.estadoLlamada||'pendiente', r.descripcionBo||'—']),
+      styles: { font: 'helvetica', fontSize: 8, cellPadding: 3 },
+      headStyles: { fillColor: [242,101,34], textColor: 255, fontStyle: 'bold' },
+      columnStyles: {
+        0:{cellWidth:8,halign:'center'}, 1:{cellWidth:28}, 2:{cellWidth:16},
+        3:{cellWidth:20}, 4:{cellWidth:20}, 5:{cellWidth:60}, 6:{cellWidth:20}, 7:{cellWidth:80}
+      },
+      alternateRowStyles: { fillColor: [250,250,248] },
+      margin: { left:14, right:14 },
+    });
+    const pages = pdf.internal.getNumberOfPages();
+    for (let i=1;i<=pages;i++) { pdf.setPage(i); pdf.setFontSize(8); pdf.setTextColor(150); pdf.text('Página '+i+' de '+pages, 14, pdf.internal.pageSize.height-8); }
+    pdf.save('bo_llamadas_' + d.getDate() + '_' + MESES[d.getMonth()] + '_' + d.getFullYear() + '.pdf');
+    showToast('PDF descargado');
+  });
 
   // ── PLANTILLAS ──
   const PLANTILLAS = [
-    { id: 1, nombre: 'Casos elevados a otras áreas', desc: 'Para casos que deben ser derivados a un área específica fuera del canal WhatsApp.', img: 'ref_plantilla_01.png', icon: 'ti-building', color: '#EBF2FF', texto: `📢 Bríndame la siguiente información:\n\nCarrera/Curso extensión/Titulación:\nSede/Modalidad:\nTurno:\nCorreo personal:\nCelular:` },
+    { id: 1, nombre: 'Plantilla de uso general destinada a la atención de casos que no cuentan con una plantilla específica o que no se encuentran contemplados en las categorías existentes.', desc: 'Para casos que deban ser derivados a un área especializada fuera del canal de WhatsApp, así como para consultas simples o requerimientos que hayan sido resueltos y cerrados por el asesor.', img: 'ref_plantilla_01.png', icon: 'ti-building', color: '#EBF2FF', texto: `📢 Bríndame la siguiente información:\n\nCarrera/Curso extensión/Titulación:\nSede/Modalidad:\nTurno:\nCorreo personal:\nCelular:` },
     { id: 2, nombre: 'Ingreso manual de retiro', desc: 'Para solicitar el retiro de ciclo o definitivo de un alumno de forma manual.', img: 'ref_plantilla_02.png', icon: 'ti-user-minus', color: '#FFF0F0', texto: `📢 Bríndame la siguiente información:\n\nCarrera/Curso extensión/Titulación:\nSede/Modalidad:\nTipo de retiro: Ciclo o definitivo (elige según retiro)\nCorreo personal:\nCelular:` },
     { id: 3, nombre: 'Regularización de notas', desc: 'Para regularizar calificaciones de un alumno en un curso o ciclo específico.', img: 'ref_plantilla_03.png', icon: 'ti-edit', color: '#FFF7E6', texto: `📢 Bríndame la siguiente información:\n\nMotivo de la regularización:\nCurso:\nCiclo lectivo:\nCalificaciones (EA1, EA2, EP, EF) o promedio final:\nCorreo personal:\nCelular:\nAdjuntar sustentos` },
-    { id: 4, nombre: 'Búsqueda de notas', desc: 'Para localizar calificaciones de alumnos antiguos o egresados.', img: 'ref_plantilla_04.png', icon: 'ti-search', color: '#E8FAF0', texto: `📢 Bríndame la siguiente información:\n\nCarrera/Curso extensión/Titulación:\nSede/Modalidad:\nAño ingreso/egreso aproximado:\nHasta qué ciclo estudió:\nCorreo personal:\nCelular:` },
+    { id: 4, nombre: 'Búsqueda de notas Carrera CPEX y Titulación', desc: 'Para localizar calificaciones de alumnos antiguos o egresados de carrera.', img: 'ref_plantilla_04.png', icon: 'ti-search', color: '#E8FAF0', texto: `📢 Bríndame la siguiente información:\n\nCarrera/Curso extensión/Titulación:\nSede/Modalidad:\nAño ingreso/egreso aproximado:\nHasta qué ciclo estudió:\nCorreo personal:\nCelular:` },
     { id: 5, nombre: 'Reportar incidencia con docente', desc: 'Para registrar una incidencia puntual con un docente en un curso.', img: 'ref_plantilla_05.png', icon: 'ti-alert-triangle', color: '#FFF7E6', texto: `📢 Bríndame la siguiente información:\n\nCarrera/Curso extensión/Titulación:\nSede/Modalidad:\nCurso:\nDocente:\nCorreo personal:\nCelular:` },
     { id: 6, nombre: 'Queja con docente', desc: 'Para registrar una queja formal sobre la conducta o desempeño de un docente.', img: 'ref_plantilla_06.png', icon: 'ti-mood-sad', color: '#FFF0F0', texto: `📢 Bríndame la siguiente información:\n\nCarrera/Curso extensión/Titulación:\nSede/Modalidad:\nTurno:\nCiclo/Bloque:\nCurso:\nDocente:\nCorreo personal:\nCelular:\nMotivo de la queja:` },
-    { id: 7, nombre: 'Certificado FCI', desc: 'Para solicitar el certificado de finalización de curso de extensión (FCI).', img: 'ref_plantilla_07.png', icon: 'ti-certificate', color: '#F5F0FF', texto: `📢 Bríndame la siguiente información:\n\nNombre del Curso de Extensión:\nFecha que culminó:\nCorreo personal:\nNivel de módulo obtenido: (Aplica para estudiantes que ingresaron por examen de clasificación)` },
-    { id: 8, nombre: 'Alumnos antiguos sin PeopleSoft', desc: 'Para alumnos antiguos que no figuran en PeopleSoft.', img: 'ref_plantilla_08.png', icon: 'ti-users', color: '#EBF2FF', texto: `📢 Bríndame la siguiente información:\n\nNombres y Apellidos:\nDNI:\nCarrera:\nSede/Modalidad:\nAño ingreso/egreso:\nCiclo/Bloque que estudió:\nCorreo personal:\nCelular:` },
+    { id: 7, nombre: 'Certificado FCI', desc: 'Para solicitar el certificado de finalización de curso de extensión (FCI).', img: 'ref_plantilla_07.png', icon: 'ti-certificate', color: '#F5F0FF', texto: `📢 Bríndame la siguiente información:\n\nNombre del Curso de Extensión:\nSede:\nModalidad:\nFecha de inicio:\nFecha que culminó:\nCorreo personal:\nNivel de módulo obtenido: (Aplica para estudiantes que ingresaron por examen de clasificación)` },
+    { id: 8, nombre: 'Alumnos antiguos que no figuran en PeopleSoft', desc: 'Para alumnos antiguos que no figuran en PeopleSoft y requieren la creación de una cuenta en Salesforce para la gestión de su caso.', img: 'ref_plantilla_08.png', icon: 'ti-users', color: '#EBF2FF', texto: `📢 Bríndame la siguiente información:\n\nNombres y Apellidos:\nDNI:\nCarrera:\nSede/Modalidad:\nAño ingreso/egreso:\nCiclo/Bloque que estudió:\nCorreo personal:\nCelular:` },
     { id: 9, nombre: 'Matrícula administrativa FCI', desc: 'Para matricular administrativamente a un alumno en un curso de extensión.', img: 'ref_plantilla_09.png', icon: 'ti-school', color: '#E8FAF0', texto: `📢 Bríndame la siguiente información:\n\nCurso:\nHorario:\nGrupo:\nDocente:\nCorreo personal:\nCelular:` },
     { id: 10, nombre: 'Creación de ID para pago', desc: 'Para generar un ID de pago a alumnos antiguos que no cuentan con uno.', img: 'ref_plantilla_10.png', icon: 'ti-id-badge', color: '#FFF0E8', texto: `📢 Bríndame la siguiente información:\n\nCarrera/Curso extensión/Titulación:\nSede/Modalidad:\nNúmero de DNI/CE/PS:\nCorreo personal:\nCelular:\nDirección:\nFecha de Nacimiento:\nAdjuntar imagen de DNI/CE/PASAPORTE` },
   ];
@@ -942,6 +1801,9 @@
   });
 
   async function eliminarPendiente(id) {
+    if (currentUserRol.toLowerCase() !== 'supervisor') {
+      showToast('Solo los supervisores pueden eliminar casos', 'error'); return;
+    }
     if (!confirm('¿Eliminar este caso pendiente?')) return;
     try { await deleteDoc(doc(db, 'casos_pendientes', id)); showToast('Caso eliminado'); }
     catch (err) { showToast('Error al eliminar', 'error'); }
@@ -963,71 +1825,77 @@
     document.getElementById('badge-pendientes').textContent = allPendientes.length;
   }
 
-  document.getElementById('pend-prev').addEventListener('click', () => { pendViewMonth.setMonth(pendViewMonth.getMonth()-1); renderPendientes(); });
-  document.getElementById('pend-next').addEventListener('click', () => { pendViewMonth.setMonth(pendViewMonth.getMonth()+1); renderPendientes(); });
+  document.getElementById('pend-prev').addEventListener('click', () => { pendViewDay.setDate(pendViewDay.getDate()-1); renderPendientes(); });
+  document.getElementById('pend-next').addEventListener('click', () => { pendViewDay.setDate(pendViewDay.getDate()+1); renderPendientes(); });
+  document.getElementById('pend-today').addEventListener('click', () => { pendViewDay = new Date(); renderPendientes(); });
   document.getElementById('search-pend').addEventListener('input', renderPendientes);
 
   function fmtDate(f) { if (!f) return '—'; const [y,m,d] = f.split('-'); return d+'/'+m+'/'+y; }
 
   function renderPendientes() {
     const container = document.getElementById('pend-calendar-container');
-    const y = pendViewMonth.getFullYear();
-    const m = pendViewMonth.getMonth();
-    document.getElementById('pend-month-label').textContent = MESES[m] + ' ' + y;
+    const viewDateStr = pendViewDay.toISOString().split('T')[0];
+    const today       = new Date().toISOString().split('T')[0];
+    const isToday     = viewDateStr === today;
+    const dias   = ['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];
+    const MESES_C= ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+    const d = pendViewDay;
+    const dayLabel = (isToday ? 'Hoy · ' : '') + dias[d.getDay()] + ' ' + d.getDate() + ' ' + MESES[d.getMonth()] + ' ' + d.getFullYear();
+    document.getElementById('pend-month-label').textContent = dayLabel;
+
     const q = document.getElementById('search-pend').value.toLowerCase().trim();
-    let data = allPendientes.filter(r => {
-      const reg = r.fechaRegistro || r.fecha || '';
-      if (!reg) return false;
-      const parts = reg.split('-').map(Number);
-      return parts[0] === y && (parts[1]-1) === m;
-    });
-    if (q) data = data.filter(r => (r.numeroCaso||'').toLowerCase().includes(q) || (r.descripcion||'').toLowerCase().includes(q) || (r.asesor||'').toLowerCase().includes(q));
+    let data = allPendientes.filter(r => (r.fechaRegistro || r.fecha || '') === viewDateStr);
+    if (q) data = data.filter(r =>
+      (r.numeroCaso||'').toLowerCase().includes(q) ||
+      (r.descripcion||'').toLowerCase().includes(q) ||
+      (r.asesor||'').toLowerCase().includes(q)
+    );
+
+    const isSupervisor = currentUserRol.toLowerCase() === 'supervisor';
+    const delBtn = (id) => isSupervisor
+      ? '<button class="btn-row del" onclick="window._pendDel(\'' + id + '\')"><i class="ti ti-trash"></i></button>'
+      : '<button class="btn-row del" disabled style="opacity:0.3;cursor:not-allowed" title="Solo supervisores pueden eliminar"><i class="ti ti-trash"></i></button>';
 
     if (!data.length) {
-      container.innerHTML = '<div class="empty-state"><i class="ti ti-calendar-off"></i><p>No hay casos pendientes registrados en ' + MESES[m] + ' ' + y + '.</p><p class="empty-hint">Usa "Nuevo caso" para registrar uno.</p></div>';
+      container.innerHTML = '<div class="empty-state"><i class="ti ti-calendar-off"></i><p>No hay casos el ' + d.getDate() + ' de ' + MESES[d.getMonth()] + ' ' + d.getFullYear() + '.</p><p class="empty-hint">Usa &quot;Nuevo caso&quot; para registrar uno.</p></div>';
       return;
     }
-    const byDate = {};
-    data.forEach(r => { const key = r.fechaRegistro || r.fecha || ''; if (!byDate[key]) byDate[key] = []; byDate[key].push(r); });
-    const today = new Date().toISOString().split('T')[0];
-    const dias  = ['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];
-
-    container.innerHTML = Object.keys(byDate).sort((a,b)=>b.localeCompare(a)).map(fecha => {
-      const casos   = byDate[fecha];
-      const isToday = fecha === today;
-      const dateObj = new Date(fecha + 'T12:00:00');
-      const label   = isToday ? 'Hoy — ' + dias[dateObj.getDay()] + ' ' + dateObj.getDate() : dias[dateObj.getDay()] + ' ' + dateObj.getDate();
-      return '<div class="pend-day-block">' +
+    container.innerHTML =
+      '<div class="pend-day-block">' +
         '<div class="pend-day-header">' +
-          '<div class="pend-day-pill' + (isToday?' today':'') + '"><i class="ti ti-calendar-event" style="font-size:13px"></i>' + label + '</div>' +
+          '<div class="pend-day-pill' + (isToday?' today':'') + '">' +
+            '<i class="ti ti-calendar-event" style="font-size:13px"></i>' +
+            (isToday ? 'Hoy — ' : '') + dias[d.getDay()] + ' ' + d.getDate() + ' ' + MESES_C[d.getMonth()] +
+          '</div>' +
           '<div class="pend-day-line"></div>' +
-          '<span class="pend-day-count">' + casos.length + ' caso' + (casos.length!==1?'s':'') + '</span>' +
+          '<span class="pend-day-count">' + data.length + ' caso' + (data.length!==1?'s':'') + '</span>' +
         '</div>' +
-        casos.map(r => '<div class="pend-case-card">' +
-          '<div class="pend-num-badge"><i class="ti ti-alert-triangle" style="font-size:11px;margin-right:3px"></i>Caso ' + escH(r.numeroCaso||'—') + '</div>' +
-          '<div class="pend-case-body">' +
-            '<div class="pend-case-desc">' + escH(r.descripcion||'—') + '</div>' +
-            '<div class="pend-case-meta">' +
-              '<span class="pend-case-meta-item"><i class="ti ti-user"></i>' + escH(r.asesor||'—') + '</span>' +
-              (r.fechaCaso ? '<span class="pend-case-meta-item" title="Fecha original del caso"><i class="ti ti-calendar-x"></i>Caso desde: ' + fmtDate(r.fechaCaso) + '</span>' : '') +
-              '<span class="pend-case-meta-item" title="Fecha de registro en portal"><i class="ti ti-clock"></i>Registrado: ' + fmtDate(r.fechaRegistro||r.fecha||'') + '</span>' +
-              (r.creadoPor ? '<span class="pend-case-meta-item"><i class="ti ti-mail"></i>' + escH(r.creadoPor.split('@')[0]) + '</span>' : '') +
+        data.map(r =>
+          '<div class="pend-case-card">' +
+            '<div class="pend-num-badge"><i class="ti ti-alert-triangle" style="font-size:11px;margin-right:3px"></i>Caso ' + escH(r.numeroCaso||'—') + '</div>' +
+            '<div class="pend-case-body">' +
+              '<div class="pend-case-desc">' + escH(r.descripcion||'—') + '</div>' +
+              '<div class="pend-case-meta">' +
+                '<span class="pend-case-meta-item"><i class="ti ti-user"></i>' + escH(r.asesor||'—') + '</span>' +
+                (r.fechaCaso ? '<span class="pend-case-meta-item"><i class="ti ti-calendar-x"></i>Caso desde: ' + fmtDate(r.fechaCaso) + '</span>' : '') +
+                (r.creadoPor ? '<span class="pend-case-meta-item"><i class="ti ti-mail"></i>' + escH(r.creadoPor.split('@')[0]) + '</span>' : '') +
+              '</div>' +
             '</div>' +
-          '</div>' +
-          '<div class="pend-case-actions">' +
-            '<button class="btn-row edit" onclick="window._pendEdit(\'' + r.id + '\')"><i class="ti ti-pencil"></i></button>' +
-            '<button class="btn-row del"  onclick="window._pendDel(\'' + r.id + '\')"><i class="ti ti-trash"></i></button>' +
-          '</div>' +
-        '</div>').join('') +
+            '<div class="pend-case-actions">' +
+              '<button class="btn-row edit" onclick="window._pendEdit(\'' + r.id + '\')"><i class="ti ti-pencil"></i></button>' +
+              delBtn(r.id) +
+            '</div>' +
+          '</div>'
+        ).join('') +
       '</div>';
-    }).join('');
   }
 
   // ── EXPORT EXCEL ──
   document.getElementById('btn-export-excel').addEventListener('click', () => {
-    const y = pendViewMonth.getFullYear(), m = pendViewMonth.getMonth();
+    const viewDateStr = pendViewDay.toISOString().split('T')[0];
+    const d = pendViewDay;
     const q = document.getElementById('search-pend').value.toLowerCase().trim();
-    let data = allPendientes.filter(r => { if(!r.fechaRegistro&&!r.fecha)return false; const f=r.fechaRegistro||r.fecha; const p=f.split('-').map(Number); return p[0]===y&&(p[1]-1)===m; });
+    let data = allPendientes.filter(r => (r.fechaRegistro||r.fecha||'') === viewDateStr);
     if (q) data = data.filter(r => (r.numeroCaso||'').toLowerCase().includes(q)||(r.descripcion||'').toLowerCase().includes(q)||(r.asesor||'').toLowerCase().includes(q));
     if (!data.length) { showToast('No hay casos para exportar', 'error'); return; }
     const rows = data.sort((a,b)=>(a.fechaRegistro||a.fecha)<(b.fechaRegistro||b.fecha)?-1:1).map((r,i) => ({ '#': i+1, 'Registrado': fmtDate(r.fechaRegistro||r.fecha), 'Caso desde': fmtDate(r.fechaCaso||''), 'N° Caso': r.numeroCaso||'', 'Descripción': r.descripcion||'', 'Asesor': r.asesor||'', 'Registrado por': r.creadoPor?r.creadoPor.split('@')[0]:'' }));
@@ -1035,16 +1903,17 @@
     const ws = XLSX.utils.json_to_sheet(rows);
     ws['!cols'] = [{wch:4},{wch:14},{wch:14},{wch:12},{wch:60},{wch:20},{wch:20}];
     XLSX.utils.book_append_sheet(wb, ws, 'Casos Pendientes');
-    XLSX.writeFile(wb, 'casos_pendientes_' + MESES[m] + '_' + y + '.xlsx');
+    XLSX.writeFile(wb, 'casos_pendientes_' + d.getDate() + '_' + MESES[d.getMonth()] + '_' + d.getFullYear() + '.xlsx');
     showToast('Excel descargado correctamente');
   });
 
   // ── EXPORT PDF ──
   document.getElementById('btn-export-pdf').addEventListener('click', () => {
     const { jsPDF } = window.jspdf;
-    const y = pendViewMonth.getFullYear(), m = pendViewMonth.getMonth();
+    const viewDateStr = pendViewDay.toISOString().split('T')[0];
+    const d = pendViewDay;
     const q = document.getElementById('search-pend').value.toLowerCase().trim();
-    let data = allPendientes.filter(r => { if(!r.fechaRegistro&&!r.fecha)return false; const f=r.fechaRegistro||r.fecha; const p=f.split('-').map(Number); return p[0]===y&&(p[1]-1)===m; });
+    let data = allPendientes.filter(r => (r.fechaRegistro||r.fecha||'') === viewDateStr);
     if (q) data = data.filter(r => (r.numeroCaso||'').toLowerCase().includes(q)||(r.descripcion||'').toLowerCase().includes(q)||(r.asesor||'').toLowerCase().includes(q));
     if (!data.length) { showToast('No hay casos para exportar', 'error'); return; }
     const pdf = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
@@ -1052,7 +1921,7 @@
     pdf.setTextColor(255,255,255); pdf.setFontSize(12); pdf.setFont('helvetica','bold');
     pdf.text('SISE · Portal SAES', 14, 13);
     pdf.setFontSize(9); pdf.setFont('helvetica','normal');
-    pdf.text('Casos Pendientes Fuera de Plazo — ' + MESES[m] + ' ' + y, 14, 18);
+    pdf.text('Casos Pendientes Fuera de Plazo — ' + d.getDate() + ' de ' + MESES[d.getMonth()] + ' ' + d.getFullYear(), 14, 18);
     pdf.text('Generado: ' + new Date().toLocaleDateString('es-PE'), 240, 18);
     pdf.autoTable({
       startY: 26,
@@ -1066,7 +1935,7 @@
     });
     const pages = pdf.internal.getNumberOfPages();
     for (let i=1;i<=pages;i++) { pdf.setPage(i); pdf.setFontSize(8); pdf.setTextColor(150); pdf.text('Página '+i+' de '+pages+' · SISE Portal SAES', 14, pdf.internal.pageSize.height-8); }
-    pdf.save('casos_pendientes_' + MESES[m] + '_' + y + '.pdf');
+    pdf.save('casos_pendientes_' + d.getDate() + '_' + MESES[d.getMonth()] + '_' + d.getFullYear() + '.pdf');
     showToast('PDF descargado correctamente');
   });
 
@@ -1103,6 +1972,13 @@
   zoomImg.addEventListener('touchmove', e => { e.preventDefault(); if (e.touches.length === 1 && dragging) { zX = startZX + (e.touches[0].clientX - startX); zY = startZY + (e.touches[0].clientY - startY); clampPan(); applyZoom(); } else if (e.touches.length === 2) { const dx = e.touches[0].clientX - e.touches[1].clientX; const dy = e.touches[0].clientY - e.touches[1].clientY; const dist = Math.sqrt(dx*dx + dy*dy); zScale = Math.min(Math.max(zScale * (dist / lastTouchDist), 0.5), 5); lastTouchDist = dist; clampPan(); applyZoom(); } }, { passive: false });
   zoomImg.addEventListener('touchend', () => { dragging = false; });
   zoomImg.addEventListener('dblclick', e => { e.stopPropagation(); if (zScale > 1.2) { zScale = 1; zX = 0; zY = 0; } else { zScale = 2.5; } applyZoom(); });
+  // ── SALUDO DINÁMICO EN HOME ──
+  (function() {
+    const h = new Date().getHours();
+    const greet = h < 12 ? '¡Buenos días' : h < 18 ? '¡Buenas tardes' : '¡Buenas noches';
+    const el = document.querySelector('.home-hero-title');
+    if (el) el.innerHTML = greet + '! Portal SAES <span style="color:var(--orange)">·</span> Canal WhatsApp';
+  })();
 
 </script>
 </body>
