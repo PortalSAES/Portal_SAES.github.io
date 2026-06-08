@@ -330,12 +330,12 @@
 
     /* anchos de columna fijos para que aplica tenga espacio cómodo */
     .tipi-table colgroup col.col-num      { width: 36px; }
-    .tipi-table colgroup col.col-modal    { width: 150px; }
-    .tipi-table colgroup col.col-sub      { width: 180px; }
-    .tipi-table colgroup col.col-asunto   { width: 180px; }
-    .tipi-table colgroup col.col-aplica   { width: auto; min-width: 200px; }
-    .tipi-table colgroup col.col-tipo     { width: 130px; }
-    .tipi-table colgroup col.col-plazo    { width: 110px; }
+    .tipi-table colgroup col.col-modal    { width: 165px; }
+    .tipi-table colgroup col.col-sub      { width: 165px; }
+    .tipi-table colgroup col.col-asunto   { width: 175px; }
+    .tipi-table colgroup col.col-aplica   { width: auto; }
+    .tipi-table colgroup col.col-tipo     { width: 125px; }
+    .tipi-table colgroup col.col-plazo    { width: 115px; }
     .tipi-table colgroup col.col-acc      { width: 70px; }
 
     .tipi-table thead th {
@@ -346,12 +346,9 @@
     .tipi-table tbody tr { border-bottom: 1px solid #F0EEE9; transition: background 0.1s; background: var(--white); }
     .tipi-table tbody tr:last-child { border-bottom: none; }
     .tipi-table tbody tr:hover { background: var(--orange-light); }
-    .tipi-table tbody td { padding: 10px 12px; font-size: 12px; color: var(--text); vertical-align: top; overflow: hidden; max-width: 0; }
+    .tipi-table tbody td { padding: 10px 12px; font-size: 12px; color: var(--text); vertical-align: top; overflow: hidden; }
 
-    .tipi-badge { display: inline-flex; align-items: center; gap: 4px; border-radius: 99px; padding: 3px 10px; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em;
-      /* nunca desborda: se quiebra en la siguiente línea si no cabe */
-      white-space: normal; word-break: break-word; max-width: 100%;
-    }
+    .tipi-badge { display: inline-flex; align-items: center; gap: 4px; border-radius: 99px; padding: 3px 10px; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
     .tipi-badge.modalidad     { background: var(--info-bg); color: var(--info); }
     .tipi-badge.proceso       { background: var(--orange-light); color: var(--orange-dark); }
     .tipi-badge.sub           { background: var(--surface); color: var(--muted); border: 1px solid var(--border); }
