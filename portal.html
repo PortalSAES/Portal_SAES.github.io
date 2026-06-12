@@ -1427,63 +1427,124 @@ Amplio
 <!-- FIN VISTA ACERCA DE -->
 
 
-<div class="view" id="view-satisfaccion">
+<div class="view" id="view-satisfaccion" style="background:#1a1035;min-height:100vh;padding:0;margin:-24px;padding:24px">
 
 <!-- SUPERVISOR: Upload bar -->
-<div id="sat-supervisor-bar" style="display:none;background:linear-gradient(135deg,#0D0D0D,#1a0f06);border-radius:14px;padding:18px 22px;margin-bottom:22px;display:none;align-items:center;gap:16px;flex-wrap:wrap">
+<div id="sat-supervisor-bar" style="display:none;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);backdrop-filter:blur(8px);border-radius:16px;padding:16px 22px;margin-bottom:24px;align-items:center;gap:16px;flex-wrap:wrap">
   <div style="flex:1;min-width:0">
-    <div style="font-size:11px;font-weight:700;color:#C41E3A;text-transform:uppercase;letter-spacing:.08em;margin-bottom:3px">Panel Supervisor</div>
+    <div style="font-size:10px;font-weight:800;color:#a78bfa;text-transform:uppercase;letter-spacing:.1em;margin-bottom:3px">⚡ Panel Supervisor</div>
     <div style="font-size:15px;font-weight:800;color:#fff;margin-bottom:2px">Subir reporte de satisfacción</div>
-    <div style="font-size:12px;color:#666">Excel exportado de Genesys — columnas: Asesor, % Satisfacción, TMO</div>
+    <div style="font-size:12px;color:rgba(255,255,255,.45)">Excel exportado de Genesys — columnas: Asesor, % Satisfacción, TMO</div>
   </div>
-  <label id="sat-upload-label" style="display:flex;align-items:center;gap:8px;background:#C41E3A;color:#fff;border-radius:10px;padding:10px 20px;font-size:13px;font-weight:700;cursor:pointer;transition:background .15s;white-space:nowrap">
-    <i class="ti ti-upload"></i> Subir Excel
+  <label style="display:flex;align-items:center;gap:8px;background:linear-gradient(135deg,#7c3aed,#5b21b6);color:#fff;border-radius:12px;padding:11px 22px;font-size:13px;font-weight:700;cursor:pointer;transition:opacity .15s;white-space:nowrap;box-shadow:0 4px 16px rgba(124,58,237,.4)">
+    <i class="ti ti-table-export"></i> Subir Excel
     <input type="file" id="sat-file-input" accept=".xlsx,.xls,.csv" style="display:none">
   </label>
-  <div id="sat-upload-status" style="font-size:12px;color:#666"></div>
+  <div id="sat-upload-status" style="font-size:12px;color:rgba(255,255,255,.5)"></div>
 </div>
 
-<!-- Período actual -->
-<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;flex-wrap:wrap;gap:12px">
-  <div>
-    <h2 style="font-size:20px;font-weight:800;color:var(--text);display:flex;align-items:center;gap:10px">
-      <i class="ti ti-trophy" style="color:#F26522"></i> Satisfacción del Equipo
-    </h2>
-    <p id="sat-periodo-label" style="font-size:12px;color:var(--muted);margin-top:3px">Cargando...</p>
+<!-- Header Kahoot style -->
+<div style="text-align:center;margin-bottom:28px">
+  <div style="display:inline-flex;align-items:center;gap:10px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:99px;padding:6px 18px;margin-bottom:14px">
+    <span style="width:8px;height:8px;border-radius:50%;background:#4ade80;display:inline-block;box-shadow:0 0 8px #4ade80;animation:sat-blink 1.5s ease-in-out infinite"></span>
+    <span style="font-size:11px;font-weight:700;color:rgba(255,255,255,.7);letter-spacing:.06em">EN VIVO</span>
   </div>
-  <div id="sat-global-stats" style="display:flex;gap:12px;flex-wrap:wrap"></div>
+  <h1 style="font-size:32px;font-weight:900;color:#fff;margin-bottom:6px;letter-spacing:-.5px">
+    🏆 Satisfacción del Equipo
+  </h1>
+  <p id="sat-periodo-label" style="font-size:13px;color:rgba(255,255,255,.5);font-weight:600">Cargando...</p>
 </div>
+
+<!-- Stats globales -->
+<div id="sat-global-stats" style="display:flex;gap:12px;flex-wrap:wrap;justify-content:center;margin-bottom:32px"></div>
 
 <!-- Podio top 3 -->
-<div id="sat-podio" style="display:flex;align-items:flex-end;justify-content:center;gap:12px;margin-bottom:28px;min-height:180px"></div>
+<div id="sat-podio" style="display:flex;align-items:flex-end;justify-content:center;gap:12px;margin-bottom:32px;min-height:200px"></div>
+
+<!-- Barra de búsqueda + controles supervisor -->
+<div id="sat-controls" style="margin-bottom:20px;display:flex;gap:10px;flex-wrap:wrap;align-items:center">
+  <!-- Búsqueda -->
+  <div style="flex:1;min-width:200px;position:relative">
+    <i class="ti ti-search" style="position:absolute;left:14px;top:50%;transform:translateY(-50%);color:rgba(255,255,255,.4);font-size:16px;pointer-events:none"></i>
+    <input id="sat-search" type="text" placeholder="Buscar asesor..." oninput="_satBuscar(this.value)"
+      style="width:100%;background:rgba(255,255,255,.07);border:1.5px solid rgba(255,255,255,.1);border-radius:12px;padding:11px 14px 11px 42px;font-size:13px;color:#fff;font-family:inherit;outline:none;transition:border-color .2s;box-sizing:border-box"
+      onfocus="this.style.borderColor='rgba(167,139,250,.6)'" onblur="this.style.borderColor='rgba(255,255,255,.1)'">
+  </div>
+  <!-- Botón reiniciar (solo supervisores) -->
+  <button id="sat-btn-reset-mes" onclick="_satConfirmarReinicio()" style="display:none;align-items:center;gap:8px;background:rgba(196,30,58,.15);border:1.5px solid rgba(196,30,58,.4);color:#f87171;border-radius:12px;padding:11px 18px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;transition:all .2s;white-space:nowrap">
+    <i class="ti ti-trash"></i> Reiniciar tabla del mes
+  </button>
+</div>
+
+<!-- Modal confirmar reinicio -->
+<div id="sat-confirm-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.85);backdrop-filter:blur(8px);z-index:999999;align-items:center;justify-content:center">
+  <div style="background:#1a1035;border:1px solid rgba(196,30,58,.4);border-radius:20px;max-width:400px;width:calc(100% - 40px);padding:32px 28px;text-align:center;box-shadow:0 32px 80px rgba(0,0,0,.8)">
+    <div style="font-size:44px;margin-bottom:12px">⚠️</div>
+    <div style="font-size:18px;font-weight:900;color:#fff;margin-bottom:8px">¿Reiniciar tabla del mes?</div>
+    <div style="font-size:13px;color:rgba(255,255,255,.5);margin-bottom:24px;line-height:1.6">Se eliminarán todos los datos del mes actual. Esta acción no se puede deshacer.</div>
+    <div style="display:flex;gap:12px">
+      <button onclick="document.getElementById('sat-confirm-modal').style.display='none'" style="flex:1;padding:12px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.15);color:#fff;border-radius:12px;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit">Cancelar</button>
+      <button onclick="_satEjecutarReinicio()" style="flex:1;padding:12px;background:#C41E3A;border:none;color:#fff;border-radius:12px;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit">Sí, reiniciar</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal historial asesor -->
+<div id="sat-hist-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.85);backdrop-filter:blur(10px);z-index:99999;align-items:center;justify-content:center;padding:20px">
+  <div style="background:#1a1035;border:1px solid rgba(255,255,255,.12);border-radius:24px;max-width:520px;width:100%;max-height:85vh;overflow:hidden;display:flex;flex-direction:column;box-shadow:0 40px 100px rgba(0,0,0,.8)">
+    <div style="background:rgba(0,0,0,.3);padding:20px 24px;display:flex;align-items:center;gap:14px;border-bottom:1px solid rgba(255,255,255,.06);flex-shrink:0">
+      <div id="sat-hist-avatar" style="width:48px;height:48px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:900;color:#fff;flex-shrink:0"></div>
+      <div style="flex:1;min-width:0">
+        <div id="sat-hist-name" style="font-size:17px;font-weight:900;color:#fff"></div>
+        <div id="sat-hist-badge" style="margin-top:3px"></div>
+      </div>
+      <button onclick="document.getElementById('sat-hist-modal').style.display='none'" style="background:rgba(255,255,255,.08);border:none;border-radius:10px;width:36px;height:36px;cursor:pointer;color:#fff;font-size:18px;display:flex;align-items:center;justify-content:center">✕</button>
+    </div>
+    <div style="padding:20px 24px;overflow-y:auto;flex:1">
+      <!-- KPIs del asesor -->
+      <div id="sat-hist-kpis" style="display:flex;gap:10px;margin-bottom:20px;flex-wrap:wrap"></div>
+      <!-- Gráfica de barras por día -->
+      <div style="font-size:11px;font-weight:700;color:rgba(255,255,255,.4);text-transform:uppercase;letter-spacing:.08em;margin-bottom:12px">Historial por día</div>
+      <div id="sat-hist-chart" style="display:flex;align-items:flex-end;gap:4px;height:100px;padding:0 4px"></div>
+      <div id="sat-hist-labels" style="display:flex;gap:4px;margin-top:6px;padding:0 4px"></div>
+      <!-- Tabs: Semanal / Diario -->
+      <div style="display:flex;gap:6px;margin-top:20px;margin-bottom:14px">
+        <button id="sat-tab-sem" onclick="_satTabSwitch('sem')" style="flex:1;padding:8px;border-radius:10px;font-size:12px;font-weight:700;cursor:pointer;border:1.5px solid #a78bfa;background:#a78bfa;color:#fff;font-family:inherit">Por semana</button>
+        <button id="sat-tab-dia" onclick="_satTabSwitch('dia')" style="flex:1;padding:8px;border-radius:10px;font-size:12px;font-weight:700;cursor:pointer;border:1.5px solid rgba(255,255,255,.15);background:transparent;color:rgba(255,255,255,.5);font-family:inherit">Por día</button>
+      </div>
+      <div id="sat-hist-table"></div>
+      <div id="sat-hist-daily" style="display:none"></div>
+    </div>
+  </div>
+</div>
 
 <!-- Ranking completo -->
-<div style="background:var(--white);border:1px solid var(--border);border-radius:16px;overflow:hidden">
-  <div style="background:#0D0D0D;padding:14px 20px;display:flex;align-items:center;gap:10px">
-    <i class="ti ti-list-numbers" style="color:#C41E3A;font-size:18px"></i>
-    <span style="font-size:14px;font-weight:800;color:#fff">Ranking completo</span>
-    <span id="sat-semana-label" style="margin-left:auto;font-size:11px;color:#555;font-weight:600"></span>
+<div style="background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.08);border-radius:20px;overflow:hidden;backdrop-filter:blur(8px)">
+  <div style="background:rgba(0,0,0,.3);padding:16px 22px;display:flex;align-items:center;gap:10px;border-bottom:1px solid rgba(255,255,255,.06)">
+    <i class="ti ti-list-numbers" style="color:#a78bfa;font-size:20px"></i>
+    <span style="font-size:15px;font-weight:800;color:#fff">Ranking completo</span>
+    <span id="sat-semana-label" style="margin-left:auto;font-size:11px;color:rgba(255,255,255,.4);font-weight:600"></span>
   </div>
-  <div id="sat-ranking-list" style="padding:8px 0"></div>
-  <div id="sat-empty-state" style="padding:64px 24px;text-align:center;color:var(--muted);display:none">
-    <i class="ti ti-trophy" style="font-size:40px;display:block;margin-bottom:12px;opacity:.3"></i>
-    <p style="font-size:14px;font-weight:600">Aún no hay datos este mes</p>
+  <div id="sat-ranking-list" style="padding:6px 0"></div>
+  <div id="sat-empty-state" style="padding:64px 24px;text-align:center;color:rgba(255,255,255,.4);display:none">
+    <i class="ti ti-trophy" style="font-size:44px;display:block;margin-bottom:14px;opacity:.3"></i>
+    <p style="font-size:14px;font-weight:700;color:#fff">Aún no hay datos este mes</p>
     <span style="font-size:12px">El supervisor puede subir el reporte Excel de Genesys</span>
   </div>
 </div>
 
 <!-- Modal reinicio -->
-<div id="sat-reset-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);backdrop-filter:blur(6px);z-index:99999;align-items:center;justify-content:center">
-  <div style="background:#fff;border-radius:24px;max-width:440px;width:calc(100% - 40px);overflow:hidden;box-shadow:0 32px 80px rgba(0,0,0,.4);transform:scale(.95);transition:transform .3s">
-    <div style="background:linear-gradient(135deg,#0D0D0D,#1a0f06);padding:32px 28px 24px;text-align:center;position:relative">
-      <div style="font-size:52px;margin-bottom:8px">🏆</div>
-      <div style="font-size:11px;font-weight:700;color:#C41E3A;text-transform:uppercase;letter-spacing:.1em;margin-bottom:6px">Fin de mes</div>
-      <div id="sat-reset-title" style="font-size:22px;font-weight:800;color:#fff;line-height:1.3"></div>
+<div id="sat-reset-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.8);backdrop-filter:blur(8px);z-index:99999;align-items:center;justify-content:center">
+  <div style="background:#1a1035;border:1px solid rgba(255,255,255,.12);border-radius:28px;max-width:440px;width:calc(100% - 40px);overflow:hidden;box-shadow:0 40px 100px rgba(0,0,0,.7)">
+    <div style="background:linear-gradient(135deg,#2d1b69,#1a1035);padding:36px 28px 28px;text-align:center">
+      <div style="font-size:56px;margin-bottom:10px;filter:drop-shadow(0 4px 16px rgba(255,215,0,.4))">🏆</div>
+      <div style="font-size:10px;font-weight:800;color:#a78bfa;text-transform:uppercase;letter-spacing:.12em;margin-bottom:8px">Fin de mes</div>
+      <div id="sat-reset-title" style="font-size:24px;font-weight:900;color:#fff;line-height:1.3"></div>
     </div>
     <div style="padding:24px 28px">
-      <div id="sat-reset-winner" style="background:#FFFBF0;border:2px solid #F0C040;border-radius:14px;padding:16px;text-align:center;margin-bottom:20px"></div>
-      <div id="sat-reset-msg" style="font-size:14px;color:#555;line-height:1.7;text-align:center;margin-bottom:20px"></div>
-      <button id="sat-reset-close" style="width:100%;padding:13px;background:#C41E3A;color:#fff;border:none;border-radius:12px;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit">¡Comenzar nuevo mes! 🚀</button>
+      <div id="sat-reset-winner" style="background:rgba(255,255,255,.06);border:1.5px solid rgba(240,192,64,.4);border-radius:16px;padding:20px;text-align:center;margin-bottom:18px"></div>
+      <div id="sat-reset-msg" style="font-size:14px;color:rgba(255,255,255,.6);line-height:1.7;text-align:center;margin-bottom:20px"></div>
+      <button id="sat-reset-close" style="width:100%;padding:14px;background:linear-gradient(135deg,#7c3aed,#5b21b6);color:#fff;border:none;border-radius:14px;font-size:15px;font-weight:800;cursor:pointer;font-family:inherit;box-shadow:0 4px 20px rgba(124,58,237,.5)">¡Comenzar nuevo mes! 🚀</button>
     </div>
   </div>
 </div>
@@ -6930,6 +6991,51 @@ document.getElementById('btn-pend-export-mensual').addEventListener('click', () 
       0%  { transform:translateY(0) scale(1); opacity:.8; }
       100%{ transform:translateY(-40px) scale(0); opacity:0; }
     }
+
+    /* Dark Kahoot theme overrides */
+    @keyframes sat-blink {
+      0%,100%{ opacity:1; box-shadow:0 0 8px #4ade80; }
+      50%{ opacity:.5; box-shadow:0 0 3px #4ade80; }
+    }
+
+    #view-satisfaccion .sat-row {
+      border-bottom:1px solid rgba(255,255,255,.06) !important;
+      color:#fff;
+    }
+    #view-satisfaccion .sat-row:hover {
+      background:rgba(255,255,255,.07) !important;
+      box-shadow:inset 3px 0 0 #a78bfa !important;
+    }
+    #view-satisfaccion .sat-bar-track {
+      background:rgba(255,255,255,.1) !important;
+    }
+    #view-satisfaccion .sat-frase-top {
+      background:rgba(240,192,64,.12) !important;
+      border-color:rgba(240,192,64,.35) !important;
+      color:#fde68a !important;
+    }
+    #view-satisfaccion .sat-frase-bot {
+      background:rgba(124,58,237,.12) !important;
+      border-color:rgba(124,58,237,.35) !important;
+      color:#c4b5fd !important;
+    }
+    #view-satisfaccion .sat-stat {
+      background:rgba(255,255,255,.06) !important;
+      border-color:rgba(255,255,255,.1) !important;
+      color:#fff !important;
+    }
+    #view-satisfaccion .sat-stat div { color:rgba(255,255,255,.5); }
+    #view-satisfaccion .sat-stat div:nth-child(2) { color:#fff !important; }
+
+    /* Rank number color in dark */
+    #view-satisfaccion .sat-row > div:first-child span:last-child {
+      color:rgba(255,255,255,.4) !important;
+    }
+
+    /* Name text in dark */
+    #view-satisfaccion [style*="color:var(--text)"] {
+      color:#fff !important;
+    }
   `;
   document.head.appendChild(style);
 
@@ -7053,7 +7159,7 @@ document.getElementById('btn-pend-export-mensual').addEventListener('click', () 
           </div>
           <div style="flex:1;min-width:0">
             <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:2px">
-              <span style="font-size:13px;font-weight:800;color:var(--text)">${r.asesor}</span>
+              <span data-asesor="${r.asesor}" style="font-size:13px;font-weight:800;color:#fff;cursor:pointer;border-bottom:1.5px solid rgba(255,255,255,.2);transition:border-color .15s" onmouseover="this.style.borderColor='rgba(167,139,250,.8)'" onmouseout="this.style.borderColor='rgba(255,255,255,.2)'" onclick="window._satVerHistorial(this.dataset.asesor)">${r.asesor}</span>
               <div class="sat-badge" style="color:${niv.color};border-color:${niv.bdr};background:${niv.bg};font-size:9px;padding:2px 8px">${niv.icon} ${niv.label}</div>
               ${yoHtml}${rachaHtml}${tmoHtml}
             </div>
@@ -7062,6 +7168,7 @@ document.getElementById('btn-pend-export-mensual').addEventListener('click', () 
             </div>
           </div>
           <div style="font-size:20px;font-weight:900;color:${niv.color};flex-shrink:0;min-width:54px;text-align:right;line-height:1">${r.pct}%</div>
+          ${_esSupervisorSat() ? `<button onclick="event.stopPropagation();_satEliminarAsesor('${r.asesor.replace(/'/g,"\\'")}','${r.semana}')" title="Quitar del ranking" style="width:28px;height:28px;border-radius:8px;background:rgba(196,30,58,.12);border:1px solid rgba(196,30,58,.3);color:#f87171;cursor:pointer;font-size:14px;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all .15s" onmouseover="this.style.background='rgba(196,30,58,.3)'" onmouseout="this.style.background='rgba(196,30,58,.12)'">✕</button>` : ''}
         </div>`;
 
       // ── Frase motivacional ───────────────────────────────────
@@ -7153,7 +7260,7 @@ document.getElementById('btn-pend-export-mensual').addEventListener('click', () 
         snap=>{
           satData=snap.docs.map(d=>({id:d.id,...d.data()}));
           const ranking=calcRanking(satData);
-          renderPodio(ranking); renderRanking(ranking); renderStats(ranking);
+          renderPodio(ranking); renderRanking(ranking); renderStats(ranking); renderFilterBar(ranking);
           const mes=mesActual(), [y,m]=mes.split('-');
           document.getElementById('sat-periodo-label').textContent='Mes en curso: '+MESES_N[parseInt(m)-1]+' '+y;
           const ultima=satData.filter(r=>r.mes===mes).sort((a,b)=>b.semana.localeCompare(a.semana))[0];
@@ -7209,6 +7316,168 @@ document.getElementById('btn-pend-export-mensual').addEventListener('click', () 
     modal.addEventListener('click',e=>{if(e.target===modal)modal.style.display='none';});
   }
 
+
+    // ── Barra de filtros por asesor ───────────────────────────────
+  let satFiltroActivo = null;
+
+  function renderFilterBar(ranking) {
+    const bar   = document.getElementById('sat-filter-bar');
+    const chips = document.getElementById('sat-filter-chips');
+    if (!bar || !chips || !ranking.length) { if(bar) bar.style.display='none'; return; }
+
+    bar.style.display = 'block';
+    chips.innerHTML = `
+      <button onclick="_satFiltrar(null)" id="sat-chip-all"
+        style="padding:6px 14px;border-radius:99px;font-size:12px;font-weight:700;cursor:pointer;border:1.5px solid rgba(255,255,255,.2);background:rgba(255,255,255,.12);color:#fff;transition:all .15s">
+        Todos
+      </button>` +
+      ranking.map((r,i) => {
+        const niv = getNivel(r.pct);
+        return `<button onclick="_satFiltrar('${r.asesor.replace(/'/g,"\\'")}')"
+          id="sat-chip-${i}"
+          style="padding:5px 13px;border-radius:99px;font-size:11.5px;font-weight:700;cursor:pointer;border:1.5px solid ${niv.bdr};background:${niv.bg};color:${niv.color};transition:all .15s;white-space:nowrap">
+          ${niv.icon} ${r.asesor.split(' ')[0]}
+        </button>`;
+      }).join('');
+  }
+
+  window._satFiltrar = function(nombre) {
+    satFiltroActivo = nombre;
+    // Resaltar chip activo
+    document.querySelectorAll('#sat-filter-chips button').forEach(b => {
+      b.style.opacity = '0.5';
+      b.style.transform = 'scale(0.95)';
+    });
+    const activeChip = nombre
+      ? [...document.querySelectorAll('#sat-filter-chips button')].find(b => b.textContent.includes(nombre.split(' ')[0]))
+      : document.getElementById('sat-chip-all');
+    if (activeChip) { activeChip.style.opacity='1'; activeChip.style.transform='scale(1.05)'; }
+
+    // Filtrar filas del ranking
+    const rows = document.querySelectorAll('#sat-ranking-list .sat-row');
+    rows.forEach(row => {
+      if (!nombre) { row.style.display=''; return; }
+      const nameEl = row.querySelector('[data-asesor]');
+      const match  = nameEl && nameEl.dataset.asesor === nombre;
+      row.style.display = match ? '' : 'none';
+      // También ocultar/mostrar frases debajo
+    });
+  };
+
+  // ── Modal historial de asesor ─────────────────────────────────
+  window._satVerHistorial = function(nombre) {
+    const modal = document.getElementById('sat-hist-modal');
+    if (!modal) return;
+
+    const mes    = mesActual();
+    const niv    = (() => {
+      const r = calcRanking(satData).find(x => x.asesor === nombre);
+      return r ? getNivel(r.pct) : getNivel(0);
+    })();
+    const initials = nombre.split(' ').slice(0,2).map(w=>w[0]||'').join('').toUpperCase();
+
+    // Avatar
+    const av = document.getElementById('sat-hist-avatar');
+    av.style.cssText += `;background:${niv.bg};border:2px solid ${niv.bdr};color:${niv.color}`;
+    av.textContent = initials;
+
+    document.getElementById('sat-hist-name').textContent = nombre;
+    document.getElementById('sat-hist-badge').innerHTML =
+      `<span style="display:inline-flex;align-items:center;gap:4px;border-radius:99px;padding:2px 10px;font-size:10px;font-weight:800;border:1.5px solid ${niv.bdr};background:${niv.bg};color:${niv.color}">${niv.icon} ${niv.label}</span>`;
+
+    // Datos del asesor — todas las semanas del mes
+    const histData = satData
+      .filter(r => r.asesor === nombre && r.mes === mes)
+      .sort((a,b) => a.semana.localeCompare(b.semana));
+
+    // También buscar datos históricos de meses anteriores
+    const allHist = satData
+      .filter(r => r.asesor === nombre)
+      .sort((a,b) => (a.mes+a.semana).localeCompare(b.mes+b.semana));
+
+    // KPIs
+    const pcts  = allHist.map(r => r.pct);
+    const avg   = pcts.length ? Math.round(pcts.reduce((s,v)=>s+v,0)/pcts.length) : 0;
+    const best  = pcts.length ? Math.max(...pcts) : 0;
+    const worst = pcts.length ? Math.min(...pcts) : 0;
+    const last  = pcts.length ? pcts[pcts.length-1] : 0;
+    const lastNiv = getNivel(last);
+
+    document.getElementById('sat-hist-kpis').innerHTML = [
+      { label:'Actual', val:last+'%', color:lastNiv.color, bg:lastNiv.bg, bdr:lastNiv.bdr },
+      { label:'Promedio', val:avg+'%', color:'#a78bfa', bg:'rgba(167,139,250,.15)', bdr:'rgba(167,139,250,.4)' },
+      { label:'Mejor', val:best+'%', color:'#4ade80', bg:'rgba(74,222,128,.15)', bdr:'rgba(74,222,128,.4)' },
+      { label:'Semanas', val:allHist.length, color:'#f4d03f', bg:'rgba(244,208,63,.15)', bdr:'rgba(244,208,63,.4)' },
+    ].map(k => `
+      <div style="flex:1;min-width:80px;background:${k.bg};border:1.5px solid ${k.bdr};border-radius:12px;padding:12px 14px;text-align:center">
+        <div style="font-size:9px;font-weight:700;color:rgba(255,255,255,.4);text-transform:uppercase;letter-spacing:.08em;margin-bottom:4px">${k.label}</div>
+        <div style="font-size:22px;font-weight:900;color:${k.color};line-height:1">${k.val}</div>
+      </div>`).join('');
+
+    // Gráfica de barras
+    const chartEl  = document.getElementById('sat-hist-chart');
+    const labelsEl = document.getElementById('sat-hist-labels');
+    const maxPct   = Math.max(...allHist.map(r=>r.pct), 1);
+
+    chartEl.innerHTML = allHist.map(r => {
+      const nv  = getNivel(r.pct);
+      const h   = Math.max((r.pct/100)*90, 4);
+      const wk  = r.semana.replace(/^\d{4}-W/,'W');
+      return `<div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;gap:3px;min-width:28px;max-width:48px">
+        <div style="font-size:9px;font-weight:700;color:${nv.color}">${r.pct}%</div>
+        <div title="${wk}: ${r.pct}%" style="width:100%;height:${h}px;background:linear-gradient(180deg,${nv.bdr},${nv.color});border-radius:5px 5px 0 0;transition:height .4s;cursor:default"></div>
+      </div>`;
+    }).join('');
+
+    labelsEl.innerHTML = allHist.map(r => {
+      const wk = r.semana.replace(/^\d{4}-W/,'S');
+      const mn = r.mes.split('-')[1];
+      return `<div style="flex:1;text-align:center;font-size:8.5px;color:rgba(255,255,255,.3);font-weight:600;min-width:28px;max-width:48px">${wk}<br>${mn}</div>`;
+    }).join('');
+
+    // Tabla detalle
+    document.getElementById('sat-hist-table').innerHTML = allHist.length
+      ? allHist.map(r => {
+          const nv = getNivel(r.pct);
+          const wk = r.semana.replace(/^\d{4}-/,'');
+          const mn = MESES_N[parseInt(r.mes.split('-')[1])-1];
+          return `<div style="display:flex;align-items:center;gap:12px;padding:10px 14px;background:rgba(255,255,255,.04);border-radius:10px;margin-bottom:6px">
+            <div style="font-size:11px;font-weight:600;color:rgba(255,255,255,.5);width:60px">${mn} ${wk}</div>
+            <div style="flex:1;background:rgba(255,255,255,.08);border-radius:99px;height:6px;overflow:hidden">
+              <div style="width:${r.pct}%;height:100%;background:${nv.color};border-radius:99px"></div>
+            </div>
+            <div style="font-size:14px;font-weight:900;color:${nv.color};width:44px;text-align:right">${r.pct}%</div>
+            ${r.tmo ? `<div style="font-size:10px;color:rgba(255,255,255,.3)">⏱${r.tmo}</div>` : ''}
+          </div>`;
+        }).join('')
+      : '<div style="color:rgba(255,255,255,.3);font-size:13px;text-align:center;padding:20px">Sin datos históricos</div>';
+
+    // Daily tab
+    const dayMap = {};
+    allHist.forEach(r => {
+      const wk = r.semana.replace(/^\d{4}-/,'');
+      const mn = MESES_N[parseInt(r.mes.split('-')[1])-1];
+      dayMap[r.semana] = { label: wk+' '+mn, pct:r.pct, nv:getNivel(r.pct) };
+    });
+    const dayEl = document.getElementById('sat-hist-daily');
+    if (dayEl) {
+      const dKeys = Object.keys(dayMap).sort();
+      dayEl.innerHTML = dKeys.length ? dKeys.map(k => {
+        const d=dayMap[k],nv=d.nv;
+        return '<div style="display:flex;align-items:center;gap:12px;padding:10px 14px;background:rgba(255,255,255,.04);border-radius:10px;margin-bottom:6px">'
+          +'<div style="font-size:11px;font-weight:600;color:rgba(255,255,255,.4);width:70px;flex-shrink:0">'+d.label+'</div>'
+          +'<div style="flex:1;background:rgba(255,255,255,.08);border-radius:99px;height:10px;overflow:hidden">'
+          +'<div style="width:'+d.pct+'%;height:100%;background:'+nv.color+';border-radius:99px"></div></div>'
+          +'<div style="font-size:16px;font-weight:900;color:'+nv.color+';width:46px;text-align:right">'+d.pct+'%</div>'
+          +'</div>';
+      }).join('') : '<div style="color:rgba(255,255,255,.3);text-align:center;padding:20px">Sin datos</div>';
+    }
+
+    modal.style.display = 'flex';
+    modal.addEventListener('click', e => { if(e.target===modal) modal.style.display='none'; }, {once:true});
+    if(window._satTabSwitch) window._satTabSwitch('sem');
+  };
+
   // ── Excel ─────────────────────────────────────────────────────
   function getISOWeek(d) {
     const dt=new Date(Date.UTC(d.getFullYear(),d.getMonth(),d.getDate()));
@@ -7218,37 +7487,194 @@ document.getElementById('btn-pend-export-mensual').addEventListener('click', () 
   }
 
   function leerExcelGenesys(file) {
-    const st=document.getElementById('sat-upload-status');
-    st.textContent='⏳ Leyendo...'; st.style.color='#888';
-    const reader=new FileReader();
-    reader.onload=async e=>{
+    const st = document.getElementById('sat-upload-status');
+    st.textContent = '⏳ Leyendo archivo...'; st.style.color = '#a78bfa';
+    const reader = new FileReader();
+    reader.onload = async e => {
       try {
-        const wb=XLSX.read(e.target.result,{type:'array'});
-        const ws=wb.Sheets[wb.SheetNames[0]];
-        const rows=XLSX.utils.sheet_to_json(ws,{defval:''});
-        if(!rows.length) throw new Error('Archivo vacío');
-        const keys=Object.keys(rows[0]);
-        const cA=keys.find(k=>k.toLowerCase().includes('asesor'))||keys[1];
-        const cP=keys.find(k=>k.toLowerCase().includes('satisf')||k.toLowerCase().includes('%'))||keys[2];
-        const cT=keys.find(k=>k.toLowerCase().includes('tmo'))||keys[3];
-        const regs=rows.map(row=>({
-          asesor:String(row[cA]||'').trim(),
-          pct:Math.round(parseFloat(String(row[cP]||'0').replace('%',''))||0),
-          tmo:String(row[cT]||'').trim()
-        })).filter(r=>r.asesor&&r.pct>=0);
-        if(!regs.length) throw new Error('Sin datos válidos');
-        const ahora=new Date();
-        const semana=ahora.getFullYear()+'-W'+String(getISOWeek(ahora)).padStart(2,'0');
-        st.textContent=`⏳ Guardando ${regs.length} registros...`;
-        await window._satGuardar(regs,semana);
-        st.textContent=`✅ ${regs.length} asesores cargados`; st.style.color='#1A7A45';
-        showToast('Satisfacción actualizada ✓');
-      } catch(err){ st.textContent='❌ '+err.message; st.style.color='#C41E3A'; showToast('Error','error'); }
+        const wb  = XLSX.read(e.target.result, { type:'array' });
+        const ws  = wb.Sheets[wb.SheetNames[0]];
+        const raw = XLSX.utils.sheet_to_json(ws, { header:1, defval:'' });
+        if (!raw.length) throw new Error('Archivo vacio');
+
+        const SKIP = ['asesor','nombres','apellidos','nombre','agente','agent','total','promedio','equipo','sise','satisfacci','acum','fecha'];
+
+        // Detectar fila de headers
+        let headerRow = 0;
+        for (let i = 0; i < Math.min(5, raw.length); i++) {
+          if (raw[i].filter(c=>String(c).trim()).length > raw[headerRow].filter(c=>String(c).trim()).length)
+            headerRow = i;
+        }
+        const headers = raw[headerRow].map(h => String(h).trim());
+
+        // Col nombre
+        let colN = 0;
+        for (let i = 0; i < headers.length; i++) {
+          const h = headers[i].toLowerCase();
+          if (h.includes('asesor')||h.includes('nombre')||h.includes('agente')) { colN=i; break; }
+        }
+
+        // Col ACUM (prioritaria)
+        let colP = -1;
+        for (let i = 0; i < headers.length; i++) {
+          if (headers[i].toLowerCase().includes('acum')) { colP=i; break; }
+        }
+        if (colP === -1) {
+          for (let i = 0; i < headers.length; i++) {
+            const h = headers[i].toLowerCase();
+            if (h.includes('satisf')||h.includes('%')) { colP=i; break; }
+          }
+        }
+
+        // Columnas de dias (fallback si no hay ACUM)
+        const colDias = [];
+        if (colP === -1) {
+          headers.forEach((h,i) => {
+            if (i===colN) return;
+            if (/\d/.test(h) && /[a-zA-Z]/.test(h) && !h.toLowerCase().includes('tmo')) colDias.push(i);
+          });
+        }
+
+        // Col TMO
+        let colT = -1;
+        for (let i = 0; i < headers.length; i++) {
+          if (headers[i].toLowerCase().includes('tmo')) { colT=i; break; }
+        }
+
+        const regs = [];
+        for (let ri = headerRow+1; ri < raw.length; ri++) {
+          const row    = raw[ri];
+          const nombre = String(row[colN]||'').trim();
+          if (!nombre) continue;
+          const low = nombre.toLowerCase();
+          if (SKIP.some(w => low===w||low.startsWith(w+' '))) continue;
+
+          let pct = 0;
+          if (colP >= 0) {
+            pct = Math.round(parseFloat(String(row[colP]||'0').replace('%',''))||0);
+          } else if (colDias.length) {
+            const vals = colDias
+              .map(ci => parseFloat(String(row[ci]||'').replace('%',''))||null)
+              .filter(v => v!==null && !isNaN(v));
+            pct = vals.length ? Math.round(vals.reduce((s,v)=>s+v,0)/vals.length) : 0;
+          }
+
+          const tmo = colT>=0 ? String(row[colT]||'').trim() : '';
+          regs.push({ asesor:nombre, pct, tmo });
+        }
+
+        if (!regs.length) throw new Error('Sin datos validos. Verifica que el Excel tenga columna ACUM o dias con porcentajes');
+
+        const ahora  = new Date();
+        const semana = ahora.getFullYear()+'-W'+String(getISOWeek(ahora)).padStart(2,'0');
+        st.textContent = `Guardando ${regs.length} asesores...`;
+        await window._satGuardar(regs, semana);
+        st.textContent = `${regs.length} asesores cargados correctamente`;
+        st.style.color = '#4ade80';
+        showToast('Satisfaccion actualizada');
+      } catch(err) {
+        st.textContent = 'Error: ' + err.message;
+        st.style.color = '#f87171';
+        showToast('Error al leer el Excel', 'error');
+      }
     };
     reader.readAsArrayBuffer(file);
   }
 
-  // ── Init ──────────────────────────────────────────────────────
+
+
+  // ── Helper rol supervisor ─────────────────────────────────────
+  function _esSupervisorSat() {
+    const r = (window.currentUserRol||'').toLowerCase();
+    return r==='supervisor'||r==='bo'||r==='formador';
+  }
+
+  // ── Búsqueda de asesor ────────────────────────────────────────
+  window._satBuscar = function(q) {
+    const val = q.toLowerCase().trim();
+    document.querySelectorAll('#sat-ranking-list .sat-row').forEach(row => {
+      const nameEl = row.querySelector('[data-asesor]');
+      if (!nameEl) return;
+      const nombre = nameEl.dataset.asesor.toLowerCase();
+      row.style.display = (!val || nombre.includes(val)) ? '' : 'none';
+    });
+  };
+
+  // ── Reiniciar tabla del mes ───────────────────────────────────
+  window._satConfirmarReinicio = function() {
+    const modal = document.getElementById('sat-confirm-modal');
+    if (modal) modal.style.display = 'flex';
+  };
+
+  window._satEjecutarReinicio = async function() {
+    document.getElementById('sat-confirm-modal').style.display = 'none';
+    try {
+      const {getFirestore,collection,getDocs,query,where,deleteDoc,doc} = window._fbModules||{};
+      if (!getFirestore) return;
+      const db  = getFirestore();
+      const mes = mesActual();
+      const q   = query(collection(db,'satisfaccion'), where('mes','==',mes));
+      const snap= await getDocs(q);
+      const dels= snap.docs.map(d => deleteDoc(doc(db,'satisfaccion',d.id)));
+      await Promise.all(dels);
+      showToast('Tabla del mes reiniciada ✓');
+    } catch(e) {
+      showToast('Error al reiniciar: '+e.message,'error');
+    }
+  };
+
+  // ── Eliminar asesor del ranking (supervisor) ──────────────────
+  window._satEliminarAsesor = async function(nombre, semana) {
+    if (!confirm('¿Quitar a '+nombre+' del ranking de la semana '+semana+'?')) return;
+    try {
+      const {getFirestore,collection,getDocs,query,where,deleteDoc,doc} = window._fbModules||{};
+      const db  = getFirestore();
+      const mes = mesActual();
+      const q   = query(collection(db,'satisfaccion'),
+        where('asesor','==',nombre), where('semana','==',semana), where('mes','==',mes));
+      const snap= await getDocs(q);
+      await Promise.all(snap.docs.map(d => deleteDoc(doc(db,'satisfaccion',d.id))));
+      showToast(nombre+' eliminado del ranking ✓');
+    } catch(e) {
+      showToast('Error: '+e.message,'error');
+    }
+  };
+
+  // ── Mostrar/ocultar botón de reinicio según rol ───────────────
+  function updateSatControls() {
+    const btn = document.getElementById('sat-btn-reset-mes');
+    if (btn) btn.style.display = _esSupervisorSat() ? 'flex' : 'none';
+  }
+  window.addEventListener('sise:rolCargado', updateSatControls);
+  if (window.currentUserRol) updateSatControls();
+
+  // ── Reemplazar renderFilterBar (ya no se usa chips) ───────────
+  function renderFilterBar(ranking) {
+    // Solo aseguramos que el botón de reinicio esté visible para supervisores
+    updateSatControls();
+  }
+
+  // ── Tabs del modal de historial ───────────────────────────────
+  window._satTabSwitch = function(tab) {
+    const semBtn = document.getElementById('sat-tab-sem');
+    const diaBtn = document.getElementById('sat-tab-dia');
+    const semDiv = document.getElementById('sat-hist-table');
+    const diaDiv = document.getElementById('sat-hist-daily');
+    if (!semBtn) return;
+    if (tab === 'sem') {
+      semBtn.style.cssText += ';background:#a78bfa;color:#fff;border-color:#a78bfa';
+      diaBtn.style.cssText += ';background:transparent;color:rgba(255,255,255,.5);border-color:rgba(255,255,255,.15)';
+      if (semDiv) semDiv.style.display = '';
+      if (diaDiv) diaDiv.style.display = 'none';
+    } else {
+      diaBtn.style.cssText += ';background:#a78bfa;color:#fff;border-color:#a78bfa';
+      semBtn.style.cssText += ';background:transparent;color:rgba(255,255,255,.5);border-color:rgba(255,255,255,.15)';
+      if (semDiv) semDiv.style.display = 'none';
+      if (diaDiv) diaDiv.style.display = '';
+    }
+  };
+
+
   function onSatViewActive() {
     const rol=(window.currentUserRol||'').toLowerCase();
     const esSup=rol==='supervisor'||rol==='bo'||rol==='formador';
@@ -7256,6 +7682,7 @@ document.getElementById('btn-pend-export-mensual').addEventListener('click', () 
     if(bar) bar.style.display=esSup?'flex':'none';
     const fi=document.getElementById('sat-file-input');
     if(fi&&!fi._bound){ fi._bound=true; fi.addEventListener('change',e=>{if(e.target.files[0])leerExcelGenesys(e.target.files[0]);e.target.value='';}); }
+
     if(!satUnsub) initSatFirebase();
   }
 
