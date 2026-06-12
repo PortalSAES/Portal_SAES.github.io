@@ -7320,6 +7320,7 @@ document.getElementById('btn-pend-export-mensual').addEventListener('click', () 
           satData=snap.docs.map(d=>({id:d.id,...d.data()}));
           const ranking=calcRanking(satData);
           renderPodio(ranking); renderRanking(ranking); renderStats(ranking); renderFilterBar(ranking);
+          if(window._satNotifComparar) window._satNotifComparar(ranking);
           const mes=mesActual(), [y,m]=mes.split('-');
           document.getElementById('sat-periodo-label').textContent='Mes en curso: '+MESES_N[parseInt(m)-1]+' '+y;
           const ultima=satData.filter(r=>r.mes===mes).sort((a,b)=>b.semana.localeCompare(a.semana))[0];
@@ -7778,6 +7779,15 @@ document.getElementById('btn-pend-export-mensual').addEventListener('click', () 
         st.textContent = `${regs.length} asesores cargados correctamente`;
         st.style.color = '#4ade80';
         showToast('Satisfaccion actualizada');
+        // Notificación de carga completada
+        if (window._satShowNotif) {
+          window._satShowNotif({
+            icon: '📊', label: 'Ranking actualizado',
+            title: 'Datos cargados correctamente',
+            sub: regs.length + ' asesores · El ranking se ha actualizado',
+            color: '#a78bfa', duration: 5000,
+          });
+        }
       } catch(err) {
         st.textContent = 'Error: ' + err.message;
         st.style.color = '#f87171';
@@ -7897,6 +7907,694 @@ document.getElementById('btn-pend-export-mensual').addEventListener('click', () 
   if(mc) obs.observe(mc,{subtree:true,attributes:true,attributeFilter:['class']});
   if(document.getElementById('view-satisfaccion')?.classList.contains('active')) onSatViewActive();
   window._initSatFirebase=initSatFirebase;
+})();
+
+
+
+// ══════════════════════════════════════════════════════════════
+// MODO SIN CONEXIÓN — banner + protección de datos
+// ══════════════════════════════════════════════════════════════
+(function() {
+
+  // ── Estilos del banner ────────────────────────────────────────
+  const style = document.createElement('style');
+  style.textContent = `
+    #offline-banner {
+      position: fixed;
+      top: 0; left: 0; right: 0;
+      z-index: 999998;
+      background: linear-gradient(135deg, #1a0a0a, #2d0d0d);
+      border-bottom: 2px solid #C41E3A;
+      padding: 0;
+      transform: translateY(-100%);
+      transition: transform 0.4s cubic-bezier(.22,.68,0,1.2);
+      box-shadow: 0 4px 24px rgba(196,30,58,.4);
+    }
+    #offline-banner.visible {
+      transform: translateY(0);
+    }
+    #offline-banner-inner {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 10px 20px;
+      max-width: 100%;
+    }
+    #offline-icon {
+      width: 32px; height: 32px;
+      background: rgba(196,30,58,.2);
+      border-radius: 8px;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+      font-size: 16px;
+    }
+    #offline-text { flex: 1; min-width: 0; }
+    #offline-title {
+      font-size: 13px; font-weight: 800;
+      color: #fff; line-height: 1.2; margin-bottom: 1px;
+    }
+    #offline-sub {
+      font-size: 11px; color: rgba(255,255,255,.5);
+      font-weight: 500;
+    }
+    #offline-dot {
+      width: 8px; height: 8px;
+      border-radius: 50%;
+      background: #C41E3A;
+      flex-shrink: 0;
+      animation: off-pulse 1.5s ease-in-out infinite;
+    }
+    @keyframes off-pulse {
+      0%,100% { opacity:1; box-shadow: 0 0 0 0 rgba(196,30,58,.5); }
+      50%      { opacity:.6; box-shadow: 0 0 0 5px rgba(196,30,58,0); }
+    }
+    #offline-retry {
+      padding: 6px 14px;
+      background: rgba(255,255,255,.08);
+      border: 1px solid rgba(255,255,255,.15);
+      border-radius: 8px;
+      color: #fff;
+      font-size: 12px; font-weight: 700;
+      cursor: pointer;
+      font-family: inherit;
+      transition: background .15s;
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+    #offline-retry:hover { background: rgba(255,255,255,.16); }
+
+    /* Banner de reconexión (verde) */
+    #online-banner {
+      position: fixed;
+      top: 0; left: 0; right: 0;
+      z-index: 999998;
+      background: linear-gradient(135deg, #0a1a0a, #0d2d0d);
+      border-bottom: 2px solid #2ECC71;
+      padding: 0;
+      transform: translateY(-100%);
+      transition: transform 0.4s cubic-bezier(.22,.68,0,1.2);
+      box-shadow: 0 4px 24px rgba(46,204,113,.3);
+    }
+    #online-banner.visible { transform: translateY(0); }
+    #online-banner-inner {
+      display: flex; align-items: center; gap: 12px;
+      padding: 10px 20px;
+    }
+    #online-dot {
+      width: 8px; height: 8px; border-radius: 50%;
+      background: #2ECC71; flex-shrink: 0;
+      animation: on-pulse 1s ease-in-out 3;
+    }
+    @keyframes on-pulse {
+      0%,100% { box-shadow: 0 0 0 0 rgba(46,204,113,.5); }
+      50%      { box-shadow: 0 0 0 6px rgba(46,204,113,0); }
+    }
+
+    /* Overlay que bloquea interacción cuando está offline */
+    #offline-overlay {
+      display: none;
+      position: fixed; inset: 0;
+      z-index: 999990;
+      background: rgba(0,0,0,0);
+      pointer-events: none;
+    }
+    #offline-overlay.blocking {
+      pointer-events: all;
+      background: rgba(0,0,0,0);
+    }
+
+    /* Ajuste del topbar cuando sale el banner */
+    body.is-offline .topbar,
+    body.is-offline .sidebar {
+      margin-top: 52px;
+      transition: margin-top .4s;
+    }
+    body.is-offline .content {
+      margin-top: 0;
+    }
+  `;
+  document.head.appendChild(style);
+
+  // ── HTML del banner offline ───────────────────────────────────
+  const offBanner = document.createElement('div');
+  offBanner.id = 'offline-banner';
+  offBanner.innerHTML = `
+    <div id="offline-banner-inner">
+      <div id="offline-dot"></div>
+      <div id="offline-icon">📡</div>
+      <div id="offline-text">
+        <div id="offline-title">Sin conexión a internet</div>
+        <div id="offline-sub">Los datos mostrados pueden estar desactualizados. Reconectando...</div>
+      </div>
+      <button id="offline-retry">Reintentar</button>
+    </div>`;
+  document.body.appendChild(offBanner);
+
+  // ── HTML del banner online ────────────────────────────────────
+  const onBanner = document.createElement('div');
+  onBanner.id = 'online-banner';
+  onBanner.innerHTML = `
+    <div id="online-banner-inner">
+      <div id="online-dot"></div>
+      <div style="font-size:13px;font-weight:800;color:#fff">Conexión restaurada</div>
+      <div style="font-size:11px;color:rgba(255,255,255,.5);margin-left:4px">— Sincronizando datos...</div>
+    </div>`;
+  document.body.appendChild(onBanner);
+
+  // ── Overlay bloqueante ────────────────────────────────────────
+  const overlay = document.createElement('div');
+  overlay.id = 'offline-overlay';
+  document.body.appendChild(overlay);
+
+  // ── Estado ────────────────────────────────────────────────────
+  let isOffline   = false;
+  let wasOffline  = false;
+  let retryTimer  = null;
+  let offlineTime = null;
+
+  // ── Mostrar banner offline ────────────────────────────────────
+  function goOffline() {
+    if (isOffline) return;
+    isOffline   = true;
+    offlineTime = new Date();
+    document.body.classList.add('is-offline');
+    offBanner.classList.add('visible');
+    onBanner.classList.remove('visible');
+
+    // Toast informativo
+    if (window.showToast) {
+      showToast('Sin conexión — los datos pueden estar desactualizados', 'error');
+    }
+
+    // Actualizar subtítulo con tiempo
+    startOfflineTimer();
+  }
+
+  // ── Mostrar banner online ─────────────────────────────────────
+  function goOnline() {
+    if (!isOffline) return;
+    isOffline  = false;
+    wasOffline = true;
+    document.body.classList.remove('is-offline');
+    offBanner.classList.remove('visible');
+    onBanner.classList.add('visible');
+    stopOfflineTimer();
+
+    // Calcular tiempo que estuvo offline
+    const secs = offlineTime ? Math.round((new Date() - offlineTime) / 1000) : 0;
+    const timeStr = secs < 60 ? secs + 's' : Math.round(secs/60) + 'min';
+    onBanner.querySelector('div:last-child').textContent = '— Reconectado después de ' + timeStr;
+
+    if (window.showToast) {
+      showToast('Conexión restaurada ✓');
+    }
+
+    // Ocultar banner online después de 4 segundos
+    setTimeout(() => {
+      onBanner.classList.remove('visible');
+      wasOffline = false;
+    }, 4000);
+  }
+
+  // ── Timer mostrando cuánto tiempo sin conexión ────────────────
+  function startOfflineTimer() {
+    stopOfflineTimer();
+    retryTimer = setInterval(() => {
+      if (!offlineTime) return;
+      const secs = Math.round((new Date() - offlineTime) / 1000);
+      const sub  = document.getElementById('offline-sub');
+      if (!sub) return;
+      if (secs < 60) {
+        sub.textContent = 'Sin internet hace ' + secs + ' segundos. Los datos pueden estar desactualizados.';
+      } else {
+        sub.textContent = 'Sin internet hace ' + Math.round(secs/60) + ' minutos. Reconectando...';
+      }
+    }, 5000);
+  }
+
+  function stopOfflineTimer() {
+    if (retryTimer) { clearInterval(retryTimer); retryTimer = null; }
+  }
+
+  // ── Botón reintentar ──────────────────────────────────────────
+  document.getElementById('offline-retry').addEventListener('click', () => {
+    // Intentar hacer un fetch ligero para verificar conexión
+    const btn = document.getElementById('offline-retry');
+    btn.textContent = 'Verificando...';
+    btn.disabled    = true;
+    fetch('https://www.gstatic.com/firebasejs/11.8.1/firebase-app.js', {
+      method: 'HEAD', cache: 'no-store', mode: 'no-cors'
+    })
+    .then(() => {
+      // Si llega aquí hay conexión — el evento online debería dispararse
+      window.dispatchEvent(new Event('online'));
+      btn.textContent = 'Reintentar';
+      btn.disabled    = false;
+    })
+    .catch(() => {
+      btn.textContent = 'Sin conexión';
+      setTimeout(() => {
+        btn.textContent = 'Reintentar';
+        btn.disabled    = false;
+      }, 2000);
+    });
+  });
+
+  // ── Detectar cambios de conexión del navegador ────────────────
+  window.addEventListener('offline', () => {
+    goOffline();
+  });
+
+  window.addEventListener('online', () => {
+    // Verificar que realmente hay conexión (no solo que el navegador dice "online")
+    fetch('https://www.gstatic.com/firebasejs/11.8.1/firebase-app.js', {
+      method: 'HEAD', cache: 'no-store', mode: 'no-cors'
+    })
+    .then(() => goOnline())
+    .catch(() => { /* sigue offline */ });
+  });
+
+  // ── Verificación proactiva cada 30 segundos ───────────────────
+  setInterval(() => {
+    if (!navigator.onLine) {
+      goOffline();
+      return;
+    }
+    // Si el navegador dice online pero sospechamos que no hay real conexión
+    if (isOffline) {
+      fetch('https://www.gstatic.com/firebasejs/11.8.1/firebase-app.js', {
+        method: 'HEAD', cache: 'no-store', mode: 'no-cors'
+      })
+      .then(() => goOnline())
+      .catch(() => { /* sigue offline */ });
+    }
+  }, 30000);
+
+  // ── Detectar errores de Firebase por conexión ─────────────────
+  // Interceptar errores de red globales
+  window.addEventListener('unhandledrejection', e => {
+    const msg = (e.reason && e.reason.message) ? e.reason.message.toLowerCase() : '';
+    if (
+      msg.includes('network') ||
+      msg.includes('failed to fetch') ||
+      msg.includes('networkerror') ||
+      msg.includes('unavailable') ||
+      !navigator.onLine
+    ) {
+      goOffline();
+    }
+  });
+
+  // ── Estado inicial ────────────────────────────────────────────
+  if (!navigator.onLine) {
+    goOffline();
+  }
+
+})();
+
+
+
+// ══════════════════════════════════════════════════════════════
+// NOTIFICACIONES DE RANKING — estilo logro Steam
+// ══════════════════════════════════════════════════════════════
+(function() {
+
+  const notifStyle = document.createElement('style');
+  notifStyle.textContent = `
+    #sat-notif-container {
+      position: fixed;
+      bottom: 24px; right: 24px;
+      z-index: 999997;
+      display: flex; flex-direction: column-reverse;
+      gap: 10px; pointer-events: none;
+      max-width: 340px; width: calc(100vw - 48px);
+    }
+
+    .sat-notif {
+      background: linear-gradient(135deg, #1a1035 0%, #0d0020 100%);
+      border: 1px solid rgba(255,255,255,.12);
+      border-radius: 14px;
+      padding: 0;
+      box-shadow: 0 8px 32px rgba(0,0,0,.6), 0 0 0 1px rgba(255,255,255,.05);
+      overflow: hidden;
+      pointer-events: all;
+      transform: translateX(120%);
+      opacity: 0;
+      transition: transform .45s cubic-bezier(.22,.68,0,1.2), opacity .3s;
+      position: relative;
+    }
+    .sat-notif.show {
+      transform: translateX(0);
+      opacity: 1;
+    }
+    .sat-notif.hide {
+      transform: translateX(120%);
+      opacity: 0;
+      transition: transform .35s ease-in, opacity .25s;
+    }
+
+    /* Barra de progreso de auto-cierre */
+    .sat-notif-progress {
+      position: absolute;
+      bottom: 0; left: 0;
+      height: 2px;
+      background: var(--notif-color, #a78bfa);
+      border-radius: 0 0 0 14px;
+      animation: notif-progress var(--notif-duration, 5s) linear forwards;
+    }
+    @keyframes notif-progress {
+      from { width: 100%; }
+      to   { width: 0%; }
+    }
+
+    .sat-notif-inner {
+      display: flex; align-items: center; gap: 12px;
+      padding: 14px 16px;
+    }
+
+    .sat-notif-icon {
+      width: 44px; height: 44px;
+      border-radius: 12px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 22px; flex-shrink: 0;
+      position: relative;
+    }
+    .sat-notif-icon::after {
+      content: '';
+      position: absolute; inset: -2px;
+      border-radius: 14px;
+      border: 1.5px solid var(--notif-color, #a78bfa);
+      opacity: .5;
+      animation: notif-ring-pulse 2s ease-in-out infinite;
+    }
+    @keyframes notif-ring-pulse {
+      0%,100% { opacity:.4; transform:scale(1); }
+      50%      { opacity:.8; transform:scale(1.05); }
+    }
+
+    .sat-notif-text { flex: 1; min-width: 0; }
+    .sat-notif-label {
+      font-size: 9.5px; font-weight: 800;
+      text-transform: uppercase; letter-spacing: .1em;
+      color: var(--notif-color, #a78bfa);
+      margin-bottom: 2px;
+    }
+    .sat-notif-title {
+      font-size: 13px; font-weight: 800;
+      color: #fff; line-height: 1.3; margin-bottom: 2px;
+    }
+    .sat-notif-sub {
+      font-size: 11px; color: rgba(255,255,255,.45);
+      font-weight: 500; line-height: 1.4;
+    }
+
+    .sat-notif-close {
+      position: absolute; top: 8px; right: 10px;
+      background: none; border: none;
+      color: rgba(255,255,255,.25); font-size: 14px;
+      cursor: pointer; padding: 2px; line-height: 1;
+      font-family: inherit; transition: color .15s;
+    }
+    .sat-notif-close:hover { color: rgba(255,255,255,.7); }
+
+    /* Shimmer en notificación de top1 */
+    .sat-notif-top1 {
+      background: linear-gradient(135deg, #1a1500 0%, #2d2000 50%, #1a1500 100%);
+      border-color: rgba(255,215,0,.3);
+    }
+    .sat-notif-top1::before {
+      content: '';
+      position: absolute; inset: 0;
+      background: linear-gradient(90deg,transparent 30%,rgba(255,215,0,.06) 50%,transparent 70%);
+      background-size: 300% auto;
+      animation: notif-shimmer 3s linear infinite;
+      pointer-events: none;
+    }
+    @keyframes notif-shimmer {
+      0%  { background-position: 200% center; }
+      100%{ background-position: -200% center; }
+    }
+  `;
+  document.head.appendChild(notifStyle);
+
+  // Contenedor
+  const container = document.createElement('div');
+  container.id = 'sat-notif-container';
+  document.body.appendChild(container);
+
+  // ── Función principal para mostrar notificación ───────────────
+  let notifQueue = [];
+  let isShowingQueue = false;
+
+  function showNotif({ icon, label, title, sub, color, duration = 5000, type = '' }) {
+    notifQueue.push({ icon, label, title, sub, color, duration, type });
+    if (!isShowingQueue) processQueue();
+  }
+
+  function processQueue() {
+    if (!notifQueue.length) { isShowingQueue = false; return; }
+    isShowingQueue = true;
+    const cfg = notifQueue.shift();
+    _renderNotif(cfg);
+    setTimeout(processQueue, 600);
+  }
+
+  function _renderNotif({ icon, label, title, sub, color, duration, type }) {
+    const el = document.createElement('div');
+    el.className = 'sat-notif' + (type === 'top1' ? ' sat-notif-top1' : '');
+    el.style.setProperty('--notif-color', color || '#a78bfa');
+    el.style.setProperty('--notif-duration', (duration / 1000) + 's');
+    el.innerHTML = `
+      <div class="sat-notif-inner">
+        <div class="sat-notif-icon" style="background:${color}18">${icon}</div>
+        <div class="sat-notif-text">
+          <div class="sat-notif-label">${label}</div>
+          <div class="sat-notif-title">${title}</div>
+          <div class="sat-notif-sub">${sub}</div>
+        </div>
+      </div>
+      <div class="sat-notif-progress"></div>
+      <button class="sat-notif-close" onclick="this.parentElement.remove()">✕</button>`;
+
+    container.appendChild(el);
+
+    // Animar entrada
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => { el.classList.add('show'); });
+    });
+
+    // Auto-cerrar
+    setTimeout(() => {
+      el.classList.add('hide');
+      setTimeout(() => { if (el.parentElement) el.remove(); }, 400);
+    }, duration);
+  }
+
+  // ── Sonido suave de notificación ─────────────────────────────
+  function playNotifSound(type) {
+    try {
+      const ctx  = new (window.AudioContext || window.webkitAudioContext)();
+      const freqs = type === 'top1'    ? [523, 659, 784] :
+                    type === 'subida'  ? [440, 523] :
+                    type === 'bajada'  ? [440, 392] :
+                    [440];
+      freqs.forEach((f, i) => {
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.connect(gain); gain.connect(ctx.destination);
+        osc.frequency.value = f;
+        osc.type = 'sine';
+        const t = ctx.currentTime + i * 0.12;
+        gain.gain.setValueAtTime(0, t);
+        gain.gain.linearRampToValueAtTime(0.12, t + 0.04);
+        gain.gain.linearRampToValueAtTime(0, t + 0.3);
+        osc.start(t); osc.stop(t + 0.35);
+      });
+    } catch(e) {}
+  }
+
+  // ── Comparar rankings y generar notificaciones ────────────────
+  let _prevRanking = null;
+
+  window._satNotifComparar = function(newRanking) {
+    if (!newRanking || !newRanking.length) { _prevRanking = newRanking; return; }
+
+    const miNombre = (window.currentUserNombre || '').toLowerCase();
+    const miPrimNombre = miNombre.split(' ')[0];
+
+    // Primera carga — solo mostrar posición del usuario sin comparar
+    if (!_prevRanking) {
+      _prevRanking = newRanking;
+
+      if (!miPrimNombre) return;
+      const miPos = newRanking.findIndex(r =>
+        r.asesor.toLowerCase().includes(miPrimNombre)
+      );
+      if (miPos < 0) return;
+
+      const pos = miPos + 1;
+      const r   = newRanking[miPos];
+      const niv = _satGetNivelNotif(r.pct);
+
+      if (pos === 1) {
+        showNotif({
+          icon: '👑', label: 'Tu posición actual', type: 'top1',
+          title: '¡Estás en el #1!',
+          sub: r.pct + '% — ' + niv.label + '. ¡Mantén el ritmo!',
+          color: '#FFD700', duration: 7000,
+        });
+        playNotifSound('top1');
+      } else if (pos <= 3) {
+        showNotif({
+          icon: ['','🥇','🥈','🥉'][pos], label: 'Tu posición actual',
+          title: '¡Estás en el top ' + pos + '!',
+          sub: r.pct + '% — ' + niv.label + '. ¡Sigue así!',
+          color: pos === 2 ? '#C0C0C0' : '#CD7F32', duration: 6000,
+        });
+        playNotifSound('subida');
+      }
+      return;
+    }
+
+    // Comparar con ranking anterior
+    const prev = _prevRanking;
+    _prevRanking = newRanking;
+
+    newRanking.forEach((r, newIdx) => {
+      const newPos = newIdx + 1;
+      const prevIdx = prev.findIndex(p => p.asesor === r.asesor);
+      const prevPos = prevIdx >= 0 ? prevIdx + 1 : null;
+      const niv = _satGetNivelNotif(r.pct);
+
+      // ¿Es el usuario actual?
+      const esYo = miPrimNombre &&
+        r.asesor.toLowerCase().includes(miPrimNombre);
+
+      // ── Notificaciones para TODOS sobre el top 1 ──────────────
+      if (newPos === 1 && prevPos !== 1) {
+        // Alguien subió al top 1
+        showNotif({
+          icon: '👑', label: 'Nuevo líder del ranking', type: 'top1',
+          title: r.asesor.split(' ')[0] + ' tomó el #1',
+          sub: r.pct + '% — ' + niv.label + '. ¡Un nuevo campeón!',
+          color: '#FFD700', duration: 8000,
+        });
+        playNotifSound('top1');
+      } else if (newPos === 1 && prevPos === 1 && r.pct !== prev[0].pct) {
+        // Se mantiene en top 1 pero con nuevo porcentaje
+        showNotif({
+          icon: '👑', label: 'Sigue en la cima', type: 'top1',
+          title: r.asesor.split(' ')[0] + ' sigue imparable',
+          sub: r.pct + '% — ' + niv.label + '. ¡Sin rival!',
+          color: '#FFD700', duration: 6000,
+        });
+        playNotifSound('top1');
+      }
+
+      // ── Notificaciones para TODOS sobre top 2 y 3 ─────────────
+      if ((newPos === 2 || newPos === 3) && prevPos !== newPos && prevPos !== null) {
+        const medal = newPos === 2 ? '🥈' : '🥉';
+        if (prevPos > newPos) {
+          showNotif({
+            icon: medal, label: 'Movimiento en el podio',
+            title: r.asesor.split(' ')[0] + ' subió al #' + newPos,
+            sub: r.pct + '% — ' + niv.label,
+            color: newPos === 2 ? '#C0C0C0' : '#CD7F32', duration: 5000,
+          });
+        }
+      }
+
+      // ── Notificaciones PERSONALES (solo para el usuario) ──────
+      if (!esYo || prevPos === null) return;
+
+      if (newPos < prevPos) {
+        // Subiste de posición
+        if (newPos === 1) {
+          showNotif({
+            icon: '👑', label: '¡Logro desbloqueado!', type: 'top1',
+            title: '¡Alcanzaste el #1!',
+            sub: '¡Eres el mejor del equipo este mes! ' + r.pct + '%',
+            color: '#FFD700', duration: 10000,
+          });
+          playNotifSound('top1');
+        } else if (newPos <= 3) {
+          showNotif({
+            icon: ['','🥇','🥈','🥉'][newPos], label: '¡Subiste en el ranking!',
+            title: '¡Ahora eres #' + newPos + '!',
+            sub: 'Subiste ' + (prevPos - newPos) + ' puesto(s). ¡Sigue así! 🔥',
+            color: '#4ADE80', duration: 7000,
+          });
+          playNotifSound('subida');
+        } else {
+          showNotif({
+            icon: '⬆️', label: 'Subiste en el ranking',
+            title: 'Ahora estás en el puesto #' + newPos,
+            sub: 'Subiste ' + (prevPos - newPos) + ' lugar(es). ¡Buen trabajo!',
+            color: '#4ADE80', duration: 6000,
+          });
+          playNotifSound('subida');
+        }
+      } else if (newPos > prevPos) {
+        // Bajaste de posición
+        if (prevPos <= 3) {
+          showNotif({
+            icon: '⚡', label: 'Te han superado',
+            title: 'Bajaste del #' + prevPos + ' al #' + newPos,
+            sub: '¡Hora de dar más! Puedes recuperar tu posición 💪',
+            color: '#F26522', duration: 7000,
+          });
+          playNotifSound('bajada');
+        } else {
+          showNotif({
+            icon: '📉', label: 'Cambio en tu posición',
+            title: 'Bajaste al puesto #' + newPos,
+            sub: 'Estabas en #' + prevPos + '. ¡Aún puedes subir!',
+            color: '#F26522', duration: 6000,
+          });
+          playNotifSound('bajada');
+        }
+      } else if (newPos === prevPos && newPos <= 3) {
+        // Se mantiene en top 3
+        showNotif({
+          icon: ['','🥇','🥈','🥉'][newPos], label: 'Sigues en el podio',
+          title: '¡Mantienes el #' + newPos + '!',
+          sub: r.pct + '% — ' + niv.label + '. ¡Nadie te mueve!',
+          color: newPos === 1 ? '#FFD700' : newPos === 2 ? '#C0C0C0' : '#CD7F32',
+          duration: 5000,
+        });
+      }
+    });
+
+    // Notificaciones para asesores que no están en el nuevo ranking
+    // (si estaban antes y ya no aparecen)
+    prev.forEach(p => {
+      const esYo = miPrimNombre &&
+        p.asesor.toLowerCase().includes(miPrimNombre);
+      if (!esYo) return;
+      const sigueEn = newRanking.find(r => r.asesor === p.asesor);
+      if (!sigueEn) {
+        showNotif({
+          icon: '❓', label: 'Tu posición',
+          title: 'No apareces en el ranking',
+          sub: 'El supervisor aún no ha cargado tus datos de esta semana.',
+          color: '#A78BFA', duration: 6000,
+        });
+      }
+    });
+  };
+
+  // ── Helper nivel para notificaciones ─────────────────────────
+  function _satGetNivelNotif(pct) {
+    if (pct >= 95) return { label: 'Diamante 💎' };
+    if (pct >= 80) return { label: 'Esmeralda 💚' };
+    if (pct >= 60) return { label: 'Oro 🥇' };
+    if (pct >= 40) return { label: 'Plata 🥈' };
+    return { label: 'Bronce 🥉' };
+  }
+
+  // Exponer globalmente
+  window._satShowNotif = showNotif;
+
 })();
 
 })();</script>
