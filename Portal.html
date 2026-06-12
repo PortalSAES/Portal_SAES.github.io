@@ -8553,15 +8553,31 @@ document.getElementById('btn-pend-export-mensual').addEventListener('click', () 
           });
           playNotifSound('bajada');
         }
-      } else if (newPos === prevPos && newPos <= 3) {
-        // Se mantiene en top 3
+      } else if (newPos === prevPos) {
+        // Se mantiene en la misma posición — notificar siempre
+        const posColor = newPos === 1 ? '#FFD700'
+                       : newPos === 2 ? '#C0C0C0'
+                       : newPos === 3 ? '#CD7F32'
+                       : '#a78bfa';
+        const posIcon  = newPos === 1 ? '👑'
+                       : newPos === 2 ? '🥈'
+                       : newPos === 3 ? '🥉'
+                       : '📍';
+        const posLabel = newPos <= 3 ? 'Sigues en el podio' : 'Tu posición se mantiene';
+        const posSub   = newPos === 1 ? r.pct + '% — ¡Nadie te mueve de la cima!'
+                       : newPos === 2 ? r.pct + '% — ¡Muy cerca del top!'
+                       : newPos === 3 ? r.pct + '% — ¡Estás en el podio!'
+                       : r.pct + '% — ¡Sigue empujando para subir!';
         showNotif({
-          icon: ['','🥇','🥈','🥉'][newPos], label: 'Sigues en el podio',
-          title: '¡Mantienes el #' + newPos + '!',
-          sub: r.pct + '% — ' + niv.label + '. ¡Nadie te mueve!',
-          color: newPos === 1 ? '#FFD700' : newPos === 2 ? '#C0C0C0' : '#CD7F32',
+          icon: posIcon,
+          label: posLabel,
+          title: '¡Mantienes el puesto #' + newPos + '!',
+          sub: posSub,
+          color: posColor,
+          type: newPos === 1 ? 'top1' : '',
           duration: 5000,
         });
+        if (newPos === 1) playNotifSound('top1');
       }
     });
 
