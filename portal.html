@@ -78,6 +78,7 @@ mark.plt-hl {
 <div>
 <div class="nav-label">Menú</div>
 <div class="nav-item active" data-view="inicio" data-label="Inicio"><i class="ti ti-layout-dashboard"></i><span>Inicio</span></div>
+<div class="nav-item" data-view="satisfaccion" data-label="Satisfacción" id="nav-satisfaccion" style="display:none"><i class="ti ti-trophy"></i><span>Satisfacción</span></div>
 </div>
 <div>
 <div class="nav-label">Recursos</div>
@@ -1425,6 +1426,69 @@ Amplio
 </div>
 <!-- FIN VISTA ACERCA DE -->
 
+
+<div class="view" id="view-satisfaccion">
+
+<!-- SUPERVISOR: Upload bar -->
+<div id="sat-supervisor-bar" style="display:none;background:linear-gradient(135deg,#0D0D0D,#1a0f06);border-radius:14px;padding:18px 22px;margin-bottom:22px;display:none;align-items:center;gap:16px;flex-wrap:wrap">
+  <div style="flex:1;min-width:0">
+    <div style="font-size:11px;font-weight:700;color:#C41E3A;text-transform:uppercase;letter-spacing:.08em;margin-bottom:3px">Panel Supervisor</div>
+    <div style="font-size:15px;font-weight:800;color:#fff;margin-bottom:2px">Subir reporte de satisfacción</div>
+    <div style="font-size:12px;color:#666">Excel exportado de Genesys — columnas: Asesor, % Satisfacción, TMO</div>
+  </div>
+  <label id="sat-upload-label" style="display:flex;align-items:center;gap:8px;background:#C41E3A;color:#fff;border-radius:10px;padding:10px 20px;font-size:13px;font-weight:700;cursor:pointer;transition:background .15s;white-space:nowrap">
+    <i class="ti ti-upload"></i> Subir Excel
+    <input type="file" id="sat-file-input" accept=".xlsx,.xls,.csv" style="display:none">
+  </label>
+  <div id="sat-upload-status" style="font-size:12px;color:#666"></div>
+</div>
+
+<!-- Período actual -->
+<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;flex-wrap:wrap;gap:12px">
+  <div>
+    <h2 style="font-size:20px;font-weight:800;color:var(--text);display:flex;align-items:center;gap:10px">
+      <i class="ti ti-trophy" style="color:#F26522"></i> Satisfacción del Equipo
+    </h2>
+    <p id="sat-periodo-label" style="font-size:12px;color:var(--muted);margin-top:3px">Cargando...</p>
+  </div>
+  <div id="sat-global-stats" style="display:flex;gap:12px;flex-wrap:wrap"></div>
+</div>
+
+<!-- Podio top 3 -->
+<div id="sat-podio" style="display:flex;align-items:flex-end;justify-content:center;gap:12px;margin-bottom:28px;min-height:180px"></div>
+
+<!-- Ranking completo -->
+<div style="background:var(--white);border:1px solid var(--border);border-radius:16px;overflow:hidden">
+  <div style="background:#0D0D0D;padding:14px 20px;display:flex;align-items:center;gap:10px">
+    <i class="ti ti-list-numbers" style="color:#C41E3A;font-size:18px"></i>
+    <span style="font-size:14px;font-weight:800;color:#fff">Ranking completo</span>
+    <span id="sat-semana-label" style="margin-left:auto;font-size:11px;color:#555;font-weight:600"></span>
+  </div>
+  <div id="sat-ranking-list" style="padding:8px 0"></div>
+  <div id="sat-empty-state" style="padding:64px 24px;text-align:center;color:var(--muted);display:none">
+    <i class="ti ti-trophy" style="font-size:40px;display:block;margin-bottom:12px;opacity:.3"></i>
+    <p style="font-size:14px;font-weight:600">Aún no hay datos este mes</p>
+    <span style="font-size:12px">El supervisor puede subir el reporte Excel de Genesys</span>
+  </div>
+</div>
+
+<!-- Modal reinicio -->
+<div id="sat-reset-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);backdrop-filter:blur(6px);z-index:99999;align-items:center;justify-content:center">
+  <div style="background:#fff;border-radius:24px;max-width:440px;width:calc(100% - 40px);overflow:hidden;box-shadow:0 32px 80px rgba(0,0,0,.4);transform:scale(.95);transition:transform .3s">
+    <div style="background:linear-gradient(135deg,#0D0D0D,#1a0f06);padding:32px 28px 24px;text-align:center;position:relative">
+      <div style="font-size:52px;margin-bottom:8px">🏆</div>
+      <div style="font-size:11px;font-weight:700;color:#C41E3A;text-transform:uppercase;letter-spacing:.1em;margin-bottom:6px">Fin de mes</div>
+      <div id="sat-reset-title" style="font-size:22px;font-weight:800;color:#fff;line-height:1.3"></div>
+    </div>
+    <div style="padding:24px 28px">
+      <div id="sat-reset-winner" style="background:#FFFBF0;border:2px solid #F0C040;border-radius:14px;padding:16px;text-align:center;margin-bottom:20px"></div>
+      <div id="sat-reset-msg" style="font-size:14px;color:#555;line-height:1.7;text-align:center;margin-bottom:20px"></div>
+      <button id="sat-reset-close" style="width:100%;padding:13px;background:#C41E3A;color:#fff;border:none;border-radius:12px;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit">¡Comenzar nuevo mes! 🚀</button>
+    </div>
+  </div>
+</div>
+
+</div>
 </main>
 </div>
 </div>
@@ -2205,6 +2269,9 @@ if (snap.exists()) {
 }
 } catch(e) { currentUserRol = ''; window.currentUserNombre = ''; }
 window.currentUserRol = currentUserRol;
+// Expose firebase modules for satisfaccion module
+if (!window._fbModules) window._fbModules = { getFirestore, collection, onSnapshot, addDoc, query, where, orderBy, serverTimestamp, getDocs, deleteDoc, doc, updateDoc };
+if (window._initSatFirebase) window._initSatFirebase();
 window.dispatchEvent(new CustomEvent('sise:rolCargado', { detail: { rol: currentUserRol, nombre: window.currentUserNombre } }));
 // Iniciar listeners de Firestore AHORA que hay sesión activa
 if (!_tipiListenersStarted) { _tipiListenersStarted = true; await iniciarListenersTipi(); }
@@ -6658,6 +6725,545 @@ document.getElementById('btn-pend-export-mensual').addEventListener('click', () 
   } else {
     window.addEventListener('sise:rolCargado', programarAlarmas, { once: true });
   }
+})();
+
+
+
+// ══════════════════════════════════════════════════════════════
+// SATISFACCIÓN — ranking gamificado v3
+// ══════════════════════════════════════════════════════════════
+(function() {
+
+  // ── Rangos con nombres de gemas/metales ───────────────────────
+  function getNivel(pct) {
+    if (pct >= 95) return {
+      label:'Diamante', icon:'💎', color:'#1a6fbf', bg:'linear-gradient(135deg,#E8F4FF,#C0DCFF)',
+      bdr:'#4A90D9', glow:'rgba(74,144,217,0.5)', shine:'rgba(100,180,255,0.3)'
+    };
+    if (pct >= 80) return {
+      label:'Esmeralda', icon:'💚', color:'#0e7a45', bg:'linear-gradient(135deg,#D4F7E8,#A8EEC8)',
+      bdr:'#2ECC71', glow:'rgba(46,204,113,0.45)', shine:'rgba(46,204,113,0.2)'
+    };
+    if (pct >= 60) return {
+      label:'Oro', icon:'🥇', color:'#9A6700', bg:'linear-gradient(135deg,#FFF3C0,#FFE270)',
+      bdr:'#F0C040', glow:'rgba(240,192,64,0.45)', shine:'rgba(255,220,50,0.25)'
+    };
+    if (pct >= 40) return {
+      label:'Plata', icon:'🥈', color:'#5A5A6A', bg:'linear-gradient(135deg,#F0F0F5,#D8D8E8)',
+      bdr:'#A0A0C0', glow:'rgba(160,160,192,0.4)', shine:'rgba(200,200,220,0.25)'
+    };
+    return {
+      label:'Bronce', icon:'🥉', color:'#7A4A20', bg:'linear-gradient(135deg,#F5E8D8,#E8C8A0)',
+      bdr:'#CD8B5A', glow:'rgba(205,139,90,0.4)', shine:'rgba(205,139,90,0.2)'
+    };
+  }
+
+  // ── Frases por posición ───────────────────────────────────────
+  const FRASES_TOP1_RACHA = [
+    "¡Eres imparable! El podio tiene dueño y se llama {nombre} 👑",
+    "¡{nombre} en modo bestia! Semana tras semana en la cima 🔥",
+    "¿Alguien puede detener a {nombre}? ¡El equipo está mirando! 💎",
+    "¡{nombre} está escribiendo historia este mes! Nivel Diamante real 🏆",
+    "¡Racha épica de {nombre}! Así se demuestra la excelencia 🚀",
+  ];
+  const FRASES_BOTTOM = [
+    "Cada encuesta cuenta. Un punto más y empiezas a escalar 💪",
+    "Los campeones también empezaron desde aquí. ¡Tu turno de subir! ⬆️",
+    "El podio no está tan lejos como crees. ¡Hoy puede ser el día! 🎯",
+    "Una buena atención puede cambiar todo. ¡Tú puedes! 🌟",
+    "Los mejores también tuvieron días difíciles. ¡Sigue adelante! 🔥",
+    "Cada chat es una oportunidad de subir en el ranking. ¡Aprovéchala! 💡",
+  ];
+
+  function getFraseTop1(nombre, racha) {
+    if (racha < 2) return null;
+    const f = FRASES_TOP1_RACHA[Math.floor(Math.random()*FRASES_TOP1_RACHA.length)];
+    return f.replace('{nombre}', nombre.split(' ')[0]);
+  }
+  function getFraseBottom() {
+    return FRASES_BOTTOM[Math.floor(Math.random()*FRASES_BOTTOM.length)];
+  }
+
+  // ── CSS ───────────────────────────────────────────────────────
+  const style = document.createElement('style');
+  style.textContent = `
+    #view-satisfaccion { background:var(--surface); }
+
+    /* Podio */
+    #sat-podio {
+      display:flex; align-items:flex-end; justify-content:center;
+      gap:12px; padding:0 16px; min-height:200px; position:relative;
+    }
+    .sat-podio-col { display:flex; flex-direction:column; align-items:center; flex:1; max-width:170px; }
+
+    /* Avatar con anillo */
+    .sat-av {
+      border-radius:50%; display:flex; align-items:center; justify-content:center;
+      font-weight:900; color:#fff; flex-shrink:0; position:relative;
+      transition:transform .25s cubic-bezier(.22,.68,0,1.5);
+    }
+    .sat-av:hover { transform:scale(1.1) rotate(-3deg); }
+    .sat-av-ring {
+      position:absolute; inset:-4px; border-radius:50%;
+      border:3px solid transparent;
+      animation:sat-ring-spin 4s linear infinite;
+    }
+    @keyframes sat-ring-spin {
+      from { transform:rotate(0deg); }
+      to   { transform:rotate(360deg); }
+    }
+
+    /* Pedestal */
+    .sat-pedestal {
+      width:100%; border-radius:16px 16px 0 0;
+      display:flex; flex-direction:column; align-items:center;
+      justify-content:flex-start; padding-top:18px;
+      margin-top:12px; position:relative; overflow:hidden;
+    }
+    .sat-pedestal::after {
+      content:''; position:absolute; top:0; left:-50%; width:200%; height:100%;
+      background:linear-gradient(90deg,transparent 30%,rgba(255,255,255,.15) 50%,transparent 70%);
+      background-size:200% auto;
+      animation:sat-pedestal-shine 3s linear infinite;
+    }
+    @keyframes sat-pedestal-shine {
+      0%  { background-position:200% center; }
+      100%{ background-position:-200% center; }
+    }
+
+    /* Nivel badge */
+    .sat-badge {
+      display:inline-flex; align-items:center; gap:4px;
+      border-radius:99px; padding:3px 11px;
+      font-size:10px; font-weight:800; letter-spacing:.04em;
+      border:1.5px solid; white-space:nowrap; backdrop-filter:blur(4px);
+      transition:transform .2s;
+    }
+    .sat-badge:hover { transform:scale(1.05); }
+
+    /* Ranking rows */
+    .sat-row {
+      display:flex; align-items:center; gap:14px;
+      padding:12px 20px; border-bottom:1px solid var(--border);
+      transition:background .15s, transform .15s, box-shadow .15s;
+      position:relative; overflow:hidden;
+    }
+    .sat-row:last-child { border-bottom:none; }
+    .sat-row:hover {
+      transform:translateX(4px);
+      background:var(--orange-light) !important;
+      box-shadow:inset 3px 0 0 var(--orange);
+    }
+
+    /* Shine en top 3 */
+    .sat-row-shine::after {
+      content:''; position:absolute; inset:0; pointer-events:none;
+      background:linear-gradient(90deg,transparent 35%,rgba(255,255,255,.07) 50%,transparent 65%);
+      background-size:300% auto;
+      animation:sat-row-sh 4s linear infinite;
+    }
+    @keyframes sat-row-sh {
+      0%  { background-position:200% center; }
+      100%{ background-position:-200% center; }
+    }
+
+    /* Barra */
+    .sat-bar-track { height:8px; border-radius:99px; background:#F0EEE9; overflow:hidden; margin-top:5px; }
+    .sat-bar-fill  { height:100%; border-radius:99px; transition:width .9s cubic-bezier(.22,.68,0,1.2); }
+
+    /* Racha */
+    .sat-racha {
+      display:inline-flex; align-items:center; gap:3px;
+      background:linear-gradient(135deg,#FF6B35,#FF3A00);
+      color:#fff; border-radius:99px; padding:2px 8px;
+      font-size:10px; font-weight:800;
+      box-shadow:0 2px 8px rgba(255,58,0,.4);
+      animation:sat-racha-pulse 1.8s ease-in-out infinite;
+    }
+    @keyframes sat-racha-pulse {
+      0%,100%{ box-shadow:0 2px 8px rgba(255,58,0,.4); }
+      50%{ box-shadow:0 2px 18px rgba(255,58,0,.7); }
+    }
+
+    /* Badge "Tú" */
+    .sat-yo { display:inline-flex; align-items:center; background:var(--orange); color:#fff; border-radius:99px; padding:2px 9px; font-size:10px; font-weight:800; }
+
+    /* Frase motivacional */
+    .sat-frase {
+      margin:4px 20px 12px; padding:12px 16px;
+      border-radius:12px; font-size:12.5px; font-weight:600;
+      line-height:1.55; display:flex; align-items:flex-start; gap:10px;
+    }
+    .sat-frase-top { background:linear-gradient(135deg,#FFF9E6,#FFF3C0); border:1.5px solid #F0C040; color:#7A5800; }
+    .sat-frase-bot { background:linear-gradient(135deg,#EBF2FF,#D0E4FF); border:1.5px solid #A0C0F0; color:#1D4080; }
+
+    /* Stat cards */
+    .sat-stat { background:var(--white); border:1px solid var(--border); border-radius:14px; padding:14px 20px; text-align:center; min-width:120px; transition:box-shadow .2s,transform .2s; }
+    .sat-stat:hover { box-shadow:0 6px 24px rgba(0,0,0,.1); transform:translateY(-3px); }
+
+    /* Efecto diamante en 1er lugar */
+    @keyframes sat-diamond {
+      0%,100%{ filter:drop-shadow(0 0 6px rgba(74,144,217,.6)); }
+      50%{ filter:drop-shadow(0 0 18px rgba(74,144,217,.9)); }
+    }
+    .sat-av-diamond { animation:sat-diamond 2s ease-in-out infinite; }
+
+    /* Corona animada para el #1 */
+    .sat-corona {
+      position:absolute; top:-18px; left:50%; transform:translateX(-50%);
+      font-size:26px; line-height:1;
+      animation:sat-corona-bounce .8s ease-in-out infinite alternate;
+    }
+    @keyframes sat-corona-bounce {
+      from { transform:translateX(-50%) translateY(0) rotate(-5deg); }
+      to   { transform:translateX(-50%) translateY(-4px) rotate(5deg); }
+    }
+
+    /* Partículas del 1er puesto */
+    .sat-particles { position:relative; }
+    .sat-particle {
+      position:absolute; width:6px; height:6px; border-radius:50%;
+      animation:sat-float linear infinite;
+      pointer-events:none;
+    }
+    @keyframes sat-float {
+      0%  { transform:translateY(0) scale(1); opacity:.8; }
+      100%{ transform:translateY(-40px) scale(0); opacity:0; }
+    }
+  `;
+  document.head.appendChild(style);
+
+  function fmtTMO(t) { return t||'—'; }
+  function mesActual() {
+    const d=new Date(); return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0');
+  }
+  const MESES_N=['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+
+  function initSatNav() {
+    const el=document.getElementById('nav-satisfaccion');
+    if(el) el.style.display='';
+  }
+  window.addEventListener('sise:rolCargado', initSatNav);
+  if(window.currentUserRol) initSatNav();
+
+  let satData=[], satUnsub=null;
+
+  // ── Podio ─────────────────────────────────────────────────────
+  function renderPodio(ranking) {
+    const el=document.getElementById('sat-podio');
+    if(!el) return;
+    if(!ranking.length){ el.innerHTML=''; return; }
+
+    const top3=ranking.slice(0,3);
+    const vis  = top3[1] ? [top3[1],top3[0],top3[2]] : [top3[0]];
+    const poses = top3[1] ? [1,0,2] : [0];
+    const heights=[150,200,120];
+    const medals=['🥇','🥈','🥉'];
+    const pedStyles=[
+      'linear-gradient(180deg,#C8C8D8,#A0A0B8)', // plata 2do
+      'linear-gradient(180deg,#FFD700,#E8A800)',  // oro 1ro
+      'linear-gradient(180deg,#CD8B5A,#A06030)',  // bronce 3ro
+    ];
+    const avSizes=[66,84,58];
+
+    el.innerHTML = vis.filter(Boolean).map((r,vi) => {
+      const pos=poses[vi], niv=getNivel(r.pct), h=heights[pos];
+      const sz=avSizes[pos];
+      const initials=r.asesor.split(' ').slice(0,2).map(w=>w[0]||'').join('').toUpperCase();
+      const isFirst=pos===0;
+      const rachaHtml=r.racha>1?`<div class="sat-racha" style="margin-top:6px;font-size:11px">🔥 ${r.racha} semanas</div>`:'';
+      const coronaHtml=isFirst?`<div class="sat-corona">👑</div>`:'';
+
+      // Avatar style según posición
+      const avBg=isFirst
+        ? `linear-gradient(135deg,#1a6fbf,#0a4a8f)` // diamante azul para el 1ro
+        : pos===1 ? `linear-gradient(135deg,#888,#555)`
+        : `linear-gradient(135deg,#CD8B5A,#8B5020)`;
+      const avShadow=isFirst
+        ? `0 8px 32px rgba(74,144,217,.6), 0 0 0 3px rgba(74,144,217,.3)`
+        : pos===1 ? `0 4px 16px rgba(0,0,0,.25)`
+        : `0 4px 16px rgba(205,139,90,.4)`;
+      const ringColor=isFirst?'#4A90D9':pos===1?'#A0A0C0':'#CD8B5A';
+
+      return `
+        <div class="sat-podio-col sat-particles" style="z-index:${isFirst?2:1}">
+          <div style="position:relative;margin-bottom:6px;margin-top:${isFirst?0:20}px">
+            ${coronaHtml}
+            <div class="sat-av${isFirst?' sat-av-diamond':''}" style="width:${sz}px;height:${sz}px;background:${avBg};box-shadow:${avShadow};font-size:${isFirst?28:20}px;color:#fff">
+              ${initials}
+              <div style="position:absolute;inset:-5px;border-radius:50%;border:2px solid ${ringColor};opacity:.5;animation:sat-ring-spin ${isFirst?3:5}s linear infinite"></div>
+              <div style="position:absolute;top:-4px;right:-2px;font-size:${isFirst?22:16}px;line-height:1">${medals[pos]}</div>
+            </div>
+          </div>
+          <div style="font-size:${isFirst?14:12}px;font-weight:800;color:var(--text);text-align:center;line-height:1.3;max-width:150px;margin-bottom:4px">${r.asesor}</div>
+          <div style="font-size:${isFirst?30:22}px;font-weight:900;color:${niv.color};line-height:1">${r.pct}%</div>
+          <div class="sat-badge" style="color:${niv.color};border-color:${niv.bdr};background:${niv.bg};margin-top:4px">${niv.icon} ${niv.label}</div>
+          ${rachaHtml}
+          <div class="sat-pedestal" style="height:${h}px;background:${pedStyles[pos]};box-shadow:0 -8px 32px ${isFirst?'rgba(255,215,0,.3)':'rgba(0,0,0,.1)'}">
+            <span style="font-size:${isFirst?40:28}px;opacity:.9;position:relative;z-index:1">${medals[pos]}</span>
+          </div>
+        </div>`;
+    }).join('');
+  }
+
+  // ── Ranking ───────────────────────────────────────────────────
+  function renderRanking(ranking) {
+    const el=document.getElementById('sat-ranking-list');
+    const emp=document.getElementById('sat-empty-state');
+    if(!el) return;
+    if(!ranking.length){ el.innerHTML=''; if(emp) emp.style.display='block'; return; }
+    if(emp) emp.style.display='none';
+
+    const miNombre=(window.currentUserNombre||'').toLowerCase();
+    const miPos=miNombre ? ranking.findIndex(r=>r.asesor.toLowerCase().includes(miNombre.split(' ')[0])) : -1;
+    const total=ranking.length;
+
+    let html='';
+
+    ranking.forEach((r,i) => {
+      const niv=getNivel(r.pct);
+      const isMe=miNombre&&r.asesor.toLowerCase().includes(miNombre.split(' ')[0]);
+      const isTop=i<3;
+      const initials=r.asesor.split(' ').slice(0,2).map(w=>w[0]||'').join('').toUpperCase();
+
+      // Colores barra
+      const barColor=i===0?'linear-gradient(90deg,#1a6fbf,#4A90D9)'
+                    :i===1?'linear-gradient(90deg,#888,#C0C0C0)'
+                    :i===2?'linear-gradient(90deg,#8B5020,#CD8B5A)'
+                    :`linear-gradient(90deg,${niv.color},${niv.bdr})`;
+
+      const posHtml=i===0?'<span style="font-size:24px">🥇</span>'
+                   :i===1?'<span style="font-size:20px">🥈</span>'
+                   :i===2?'<span style="font-size:18px">🥉</span>'
+                   :`<span style="font-size:13px;font-weight:800;color:var(--muted)">${i+1}</span>`;
+
+      const rachaHtml=r.racha>1?`<span class="sat-racha">🔥 ${r.racha}sem</span>`:'';
+      const yoHtml=isMe?`<span class="sat-yo">Tú 👋</span>`:'';
+      const tmoHtml=r.tmo?`<span style="font-size:11px;color:var(--muted)">⏱ ${fmtTMO(r.tmo)}</span>`:'';
+
+      const rowBg=isMe?'background:linear-gradient(90deg,rgba(242,101,34,.08),rgba(242,101,34,.02));'
+                 :isTop?`background:linear-gradient(90deg,${niv.shine||'rgba(0,0,0,0)'},transparent);`:'';
+
+      html+=`
+        <div class="sat-row${isTop?' sat-row-shine':''}" style="${rowBg}">
+          <div style="width:32px;text-align:center;flex-shrink:0">${posHtml}</div>
+          <div style="width:42px;height:42px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:900;flex-shrink:0;background:${niv.bg};border:2px solid ${niv.bdr};box-shadow:0 2px 10px ${niv.glow};color:${niv.color};position:relative">
+            ${initials}
+            ${r.racha>=3?`<div style="position:absolute;top:-5px;right:-5px;font-size:13px">🔥</div>`:''}
+          </div>
+          <div style="flex:1;min-width:0">
+            <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:2px">
+              <span style="font-size:13px;font-weight:800;color:var(--text)">${r.asesor}</span>
+              <div class="sat-badge" style="color:${niv.color};border-color:${niv.bdr};background:${niv.bg};font-size:9px;padding:2px 8px">${niv.icon} ${niv.label}</div>
+              ${yoHtml}${rachaHtml}${tmoHtml}
+            </div>
+            <div class="sat-bar-track">
+              <div class="sat-bar-fill" style="width:${Math.max(r.pct,2)}%;background:${barColor}"></div>
+            </div>
+          </div>
+          <div style="font-size:20px;font-weight:900;color:${niv.color};flex-shrink:0;min-width:54px;text-align:right;line-height:1">${r.pct}%</div>
+        </div>`;
+
+      // ── Frase motivacional ───────────────────────────────────
+      // Top 1 con racha
+      if(i===0 && r.racha>=2) {
+        const frase=getFraseTop1(r.asesor, r.racha);
+        if(frase) html+=`
+          <div class="sat-frase sat-frase-top">
+            <span style="font-size:20px;flex-shrink:0">👑</span>
+            <span>${frase}</span>
+          </div>`;
+      }
+      // Últimos 3 (bottom) — frase motivacional solo si es el propio asesor
+      if(isMe && i >= total-3 && total > 5) {
+        html+=`
+          <div class="sat-frase sat-frase-bot">
+            <span style="font-size:20px;flex-shrink:0">💪</span>
+            <span>${getFraseBottom()}</span>
+          </div>`;
+      }
+    });
+
+    el.innerHTML=html;
+  }
+
+  // ── Stats ─────────────────────────────────────────────────────
+  function renderStats(ranking) {
+    const el=document.getElementById('sat-global-stats');
+    if(!el||!ranking.length) return;
+    const avg=Math.round(ranking.reduce((s,r)=>s+r.pct,0)/ranking.length);
+    const niv=getNivel(avg);
+    const best=ranking[0], bestNiv=getNivel(best.pct);
+    el.innerHTML=`
+      <div class="sat-stat">
+        <div style="font-size:9.5px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin-bottom:5px">Promedio equipo</div>
+        <div style="font-size:28px;font-weight:900;color:${niv.color};line-height:1">${avg}%</div>
+        <div class="sat-badge" style="color:${niv.color};border-color:${niv.bdr};background:${niv.bg};margin-top:6px">${niv.icon} ${niv.label}</div>
+      </div>
+      <div class="sat-stat">
+        <div style="font-size:9.5px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin-bottom:5px">Asesores activos</div>
+        <div style="font-size:28px;font-weight:900;color:var(--text);line-height:1">${ranking.length}</div>
+        <div style="font-size:11px;color:var(--muted);margin-top:6px;font-weight:600">en ranking</div>
+      </div>
+      <div class="sat-stat" style="background:linear-gradient(135deg,#E8F4FF,#C0DCFF);border-color:#4A90D9">
+        <div style="font-size:9.5px;font-weight:700;color:#1D5FBD;text-transform:uppercase;letter-spacing:.08em;margin-bottom:5px">Líder del mes</div>
+        <div style="font-size:14px;font-weight:800;color:#0D2A5E;line-height:1.3;margin-bottom:4px">${best.asesor.split(' ')[0]}</div>
+        <div style="font-size:24px;font-weight:900;color:#1a6fbf">${best.pct}%</div>
+        <div class="sat-badge" style="color:${bestNiv.color};border-color:${bestNiv.bdr};background:${bestNiv.bg};margin-top:4px;font-size:9px">${bestNiv.icon} ${bestNiv.label}</div>
+      </div>`;
+  }
+
+  // ── Ranking calc ──────────────────────────────────────────────
+  function calcRanking(registros) {
+    const mes=mesActual();
+    const delMes=registros.filter(r=>r.mes===mes);
+    if(!delMes.length) return [];
+    const mapa={};
+    delMes.forEach(r=>{
+      if(!mapa[r.asesor]) mapa[r.asesor]={asesor:r.asesor,semanas:[],tmo:r.tmo};
+      mapa[r.asesor].semanas.push({semana:r.semana,pct:r.pct});
+      mapa[r.asesor].tmo=r.tmo||mapa[r.asesor].tmo;
+    });
+    return Object.values(mapa).map(a=>{
+      a.semanas.sort((x,y)=>x.semana.localeCompare(y.semana));
+      const ultima=a.semanas[a.semanas.length-1];
+      let racha=0;
+      for(let i=a.semanas.length-1;i>=0;i--){ if(a.semanas[i].pct>=70) racha++; else break; }
+      return {asesor:a.asesor,pct:ultima.pct,tmo:a.tmo,racha,semana:ultima.semana};
+    }).sort((a,b)=>b.pct-a.pct);
+  }
+  function calcRankingRaw(registros) {
+    const mapa={};
+    registros.forEach(r=>{
+      if(!mapa[r.asesor]) mapa[r.asesor]={asesor:r.asesor,total:0,count:0};
+      mapa[r.asesor].total+=r.pct; mapa[r.asesor].count++;
+    });
+    return Object.values(mapa).map(a=>({asesor:a.asesor,pct:Math.round(a.total/a.count)})).sort((a,b)=>b.pct-a.pct);
+  }
+
+  // ── Firebase ──────────────────────────────────────────────────
+  function initSatFirebase() {
+    try {
+      const {getFirestore,collection,onSnapshot,addDoc,query,where,orderBy,serverTimestamp,getDocs,doc,updateDoc}=window._fbModules||{};
+      if(!getFirestore) return;
+      const db=getFirestore();
+      if(satUnsub) satUnsub();
+      satUnsub=onSnapshot(
+        query(collection(db,'satisfaccion'),orderBy('creadoEn','asc')),
+        snap=>{
+          satData=snap.docs.map(d=>({id:d.id,...d.data()}));
+          const ranking=calcRanking(satData);
+          renderPodio(ranking); renderRanking(ranking); renderStats(ranking);
+          const mes=mesActual(), [y,m]=mes.split('-');
+          document.getElementById('sat-periodo-label').textContent='Mes en curso: '+MESES_N[parseInt(m)-1]+' '+y;
+          const ultima=satData.filter(r=>r.mes===mes).sort((a,b)=>b.semana.localeCompare(a.semana))[0];
+          if(ultima) document.getElementById('sat-semana-label').textContent='Última carga: semana '+ultima.semana;
+          checkReinicio(db,collection,getDocs,mes);
+        },
+        err=>console.warn('sat:',err)
+      );
+      window._satGuardar=async(registros,semana)=>{
+        const mes=mesActual();
+        for(const r of registros){
+          const q=query(collection(db,'satisfaccion'),where('asesor','==',r.asesor),where('semana','==',semana),where('mes','==',mes));
+          const ex=await getDocs(q);
+          if(!ex.empty){ await updateDoc(doc(db,'satisfaccion',ex.docs[0].id),{pct:r.pct,tmo:r.tmo}); }
+          else{ await addDoc(collection(db,'satisfaccion'),{asesor:r.asesor,pct:r.pct,tmo:r.tmo||'',semana,mes,creadoEn:serverTimestamp()}); }
+        }
+      };
+    } catch(e){ console.warn('sat firebase:',e); }
+  }
+
+  async function checkReinicio(db,collection,getDocs,mes) {
+    const KEY='sat_mes_'+(window.currentUser?.uid||'x');
+    if(localStorage.getItem(KEY)===mes) return;
+    const [y,m]=mes.split('-');
+    const pm=parseInt(m)-1, py=pm===0?parseInt(y)-1:parseInt(y);
+    const pMes=py+'-'+String(pm===0?12:pm).padStart(2,'0');
+    const {query,where}=window._fbModules;
+    const snap=await getDocs(query(collection(db,'satisfaccion'),where('mes','==',pMes)));
+    if(!snap.empty){
+      const rank=calcRankingRaw(snap.docs.map(d=>d.data()));
+      if(rank.length) showResetModal(rank[0],MESES_N[pm===0?11:pm-1]+' '+py,mes);
+    }
+    localStorage.setItem(KEY,mes);
+  }
+
+  function showResetModal(ganador,mesNombre,mesNuevo) {
+    const modal=document.getElementById('sat-reset-modal');
+    if(!modal) return;
+    const [y2,m2]=mesNuevo.split('-');
+    const mesN2=MESES_N[parseInt(m2)-1]+' '+y2;
+    const niv=getNivel(ganador.pct);
+    document.getElementById('sat-reset-title').textContent='¡Cerramos '+mesNombre+'!';
+    document.getElementById('sat-reset-winner').innerHTML=`
+      <div style="font-size:48px;margin-bottom:6px">🏆</div>
+      <div style="font-size:11px;font-weight:700;color:#B87000;text-transform:uppercase;letter-spacing:.08em;margin-bottom:6px">Campeón de ${mesNombre}</div>
+      <div style="font-size:22px;font-weight:900;color:#0D0D0D;margin-bottom:4px">${ganador.asesor}</div>
+      <div style="font-size:34px;font-weight:900;color:${niv.color}">${ganador.pct}%</div>
+      <div class="sat-badge" style="color:${niv.color};border-color:${niv.bdr};background:${niv.bg};margin-top:8px;font-size:12px;padding:4px 14px">${niv.icon} ${niv.label}</div>`;
+    const frases=['¡Equipo increíble! Nuevo mes, nuevas oportunidades. Vamos con todo en '+mesN2+' 🚀','¡Gracias a todos por su esfuerzo! Cada encuesta cuenta. ¡A por '+mesN2+'! 💪','Lo dieron todo. Ahora a recargar y volver más fuertes en '+mesN2+' ⭐','¡Que orgullo este equipo! Nuevo mes, nuevas metas. ¡A por ello! 🎯'];
+    document.getElementById('sat-reset-msg').textContent=frases[Math.floor(Math.random()*frases.length)];
+    modal.style.display='flex';
+    document.getElementById('sat-reset-close').onclick=()=>{modal.style.display='none';};
+    modal.addEventListener('click',e=>{if(e.target===modal)modal.style.display='none';});
+  }
+
+  // ── Excel ─────────────────────────────────────────────────────
+  function getISOWeek(d) {
+    const dt=new Date(Date.UTC(d.getFullYear(),d.getMonth(),d.getDate()));
+    const day=dt.getUTCDay()||7; dt.setUTCDate(dt.getUTCDate()+4-day);
+    const ys=new Date(Date.UTC(dt.getUTCFullYear(),0,1));
+    return Math.ceil((((dt-ys)/86400000)+1)/7);
+  }
+
+  function leerExcelGenesys(file) {
+    const st=document.getElementById('sat-upload-status');
+    st.textContent='⏳ Leyendo...'; st.style.color='#888';
+    const reader=new FileReader();
+    reader.onload=async e=>{
+      try {
+        const wb=XLSX.read(e.target.result,{type:'array'});
+        const ws=wb.Sheets[wb.SheetNames[0]];
+        const rows=XLSX.utils.sheet_to_json(ws,{defval:''});
+        if(!rows.length) throw new Error('Archivo vacío');
+        const keys=Object.keys(rows[0]);
+        const cA=keys.find(k=>k.toLowerCase().includes('asesor'))||keys[1];
+        const cP=keys.find(k=>k.toLowerCase().includes('satisf')||k.toLowerCase().includes('%'))||keys[2];
+        const cT=keys.find(k=>k.toLowerCase().includes('tmo'))||keys[3];
+        const regs=rows.map(row=>({
+          asesor:String(row[cA]||'').trim(),
+          pct:Math.round(parseFloat(String(row[cP]||'0').replace('%',''))||0),
+          tmo:String(row[cT]||'').trim()
+        })).filter(r=>r.asesor&&r.pct>=0);
+        if(!regs.length) throw new Error('Sin datos válidos');
+        const ahora=new Date();
+        const semana=ahora.getFullYear()+'-W'+String(getISOWeek(ahora)).padStart(2,'0');
+        st.textContent=`⏳ Guardando ${regs.length} registros...`;
+        await window._satGuardar(regs,semana);
+        st.textContent=`✅ ${regs.length} asesores cargados`; st.style.color='#1A7A45';
+        showToast('Satisfacción actualizada ✓');
+      } catch(err){ st.textContent='❌ '+err.message; st.style.color='#C41E3A'; showToast('Error','error'); }
+    };
+    reader.readAsArrayBuffer(file);
+  }
+
+  // ── Init ──────────────────────────────────────────────────────
+  function onSatViewActive() {
+    const rol=(window.currentUserRol||'').toLowerCase();
+    const esSup=rol==='supervisor'||rol==='bo'||rol==='formador';
+    const bar=document.getElementById('sat-supervisor-bar');
+    if(bar) bar.style.display=esSup?'flex':'none';
+    const fi=document.getElementById('sat-file-input');
+    if(fi&&!fi._bound){ fi._bound=true; fi.addEventListener('change',e=>{if(e.target.files[0])leerExcelGenesys(e.target.files[0]);e.target.value='';}); }
+    if(!satUnsub) initSatFirebase();
+  }
+
+  const obs=new MutationObserver(()=>{ const v=document.getElementById('view-satisfaccion'); if(v&&v.classList.contains('active')) onSatViewActive(); });
+  const mc=document.querySelector('.content');
+  if(mc) obs.observe(mc,{subtree:true,attributes:true,attributeFilter:['class']});
+  if(document.getElementById('view-satisfaccion')?.classList.contains('active')) onSatViewActive();
+  window._initSatFirebase=initSatFirebase;
 })();
 
 })();</script>
