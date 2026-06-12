@@ -1460,6 +1460,9 @@ Amplio
     <i class="ti ti-table-export"></i> Subir Excel
     <input type="file" id="sat-file-input" accept=".xlsx,.xls,.csv" style="display:none">
   </label>
+  <button id="btn-admin-logros" onclick="_satAbrirAdminLogros()" style="display:flex;align-items:center;gap:8px;background:rgba(255,215,0,.12);border:1.5px solid rgba(255,215,0,.35);color:#FFD700;border-radius:12px;padding:11px 18px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;white-space:nowrap;transition:all .2s">
+    <i class="ti ti-trophy"></i> Gestionar Logros
+  </button>
   <div id="sat-upload-status" style="font-size:12px;color:rgba(255,255,255,.5)"></div>
 </div>
 
@@ -7320,7 +7323,18 @@ document.getElementById('btn-pend-export-mensual').addEventListener('click', () 
           satData=snap.docs.map(d=>({id:d.id,...d.data()}));
           const ranking=calcRanking(satData);
           renderPodio(ranking); renderRanking(ranking); renderStats(ranking); renderFilterBar(ranking);
-          if(window._satNotifComparar) window._satNotifComparar(ranking);
+          if(window._satNotifComparar) {
+            window._satLastRanking = ranking;
+            window._satNotifComparar(ranking);
+          }
+          // Calcular logros del usuario actual
+          if(window._satCalcularLogros && window.currentUserNombre) {
+            const miNombre = window.currentUserNombre;
+            const miData   = satData.filter(r=>r.asesor===miNombre||r.asesor.toLowerCase()===miNombre.toLowerCase());
+            const histAsesor = miData.sort((a,b)=>(a.mes+a.semana).localeCompare(b.mes+b.semana))
+              .map(r=>({pct:r.pct,mes:r.mes,semana:r.semana}));
+            window._satCalcularLogros(miNombre, histAsesor, ranking, window._satLastRanking);
+          }
           const mes=mesActual(), [y,m]=mes.split('-');
           document.getElementById('sat-periodo-label').textContent='Mes en curso: '+MESES_N[parseInt(m)-1]+' '+y;
           const ultima=satData.filter(r=>r.mes===mes).sort((a,b)=>b.semana.localeCompare(a.semana))[0];
@@ -7679,6 +7693,17 @@ document.getElementById('btn-pend-export-mensual').addEventListener('click', () 
           +'</div>';
       }).join('') : '<div style="color:rgba(255,255,255,.3);text-align:center;padding:20px">Sin datos</div>';
     }
+
+    // Botón ver logros
+    const satHistBody = document.getElementById('sat-hist-daily');
+    if (satHistBody && !document.getElementById('btn-ver-logros')) {
+      const btnL = document.createElement('button');
+      btnL.id = 'btn-ver-logros';
+      btnL.innerHTML = '🏆 Ver mis logros';
+      satHistBody.parentElement.appendChild(btnL);
+    }
+    const btnLogros = document.getElementById('btn-ver-logros');
+    if (btnLogros) btnLogros.onclick = () => window._satAbrirLogros(nombre);
 
     modal.style.display = 'flex';
     modal.addEventListener('click', e => { if(e.target===modal) modal.style.display='none'; }, {once:true});
@@ -8610,6 +8635,1100 @@ document.getElementById('btn-pend-export-mensual').addEventListener('click', () 
 
   // Exponer globalmente
   window._satShowNotif = showNotif;
+
+})();
+
+
+
+// ══════════════════════════════════════════════════════════════
+// SISTEMA DE LOGROS — Satisfacción
+// ══════════════════════════════════════════════════════════════
+(function() {
+
+  // ── Definición de todos los logros ────────────────────────────
+  const LOGROS_DEF = window._LOGROS_DEF_BASE = [
+
+    // ── PRIMERAS VECES ────────────────────────────────────────
+    { id:'primera_estrella',  icon:'🌟', nombre:'Primera Estrella',     desc:'Apareciste por primera vez en el ranking.',                          cat:'Inicio',       rarity:'comun' },
+    { id:'top10_primero',     icon:'🎯', nombre:'En el Mapa',           desc:'Entraste al top 10 por primera vez.',                               cat:'Inicio',       rarity:'comun' },
+    { id:'top3_primero',      icon:'🏅', nombre:'Primer Podio',         desc:'Llegaste al top 3 por primera vez.',                                cat:'Inicio',       rarity:'raro'  },
+    { id:'top1_primero',      icon:'👑', nombre:'Primera Corona',       desc:'Alcanzaste el #1 por primera vez.',                                 cat:'Inicio',       rarity:'epico' },
+    { id:'semana1',           icon:'📅', nombre:'Primer Registro',      desc:'Tu primer registro de satisfacción.',                               cat:'Inicio',       rarity:'comun' },
+
+    // ── PORCENTAJES ───────────────────────────────────────────
+    { id:'pct_50',   icon:'✅', nombre:'La Mitad',         desc:'Llegaste al 50% de satisfacción.',                                  cat:'Porcentaje',   rarity:'comun'    },
+    { id:'pct_60',   icon:'📊', nombre:'Buen Camino',      desc:'Llegaste al 60% de satisfacción.',                                  cat:'Porcentaje',   rarity:'comun'    },
+    { id:'pct_70',   icon:'💪', nombre:'Veterano',         desc:'Superaste el 70% de satisfacción.',                                 cat:'Porcentaje',   rarity:'comun'    },
+    { id:'pct_75',   icon:'🔆', nombre:'Tres Cuartos',     desc:'Llegaste al 75% de satisfacción.',                                  cat:'Porcentaje',   rarity:'comun'    },
+    { id:'pct_80',   icon:'⭐', nombre:'All Star',         desc:'Superaste el 80% — nivel Esmeralda.',                               cat:'Porcentaje',   rarity:'raro'     },
+    { id:'pct_85',   icon:'🌠', nombre:'Estrella en Alza', desc:'Llegaste al 85% de satisfacción.',                                  cat:'Porcentaje',   rarity:'raro'     },
+    { id:'pct_90',   icon:'🚀', nombre:'A Toda Marcha',    desc:'Superaste el 90% de satisfacción.',                                 cat:'Porcentaje',   rarity:'raro'     },
+    { id:'pct_95',   icon:'💎', nombre:'Diamante Puro',    desc:'Llegaste al 95% — nivel Diamante.',                                 cat:'Porcentaje',   rarity:'epico'    },
+    { id:'pct_100',  icon:'🏆', nombre:'Perfección',       desc:'¡100% de satisfacción! Resultado impecable.',                       cat:'Porcentaje',   rarity:'legendario'},
+
+    // ── RACHAS ────────────────────────────────────────────────
+    { id:'racha_2',   icon:'🔥',   nombre:'En Llamas',        desc:'2 semanas seguidas por encima del 70%.',                          cat:'Racha',        rarity:'comun'    },
+    { id:'racha_3',   icon:'🔥🔥', nombre:'Racha de Fuego',   desc:'3 semanas seguidas por encima del 70%.',                          cat:'Racha',        rarity:'comun'    },
+    { id:'racha_4',   icon:'⚡',   nombre:'Imparable',        desc:'4 semanas seguidas por encima del 70%.',                          cat:'Racha',        rarity:'raro'     },
+    { id:'racha_6',   icon:'🌊',   nombre:'Fuerza Constante', desc:'6 semanas seguidas por encima del 70%.',                          cat:'Racha',        rarity:'raro'     },
+    { id:'racha_8',   icon:'💫',   nombre:'Leyenda Viva',     desc:'8 semanas seguidas por encima del 70%.',                          cat:'Racha',        rarity:'epico'    },
+    { id:'racha_12',  icon:'🌟',   nombre:'Eterno',           desc:'12 semanas seguidas por encima del 70%. Increíble.',              cat:'Racha',        rarity:'legendario'},
+
+    // ── MEJORA ────────────────────────────────────────────────
+    { id:'mejora_5',   icon:'📈', nombre:'Escalando',          desc:'Subiste 5+ puestos en una sola semana.',                         cat:'Mejora',       rarity:'comun'    },
+    { id:'mejora_10',  icon:'🚀', nombre:'El Comeback',        desc:'Subiste 10+ puestos en una sola semana.',                        cat:'Mejora',       rarity:'raro'     },
+    { id:'mejora_15',  icon:'💥', nombre:'Explosión',          desc:'Subiste 15+ puestos en una sola semana.',                        cat:'Mejora',       rarity:'epico'    },
+    { id:'pct_sube_10',icon:'⬆️', nombre:'Gran Salto',         desc:'Mejoraste tu % en 10+ puntos respecto a la semana anterior.',    cat:'Mejora',       rarity:'raro'     },
+    { id:'pct_sube_20',icon:'🎆', nombre:'Transformación',     desc:'Mejoraste tu % en 20+ puntos respecto a la semana anterior.',    cat:'Mejora',       rarity:'epico'    },
+
+    // ── CONSISTENCIA ──────────────────────────────────────────
+    { id:'mes_completo',    icon:'🛡️', nombre:'El Consistente',   desc:'Nunca bajaste del 70% en todo un mes.',                       cat:'Consistencia', rarity:'epico'    },
+    { id:'mes_top10',       icon:'🤝', nombre:'El Equipo',         desc:'Estuviste en el top 10 todo un mes.',                         cat:'Consistencia', rarity:'raro'     },
+    { id:'sem_4_mes',       icon:'🎖️', nombre:'Veterano del Mes',  desc:'Registraste datos en las 4 semanas del mes.',                 cat:'Consistencia', rarity:'comun'    },
+    { id:'sin_bajar',       icon:'➡️', nombre:'Línea Recta',       desc:'3 semanas seguidas sin bajar de posición.',                   cat:'Consistencia', rarity:'comun'    },
+    { id:'top5_mes',        icon:'🎗️', nombre:'Top 5 del Mes',     desc:'Te mantuviste en el top 5 durante todo un mes.',              cat:'Consistencia', rarity:'raro'     },
+
+    // ── POSICIÓN ──────────────────────────────────────────────
+    { id:'top1_mes',  icon:'👑', nombre:'Leyenda del Mes',    desc:'Terminaste el mes como #1 del equipo.',                           cat:'Posición',     rarity:'legendario'},
+    { id:'top1_2mes', icon:'💎', nombre:'Doble Corona',       desc:'Terminaste #1 dos meses seguidos.',                               cat:'Posición',     rarity:'legendario'},
+    { id:'top1_3mes', icon:'🌌', nombre:'Dinastía',           desc:'Terminaste #1 tres meses seguidos. ¡Histórico!',                  cat:'Posición',     rarity:'legendario'},
+    { id:'top2',      icon:'🥈', nombre:'El Escudero',        desc:'Llegaste al puesto #2.',                                          cat:'Posición',     rarity:'raro'     },
+    { id:'top3_3sem', icon:'🏅', nombre:'Habitante del Podio',desc:'Estuviste en el top 3 durante 3 semanas.',                        cat:'Posición',     rarity:'epico'    },
+
+    // ── ESPECIALES ────────────────────────────────────────────
+    { id:'100_primera',  icon:'🎇', nombre:'Debut Perfecto',      desc:'Tu primer registro fue 100%.',                                cat:'Especial',     rarity:'legendario'},
+    { id:'lunes_100',    icon:'☀️', nombre:'Arranque Perfecto',    desc:'Empezaste una semana con 100%.',                              cat:'Especial',     rarity:'epico'    },
+    { id:'debajo_sube',  icon:'🦅', nombre:'Ave Fénix',           desc:'Estabas en los últimos 3 y subiste al top 5.',                cat:'Especial',     rarity:'epico'    },
+    { id:'nunca_cero',   icon:'🔰', nombre:'Sin Rendirse',        desc:'Nunca tuviste 0% en ningún registro.',                        cat:'Especial',     rarity:'comun'    },
+    { id:'tres_digitos', icon:'💯', nombre:'Triple Dígito',       desc:'100% — el máximo posible.',                                   cat:'Especial',     rarity:'epico'    },
+    { id:'por_encima_avg',icon:'📊',nombre:'Por Encima del Promedio', desc:'Tu % supera el promedio del equipo por 10+ puntos.',      cat:'Especial',     rarity:'comun'    },
+    { id:'mejor_tmo',    icon:'⏱️', nombre:'El Eficiente',        desc:'Tienes el TMO más bajo del equipo.',                          cat:'Especial',     rarity:'raro'     },
+    { id:'primer_dia',   icon:'🌅', nombre:'El Madrugador',       desc:'Primer registro del día en el sistema.',                      cat:'Especial',     rarity:'comun'    },
+
+    // ── COLECCIÓN DE RANGOS ───────────────────────────────────
+    { id:'rango_bronce',   icon:'🥉', nombre:'Bronce Desbloqueado',   desc:'Alcanzaste el rango Bronce.',                             cat:'Rangos',       rarity:'comun'    },
+    { id:'rango_plata',    icon:'🥈', nombre:'Plata Desbloqueado',    desc:'Alcanzaste el rango Plata.',                              cat:'Rangos',       rarity:'comun'    },
+    { id:'rango_oro',      icon:'🥇', nombre:'Oro Desbloqueado',      desc:'Alcanzaste el rango Oro.',                                cat:'Rangos',       rarity:'raro'     },
+    { id:'rango_esmeralda',icon:'💚', nombre:'Esmeralda Desbloqueado',desc:'Alcanzaste el rango Esmeralda (80%+).',                   cat:'Rangos',       rarity:'raro'     },
+    { id:'rango_diamante', icon:'💎', nombre:'Diamante Desbloqueado', desc:'Alcanzaste el rango Diamante (95%+).',                    cat:'Rangos',       rarity:'epico'    },
+    { id:'todos_rangos',   icon:'🌈', nombre:'Coleccionista',         desc:'Desbloqueaste todos los rangos.',                         cat:'Rangos',       rarity:'legendario'},
+
+    // ── SOCIAL / EQUIPO ───────────────────────────────────────
+    { id:'top_equipo',     icon:'🌟', nombre:'Orgullo del Equipo',    desc:'Fuiste el mejor del mes al menos una vez.',               cat:'Social',       rarity:'epico'    },
+    { id:'arriba_mitad',   icon:'👆', nombre:'Por Encima del Medio',  desc:'Estás en la mitad superior del ranking.',                 cat:'Social',       rarity:'comun'    },
+    { id:'referente',      icon:'🎓', nombre:'El Referente',          desc:'3 meses seguidos en el top 5.',                           cat:'Social',       rarity:'epico'    },
+  ];
+
+  // Rareza → color y texto
+  const RARITY = {
+    comun:      { color:'#9CA3AF', bg:'rgba(156,163,175,.12)', label:'Común',      glow:'rgba(156,163,175,.2)' },
+    raro:       { color:'#60A5FA', bg:'rgba(96,165,250,.12)',  label:'Raro',       glow:'rgba(96,165,250,.25)' },
+    epico:      { color:'#A78BFA', bg:'rgba(167,139,250,.15)', label:'Épico',      glow:'rgba(167,139,250,.3)' },
+    legendario: { color:'#FFD700', bg:'rgba(255,215,0,.15)',   label:'Legendario', glow:'rgba(255,215,0,.35)' },
+  };
+
+  // ── CSS de logros ─────────────────────────────────────────────
+  const style = document.createElement('style');
+  style.textContent = `
+    /* Modal de logros */
+    #logros-modal {
+      display:none; position:fixed; inset:0;
+      background:rgba(0,0,0,.88); backdrop-filter:blur(10px);
+      z-index:999995; align-items:center; justify-content:center; padding:16px;
+    }
+    #logros-modal.open { display:flex; }
+    #logros-card {
+      background:#1a1035; border:1px solid rgba(255,255,255,.1);
+      border-radius:24px; max-width:680px; width:100%;
+      max-height:88vh; display:flex; flex-direction:column;
+      box-shadow:0 40px 100px rgba(0,0,0,.8);
+      overflow:hidden;
+    }
+    #logros-header {
+      background:linear-gradient(135deg,#2d1b69,#1a0a3d);
+      padding:20px 24px; display:flex; align-items:center;
+      gap:14px; flex-shrink:0; border-bottom:1px solid rgba(255,255,255,.06);
+    }
+    #logros-avatar {
+      width:48px; height:48px; border-radius:50%;
+      display:flex; align-items:center; justify-content:center;
+      font-size:18px; font-weight:900; flex-shrink:0;
+    }
+    #logros-body {
+      padding:20px 24px; overflow-y:auto; flex:1;
+    }
+    #logros-body::-webkit-scrollbar { width:4px; }
+    #logros-body::-webkit-scrollbar-thumb { background:#a78bfa; border-radius:99px; }
+
+    /* Tabs de categoría */
+    .logros-tabs {
+      display:flex; gap:6px; flex-wrap:wrap; margin-bottom:20px;
+    }
+    .logros-tab {
+      padding:5px 13px; border-radius:99px; font-size:11px; font-weight:700;
+      cursor:pointer; border:1.5px solid rgba(255,255,255,.15);
+      background:transparent; color:rgba(255,255,255,.5); font-family:inherit;
+      transition:all .15s;
+    }
+    .logros-tab.active {
+      background:#a78bfa; color:#fff; border-color:#a78bfa;
+    }
+
+    /* Grid de logros */
+    .logros-grid {
+      display:grid; grid-template-columns:repeat(auto-fill, minmax(190px, 1fr));
+      gap:10px;
+    }
+
+    /* Card individual de logro */
+    .logro-card {
+      background:rgba(255,255,255,.04); border:1.5px solid rgba(255,255,255,.08);
+      border-radius:14px; padding:14px; position:relative;
+      transition:transform .2s, box-shadow .2s; cursor:default;
+    }
+    .logro-card:hover {
+      transform:translateY(-2px);
+    }
+    .logro-card.desbloqueado {
+      border-color:var(--logro-color);
+      box-shadow:0 0 16px var(--logro-glow);
+    }
+    .logro-card.bloqueado {
+      opacity:.45; filter:grayscale(.8);
+    }
+    .logro-card.bloqueado .logro-icon { filter:grayscale(1); }
+
+    .logro-icon { font-size:28px; margin-bottom:8px; display:block; }
+    .logro-nombre {
+      font-size:12px; font-weight:800; color:#fff;
+      margin-bottom:3px; line-height:1.3;
+    }
+    .logro-desc {
+      font-size:10.5px; color:rgba(255,255,255,.45);
+      line-height:1.45; margin-bottom:8px;
+    }
+    .logro-rarity {
+      display:inline-flex; align-items:center; gap:4px;
+      border-radius:99px; padding:2px 8px;
+      font-size:9px; font-weight:800; letter-spacing:.06em;
+      border:1px solid; text-transform:uppercase;
+    }
+    .logro-fecha {
+      position:absolute; top:10px; right:10px;
+      font-size:9px; color:rgba(255,255,255,.3); font-weight:600;
+    }
+    .logro-nuevo {
+      position:absolute; top:-4px; right:-4px;
+      background:#C41E3A; color:#fff; font-size:8px; font-weight:800;
+      border-radius:99px; padding:2px 6px; text-transform:uppercase;
+      letter-spacing:.05em; animation:logro-nuevo-pulse 1s ease-in-out infinite;
+    }
+    @keyframes logro-nuevo-pulse {
+      0%,100%{ box-shadow:0 0 0 0 rgba(196,30,58,.5); }
+      50%{ box-shadow:0 0 0 5px rgba(196,30,58,0); }
+    }
+
+    /* Stats barra superior */
+    .logros-stats {
+      display:flex; gap:10px; margin-bottom:18px; flex-wrap:wrap;
+    }
+    .logros-stat {
+      background:rgba(255,255,255,.05); border:1px solid rgba(255,255,255,.08);
+      border-radius:10px; padding:10px 14px; text-align:center; flex:1; min-width:80px;
+    }
+    .logros-stat-val { font-size:20px; font-weight:900; color:#fff; }
+    .logros-stat-lbl { font-size:9px; font-weight:700; color:rgba(255,255,255,.4); text-transform:uppercase; letter-spacing:.06em; margin-top:2px; }
+
+    /* Notificación de logro desbloqueado */
+    .logro-notif {
+      display:flex; align-items:center; gap:12px;
+      background:linear-gradient(135deg,#1a1035,#2d1b69);
+      border:1.5px solid var(--notif-color,#a78bfa);
+      border-radius:14px; padding:14px 16px;
+      box-shadow:0 8px 32px rgba(0,0,0,.6), 0 0 20px var(--notif-glow,rgba(167,139,250,.3));
+      pointer-events:all;
+      transform:translateX(120%); opacity:0;
+      transition:transform .45s cubic-bezier(.22,.68,0,1.2), opacity .3s;
+      position:relative; overflow:hidden;
+    }
+    .logro-notif::before {
+      content:''; position:absolute; inset:0;
+      background:linear-gradient(90deg,transparent 30%,rgba(255,255,255,.04) 50%,transparent 70%);
+      background-size:300% auto; animation:notif-shimmer 3s linear infinite;
+    }
+    .logro-notif.show { transform:translateX(0); opacity:1; }
+    .logro-notif.hide {
+      transform:translateX(120%); opacity:0;
+      transition:transform .3s ease-in, opacity .2s;
+    }
+    .logro-notif-progress {
+      position:absolute; bottom:0; left:0; height:2px;
+      background:var(--notif-color,#a78bfa);
+      animation:notif-progress var(--notif-dur,6s) linear forwards;
+    }
+    @keyframes notif-progress { from{width:100%} to{width:0%} }
+
+    /* Botón logros en historial */
+    #btn-ver-logros {
+      display:flex; align-items:center; gap:7px;
+      background:rgba(167,139,250,.12); border:1.5px solid rgba(167,139,250,.3);
+      color:#a78bfa; border-radius:10px; padding:9px 16px;
+      font-size:12px; font-weight:700; cursor:pointer; font-family:inherit;
+      transition:all .15s; white-space:nowrap; margin-top:14px; width:100%;
+      justify-content:center;
+    }
+    #btn-ver-logros:hover { background:rgba(167,139,250,.22); }
+  `;
+  document.head.appendChild(style);
+
+  // ── HTML del modal ────────────────────────────────────────────
+  const modal = document.createElement('div');
+  modal.id = 'logros-modal';
+  modal.innerHTML = `
+    <div id="logros-card">
+      <div id="logros-header">
+        <div id="logros-avatar"></div>
+        <div style="flex:1;min-width:0">
+          <div style="font-size:11px;font-weight:800;color:#a78bfa;text-transform:uppercase;letter-spacing:.1em;margin-bottom:3px">🏆 Logros</div>
+          <div id="logros-nombre-user" style="font-size:17px;font-weight:900;color:#fff"></div>
+          <div id="logros-prog-text" style="font-size:11px;color:rgba(255,255,255,.4);margin-top:2px"></div>
+        </div>
+        <button onclick="document.getElementById('logros-modal').classList.remove('open')"
+          style="background:rgba(255,255,255,.08);border:none;border-radius:10px;width:36px;height:36px;cursor:pointer;color:#fff;font-size:18px;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-family:inherit">✕</button>
+      </div>
+      <div id="logros-body">
+        <div class="logros-stats" id="logros-stats"></div>
+        <div class="logros-tabs" id="logros-tabs"></div>
+        <div class="logros-grid" id="logros-grid"></div>
+      </div>
+    </div>`;
+  document.body.appendChild(modal);
+  modal.addEventListener('click', e => { if(e.target===modal) modal.classList.remove('open'); });
+
+  // ── Estado ────────────────────────────────────────────────────
+  let _logrosUsuario = {}; // { logro_id: { fecha, nuevo } }
+  let _catActiva = 'Todos';
+  let _logroNombreActual = '';
+
+  // ── Calcular logros desbloqueados ─────────────────────────────
+  // Actualizar LOGROS_DEF con personalizados de Firebase
+  window._satActualizarLogrosConfig = async function() {
+    const {getFirestore,collection,getDocs} = window._fbModules||{};
+    if (!getFirestore) return;
+    try {
+      const snap = await getDocs(collection(getFirestore(),'logros_config'));
+      snap.docs.forEach(d => {
+        const data = d.data();
+        if (data.esCustom) {
+          // Agregar logro personalizado si no existe
+          const existe = LOGROS_DEF.find(l=>l.id===data.id);
+          if (!existe) LOGROS_DEF.push({ id:data.id, icon:data.icon, nombre:data.nombre, desc:data.desc, cat:data.cat, rarity:data.rarity });
+        } else if (data.esOverride) {
+          // Sobreescribir logro base
+          const idx = LOGROS_DEF.findIndex(l=>l.id===data.id);
+          if (idx>=0) LOGROS_DEF[idx] = {...LOGROS_DEF[idx], icon:data.icon, nombre:data.nombre, desc:data.desc, cat:data.cat, rarity:data.rarity};
+        }
+      });
+    } catch(e) {}
+  };
+
+  window._satCalcularLogros = async function(nombre, historial, ranking, prevRanking) {
+    if (!nombre || !historial) return;
+    _logroNombreActual = nombre;
+
+    const {getFirestore,collection,doc,getDoc,setDoc,serverTimestamp} = window._fbModules||{};
+    if (!getFirestore) return;
+    const db = getFirestore();
+    const docRef = doc(db, 'logros_asesores', nombre.replace(/\s+/g,'_').toLowerCase());
+
+    // Cargar logros existentes
+    let existentes = {};
+    try {
+      const snap = await getDoc(docRef);
+      if (snap.exists()) existentes = snap.data().logros || {};
+    } catch(e) {}
+
+    const nuevosLogros = {};
+    const pcts = historial.map(h=>h.pct);
+    const maxPct = pcts.length ? Math.max(...pcts) : 0;
+    const minPct = pcts.length ? Math.min(...pcts) : 0;
+    const myPos  = ranking ? ranking.findIndex(r=>r.asesor===nombre)+1 : 0;
+    const prevPos= prevRanking ? prevRanking.findIndex(r=>r.asesor===nombre)+1 : 0;
+    const racha  = ranking ? (ranking.find(r=>r.asesor===nombre)||{}).racha||0 : 0;
+    const avgTeam= ranking&&ranking.length ? Math.round(ranking.reduce((s,r)=>s+r.pct,0)/ranking.length) : 0;
+    const lastPct= historial.length ? historial[historial.length-1].pct : 0;
+
+    // Agrupar por mes
+    const meses = {};
+    historial.forEach(h => {
+      if (!meses[h.mes]) meses[h.mes] = [];
+      meses[h.mes].push(h);
+    });
+
+    const check = (id) => !existentes[id];
+
+    // PRIMERAS VECES
+    if(check('semana1') && historial.length>=1)          nuevosLogros['semana1']         = true;
+    if(check('primera_estrella') && historial.length>=1) nuevosLogros['primera_estrella']= true;
+    if(check('top10_primero') && myPos>=1 && myPos<=10)  nuevosLogros['top10_primero']   = true;
+    if(check('top3_primero')  && myPos>=1 && myPos<=3)   nuevosLogros['top3_primero']    = true;
+    if(check('top1_primero')  && myPos===1)              nuevosLogros['top1_primero']    = true;
+
+    // PORCENTAJES
+    if(check('pct_50')  && maxPct>=50)  nuevosLogros['pct_50']  = true;
+    if(check('pct_60')  && maxPct>=60)  nuevosLogros['pct_60']  = true;
+    if(check('pct_70')  && maxPct>=70)  nuevosLogros['pct_70']  = true;
+    if(check('pct_75')  && maxPct>=75)  nuevosLogros['pct_75']  = true;
+    if(check('pct_80')  && maxPct>=80)  nuevosLogros['pct_80']  = true;
+    if(check('pct_85')  && maxPct>=85)  nuevosLogros['pct_85']  = true;
+    if(check('pct_90')  && maxPct>=90)  nuevosLogros['pct_90']  = true;
+    if(check('pct_95')  && maxPct>=95)  nuevosLogros['pct_95']  = true;
+    if(check('pct_100') && maxPct>=100) nuevosLogros['pct_100'] = true;
+
+    // RACHAS
+    if(check('racha_2')  && racha>=2)   nuevosLogros['racha_2']  = true;
+    if(check('racha_3')  && racha>=3)   nuevosLogros['racha_3']  = true;
+    if(check('racha_4')  && racha>=4)   nuevosLogros['racha_4']  = true;
+    if(check('racha_6')  && racha>=6)   nuevosLogros['racha_6']  = true;
+    if(check('racha_8')  && racha>=8)   nuevosLogros['racha_8']  = true;
+    if(check('racha_12') && racha>=12)  nuevosLogros['racha_12'] = true;
+
+    // MEJORA DE POSICIÓN
+    if(prevPos>0 && myPos>0) {
+      const subida = prevPos - myPos;
+      if(check('mejora_5')  && subida>=5)  nuevosLogros['mejora_5']  = true;
+      if(check('mejora_10') && subida>=10) nuevosLogros['mejora_10'] = true;
+      if(check('mejora_15') && subida>=15) nuevosLogros['mejora_15'] = true;
+    }
+    if(historial.length>=2) {
+      const diffPct = historial[historial.length-1].pct - historial[historial.length-2].pct;
+      if(check('pct_sube_10') && diffPct>=10) nuevosLogros['pct_sube_10'] = true;
+      if(check('pct_sube_20') && diffPct>=20) nuevosLogros['pct_sube_20'] = true;
+    }
+
+    // CONSISTENCIA por mes
+    Object.entries(meses).forEach(([mes, data]) => {
+      const todos70   = data.every(h=>h.pct>=70);
+      const top10todo = data.every(h => {
+        const r = ranking ? ranking.findIndex(r2=>r2.asesor===nombre)+1 : 99;
+        return r<=10;
+      });
+      if(check('mes_completo') && todos70 && data.length>=3)  nuevosLogros['mes_completo'] = true;
+      if(check('sem_4_mes')    && data.length>=4)              nuevosLogros['sem_4_mes']    = true;
+    });
+
+    if(check('sin_bajar') && historial.length>=3) {
+      const last3 = historial.slice(-3);
+      if(last3.every((h,i,a)=>i===0||h.pct>=a[i-1].pct)) nuevosLogros['sin_bajar'] = true;
+    }
+
+    // POSICIÓN
+    if(check('top2')     && myPos===2) nuevosLogros['top2']      = true;
+    if(check('top1_mes') && myPos===1) nuevosLogros['top1_mes']  = true;
+
+    // Top 3 por 3 semanas consecutivas
+    const top3weeks = historial.slice(-3).filter((h,i)=>{
+      if(!ranking) return false;
+      const pos = ranking.findIndex(r=>r.asesor===nombre)+1;
+      return pos>=1 && pos<=3;
+    });
+    if(check('top3_3sem') && top3weeks.length>=3) nuevosLogros['top3_3sem'] = true;
+
+    // ESPECIALES
+    if(check('100_primera') && historial.length===1 && lastPct===100) nuevosLogros['100_primera'] = true;
+    if(check('nunca_cero')  && historial.length>=1 && minPct>0)       nuevosLogros['nunca_cero']  = true;
+    if(check('por_encima_avg') && lastPct >= avgTeam+10)              nuevosLogros['por_encima_avg']=true;
+    if(check('debajo_sube') && prevPos>=(ranking?ranking.length-2:99) && myPos<=5 && prevPos>0) nuevosLogros['debajo_sube']=true;
+    if(check('arriba_mitad') && myPos>0 && ranking && myPos<=Math.ceil(ranking.length/2)) nuevosLogros['arriba_mitad']=true;
+
+    // RANGOS
+    if(check('rango_bronce')    && maxPct>=1)  nuevosLogros['rango_bronce']    = true;
+    if(check('rango_plata')     && maxPct>=40) nuevosLogros['rango_plata']     = true;
+    if(check('rango_oro')       && maxPct>=60) nuevosLogros['rango_oro']       = true;
+    if(check('rango_esmeralda') && maxPct>=80) nuevosLogros['rango_esmeralda'] = true;
+    if(check('rango_diamante')  && maxPct>=95) nuevosLogros['rango_diamante']  = true;
+
+    // Todos los rangos
+    const rangosIds = ['rango_bronce','rango_plata','rango_oro','rango_esmeralda','rango_diamante'];
+    const tieneTodos = rangosIds.every(id => existentes[id]||nuevosLogros[id]);
+    if(check('todos_rangos') && tieneTodos) nuevosLogros['todos_rangos'] = true;
+
+    // SOCIAL
+    if(check('top_equipo') && myPos===1) nuevosLogros['top_equipo'] = true;
+
+    // Guardar nuevos logros en Firebase
+    if (Object.keys(nuevosLogros).length > 0) {
+      const update = { ...existentes };
+      const now = new Date().toLocaleDateString('es-PE');
+      Object.keys(nuevosLogros).forEach(id => {
+        update[id] = { fecha: now, nuevo: true };
+      });
+      try {
+        await setDoc(docRef, { logros: update, actualizado: serverTimestamp() }, { merge: true });
+      } catch(e) { console.warn('logros save:', e); }
+
+      // Mostrar notificaciones de logros nuevos
+      Object.keys(nuevosLogros).forEach((id, i) => {
+        const def = LOGROS_DEF.find(l=>l.id===id);
+        if (!def) return;
+        const rar = RARITY[def.rarity];
+        setTimeout(() => {
+          _mostrarLogroNotif(def, rar);
+        }, i * 700);
+      });
+    }
+
+    // Actualizar estado local
+    _logrosUsuario = { ...existentes, ...Object.fromEntries(
+      Object.keys(nuevosLogros).map(id=>[[id],{fecha:new Date().toLocaleDateString('es-PE'),nuevo:true}])
+    )};
+  };
+
+  // ── Notificación de logro desbloqueado ────────────────────────
+  function _mostrarLogroNotif(def, rar) {
+    const container = document.getElementById('sat-notif-container');
+    if (!container) return;
+
+    const el = document.createElement('div');
+    el.className = 'logro-notif';
+    el.style.setProperty('--notif-color', rar.color);
+    el.style.setProperty('--notif-glow',  rar.glow);
+    el.style.setProperty('--notif-dur',   '7s');
+    el.innerHTML = `
+      <div style="font-size:32px;flex-shrink:0;filter:drop-shadow(0 2px 8px ${rar.glow})">${def.icon}</div>
+      <div style="flex:1;min-width:0">
+        <div style="font-size:9px;font-weight:800;color:${rar.color};text-transform:uppercase;letter-spacing:.1em;margin-bottom:2px">🏆 Logro desbloqueado — ${rar.label}</div>
+        <div style="font-size:13px;font-weight:800;color:#fff;margin-bottom:2px">${def.nombre}</div>
+        <div style="font-size:11px;color:rgba(255,255,255,.5)">${def.desc}</div>
+      </div>
+      <div class="logro-notif-progress"></div>
+      <button onclick="this.parentElement.remove()" style="position:absolute;top:8px;right:10px;background:none;border:none;color:rgba(255,255,255,.25);cursor:pointer;font-size:14px;font-family:inherit">✕</button>`;
+
+    container.appendChild(el);
+    requestAnimationFrame(()=>requestAnimationFrame(()=>el.classList.add('show')));
+
+    // Sonido especial
+    try {
+      const ctx = new (window.AudioContext||window.webkitAudioContext)();
+      const freqs = def.rarity==='legendario' ? [523,659,784,1047] :
+                    def.rarity==='epico'       ? [523,659,784] :
+                    def.rarity==='raro'        ? [440,554] : [440];
+      freqs.forEach((f,i)=>{
+        const osc=ctx.createOscillator(), g=ctx.createGain();
+        osc.connect(g); g.connect(ctx.destination);
+        osc.frequency.value=f; osc.type='sine';
+        const t=ctx.currentTime+i*.15;
+        g.gain.setValueAtTime(0,t);
+        g.gain.linearRampToValueAtTime(.15,t+.05);
+        g.gain.linearRampToValueAtTime(0,t+.4);
+        osc.start(t); osc.stop(t+.45);
+      });
+    } catch(e){}
+
+    setTimeout(()=>{
+      el.classList.add('hide');
+      setTimeout(()=>{if(el.parentElement)el.remove();},400);
+    },7000);
+  }
+
+  // ── Abrir modal de logros ─────────────────────────────────────
+  window._satAbrirLogros = async function(nombre) {
+    const {getFirestore,collection,doc,getDoc} = window._fbModules||{};
+    if (!getFirestore) return;
+    const db = getFirestore();
+
+    let logros = {};
+    try {
+      const snap = await getDoc(doc(db,'logros_asesores',nombre.replace(/\s+/g,'_').toLowerCase()));
+      if (snap.exists()) logros = snap.data().logros||{};
+    } catch(e){}
+
+    _renderModalLogros(nombre, logros);
+    document.getElementById('logros-modal').classList.add('open');
+  };
+
+  function _renderModalLogros(nombre, logros) {
+    const niv = (() => {
+      // Get from ranking
+      const r = (window._satLastRanking||[]).find(r=>r.asesor===nombre);
+      if (!r) return { color:'#a78bfa', bg:'rgba(167,139,250,.15)' };
+      if (r.pct>=95) return {color:'#1a6fbf',bg:'linear-gradient(135deg,#E8F4FF,#C0DCFF)'};
+      if (r.pct>=80) return {color:'#0e7a45',bg:'linear-gradient(135deg,#D4F7E8,#A8EEC8)'};
+      if (r.pct>=60) return {color:'#9A6700',bg:'linear-gradient(135deg,#FFF3C0,#FFE270)'};
+      return {color:'#7A4A20',bg:'linear-gradient(135deg,#F5E8D8,#E8C8A0)'};
+    })();
+
+    const av = document.getElementById('logros-avatar');
+    av.style.cssText = `width:48px;height:48px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:900;flex-shrink:0;background:${niv.bg};color:${niv.color};border:2px solid ${niv.color}`;
+    av.textContent = nombre.split(' ').slice(0,2).map(w=>w[0]||'').join('').toUpperCase();
+
+    document.getElementById('logros-nombre-user').textContent = nombre;
+
+    const total   = LOGROS_DEF.length;
+    const desbloq = Object.keys(logros).length;
+    const pct     = Math.round(desbloq/total*100);
+    document.getElementById('logros-prog-text').textContent = desbloq + ' / ' + total + ' logros (' + pct + '%)';
+
+    // Stats por rareza
+    const statsEl = document.getElementById('logros-stats');
+    const counts  = { comun:0, raro:0, epico:0, legendario:0 };
+    Object.keys(logros).forEach(id=>{
+      const def=LOGROS_DEF.find(l=>l.id===id);
+      if(def) counts[def.rarity]++;
+    });
+    statsEl.innerHTML = [
+      {label:'Total',    val:desbloq,          color:'#fff'},
+      {label:'Comunes',  val:counts.comun,      color:RARITY.comun.color},
+      {label:'Raros',    val:counts.raro,       color:RARITY.raro.color},
+      {label:'Épicos',   val:counts.epico,      color:RARITY.epico.color},
+      {label:'Legendarios',val:counts.legendario,color:RARITY.legendario.color},
+    ].map(s=>`
+      <div class="logros-stat">
+        <div class="logros-stat-val" style="color:${s.color}">${s.val}</div>
+        <div class="logros-stat-lbl">${s.label}</div>
+      </div>`).join('');
+
+    // Tabs categorías
+    const cats = ['Todos', ...new Set(LOGROS_DEF.map(l=>l.cat))];
+    const tabsEl = document.getElementById('logros-tabs');
+    tabsEl.innerHTML = cats.map(c=>`
+      <button class="logros-tab${c===_catActiva?' active':''}" onclick="_satSetCatLogros('${c}')">${c}</button>`).join('');
+
+    _renderGrid(logros);
+  }
+
+  window._satSetCatLogros = function(cat) {
+    _catActiva = cat;
+    document.querySelectorAll('.logros-tab').forEach(t=>{
+      t.classList.toggle('active', t.textContent===cat);
+    });
+    const modal = document.getElementById('logros-modal');
+    const nombre = document.getElementById('logros-nombre-user').textContent;
+    const {getFirestore,doc,getDoc} = window._fbModules||{};
+    if (!getFirestore) return;
+    getDoc(doc(getFirestore(),'logros_asesores',nombre.replace(/\s+/g,'_').toLowerCase()))
+      .then(snap=>{ _renderGrid(snap.exists()?snap.data().logros||{}:{}); })
+      .catch(()=>{ _renderGrid({}); });
+  };
+
+  function _renderGrid(logros) {
+    const grid = document.getElementById('logros-grid');
+    const filtered = _catActiva==='Todos' ? LOGROS_DEF : LOGROS_DEF.filter(l=>l.cat===_catActiva);
+    // Desbloquados primero, luego bloqueados
+    const sorted = [...filtered].sort((a,b)=>{
+      const aD=!!logros[a.id], bD=!!logros[b.id];
+      if(aD!==bD) return bD?1:-1;
+      return 0;
+    });
+    const rar = RARITY;
+    grid.innerHTML = sorted.map(def=>{
+      const data = logros[def.id];
+      const r    = rar[def.rarity];
+      const esN  = data && data.nuevo;
+      return `
+        <div class="logro-card ${data?'desbloqueado':'bloqueado'}"
+          style="--logro-color:${r.color};--logro-glow:${r.glow}">
+          ${esN ? '<div class="logro-nuevo">¡Nuevo!</div>' : ''}
+          ${data ? `<div class="logro-fecha">${data.fecha||''}</div>` : ''}
+          <span class="logro-icon">${data ? def.icon : '🔒'}</span>
+          <div class="logro-nombre">${def.nombre}</div>
+          <div class="logro-desc">${data ? def.desc : '???'}</div>
+          <div class="logro-rarity" style="color:${r.color};border-color:${r.color};background:${r.bg}">${r.label}</div>
+        </div>`;
+    }).join('');
+  }
+
+  // Exponer el último ranking para usarlo en el modal
+  const _origCalcRank = window._satNotifComparar;
+  if (_origCalcRank) {
+    const _wrapped = window._satNotifComparar;
+    window._satNotifComparar = function(ranking) {
+      window._satLastRanking = ranking;
+      _wrapped(ranking);
+    };
+  }
+
+})();
+
+
+
+// ══════════════════════════════════════════════════════════════
+// ADMIN DE LOGROS — Editor completo para supervisor/formador
+// ══════════════════════════════════════════════════════════════
+(function() {
+
+  // ── CSS del admin ─────────────────────────────────────────────
+  const style = document.createElement('style');
+  style.textContent = `
+    #ladmin-modal {
+      display:none; position:fixed; inset:0;
+      background:rgba(0,0,0,.92); backdrop-filter:blur(12px);
+      z-index:999996; align-items:flex-start; justify-content:center;
+      padding:20px; overflow-y:auto;
+    }
+    #ladmin-modal.open { display:flex; }
+    #ladmin-card {
+      background:#1a1035; border:1px solid rgba(255,255,255,.1);
+      border-radius:24px; width:100%; max-width:780px;
+      box-shadow:0 40px 100px rgba(0,0,0,.8); overflow:hidden;
+      margin:auto;
+    }
+    #ladmin-head {
+      background:linear-gradient(135deg,#2d1b69,#1a0a3d);
+      padding:20px 24px; display:flex; align-items:center;
+      gap:14px; border-bottom:1px solid rgba(255,255,255,.06); flex-shrink:0;
+    }
+    #ladmin-body { padding:24px; }
+
+    /* Tabs */
+    .ladmin-tabs { display:flex; gap:8px; margin-bottom:24px; }
+    .ladmin-tab {
+      padding:9px 20px; border-radius:10px; font-size:13px; font-weight:700;
+      cursor:pointer; border:1.5px solid rgba(255,255,255,.15);
+      background:transparent; color:rgba(255,255,255,.5); font-family:inherit;
+      transition:all .15s;
+    }
+    .ladmin-tab.active { background:#a78bfa; color:#fff; border-color:#a78bfa; }
+
+    /* Lista de logros */
+    .ladmin-logro-row {
+      display:flex; align-items:center; gap:12px;
+      padding:12px 16px; border-radius:12px;
+      background:rgba(255,255,255,.04); border:1px solid rgba(255,255,255,.07);
+      margin-bottom:8px; transition:background .15s;
+    }
+    .ladmin-logro-row:hover { background:rgba(255,255,255,.07); }
+    .ladmin-logro-icon { font-size:24px; flex-shrink:0; width:36px; text-align:center; }
+    .ladmin-logro-info { flex:1; min-width:0; }
+    .ladmin-logro-nombre { font-size:13px; font-weight:800; color:#fff; margin-bottom:2px; }
+    .ladmin-logro-desc   { font-size:11px; color:rgba(255,255,255,.4); }
+    .ladmin-logro-meta   { display:flex; gap:6px; margin-top:4px; flex-wrap:wrap; }
+    .ladmin-rarity-badge {
+      font-size:9px; font-weight:800; border-radius:99px; padding:2px 7px;
+      border:1px solid; text-transform:uppercase; letter-spacing:.05em;
+    }
+    .ladmin-cat-badge {
+      font-size:9px; font-weight:600; border-radius:99px; padding:2px 7px;
+      background:rgba(255,255,255,.08); color:rgba(255,255,255,.5); border:1px solid rgba(255,255,255,.12);
+    }
+    .ladmin-custom-badge {
+      font-size:9px; font-weight:800; border-radius:99px; padding:2px 7px;
+      background:rgba(255,215,0,.12); color:#FFD700; border:1px solid rgba(255,215,0,.3);
+    }
+    .ladmin-btn-edit {
+      padding:6px 12px; border-radius:8px; font-size:11px; font-weight:700;
+      cursor:pointer; border:1px solid rgba(167,139,250,.4);
+      background:rgba(167,139,250,.1); color:#a78bfa; font-family:inherit;
+      transition:all .15s; flex-shrink:0;
+    }
+    .ladmin-btn-edit:hover { background:rgba(167,139,250,.2); }
+    .ladmin-btn-del {
+      padding:6px 12px; border-radius:8px; font-size:11px; font-weight:700;
+      cursor:pointer; border:1px solid rgba(196,30,58,.35);
+      background:rgba(196,30,58,.1); color:#f87171; font-family:inherit;
+      transition:all .15s; flex-shrink:0;
+    }
+    .ladmin-btn-del:hover { background:rgba(196,30,58,.2); }
+
+    /* Form */
+    .ladmin-form { background:rgba(255,255,255,.04); border:1px solid rgba(255,255,255,.08); border-radius:16px; padding:20px; }
+    .ladmin-form-title { font-size:15px; font-weight:800; color:#fff; margin-bottom:18px; display:flex; align-items:center; gap:8px; }
+    .ladmin-row { display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:12px; }
+    .ladmin-row.full { grid-template-columns:1fr; }
+    .ladmin-field label { display:block; font-size:11px; font-weight:700; color:rgba(255,255,255,.5); margin-bottom:6px; letter-spacing:.05em; text-transform:uppercase; }
+    .ladmin-input {
+      width:100%; background:rgba(255,255,255,.07); border:1.5px solid rgba(255,255,255,.12);
+      border-radius:10px; padding:10px 14px; font-size:13px; color:#fff;
+      font-family:inherit; outline:none; transition:border-color .2s;
+    }
+    .ladmin-input:focus { border-color:#a78bfa; }
+    .ladmin-select {
+      width:100%; background:#1a1035; border:1.5px solid rgba(255,255,255,.12);
+      border-radius:10px; padding:10px 14px; font-size:13px; color:#fff;
+      font-family:inherit; outline:none; cursor:pointer;
+    }
+    .ladmin-select:focus { border-color:#a78bfa; }
+
+    /* Zona peligrosa */
+    .ladmin-danger-zone {
+      background:rgba(196,30,58,.08); border:1.5px solid rgba(196,30,58,.25);
+      border-radius:16px; padding:20px; margin-top:24px;
+    }
+    .ladmin-danger-title { font-size:14px; font-weight:800; color:#f87171; margin-bottom:8px; display:flex; align-items:center; gap:8px; }
+    .ladmin-danger-desc  { font-size:12px; color:rgba(255,255,255,.45); margin-bottom:16px; line-height:1.6; }
+
+    /* Btn primario */
+    .ladmin-btn-primary {
+      padding:11px 22px; background:linear-gradient(135deg,#7c3aed,#5b21b6);
+      color:#fff; border:none; border-radius:10px; font-size:13px; font-weight:700;
+      cursor:pointer; font-family:inherit; transition:opacity .15s; display:inline-flex;
+      align-items:center; gap:8px;
+    }
+    .ladmin-btn-primary:hover { opacity:.85; }
+    .ladmin-btn-danger {
+      padding:11px 22px; background:rgba(196,30,58,.2);
+      color:#f87171; border:1.5px solid rgba(196,30,58,.4);
+      border-radius:10px; font-size:13px; font-weight:700;
+      cursor:pointer; font-family:inherit; transition:all .15s; display:inline-flex;
+      align-items:center; gap:8px;
+    }
+    .ladmin-btn-danger:hover { background:rgba(196,30,58,.35); }
+
+    /* Buscador */
+    .ladmin-search {
+      width:100%; background:rgba(255,255,255,.07);
+      border:1.5px solid rgba(255,255,255,.12); border-radius:10px;
+      padding:10px 14px; font-size:13px; color:#fff; font-family:inherit;
+      outline:none; margin-bottom:14px;
+    }
+    .ladmin-search:focus { border-color:#a78bfa; }
+  `;
+  document.head.appendChild(style);
+
+  // ── HTML del modal admin ──────────────────────────────────────
+  const modal = document.createElement('div');
+  modal.id = 'ladmin-modal';
+  modal.innerHTML = `
+    <div id="ladmin-card">
+      <div id="ladmin-head">
+        <div style="width:42px;height:42px;border-radius:12px;background:rgba(255,215,0,.15);border:1.5px solid rgba(255,215,0,.35);display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0">🏆</div>
+        <div style="flex:1">
+          <div style="font-size:11px;font-weight:800;color:#FFD700;text-transform:uppercase;letter-spacing:.1em;margin-bottom:3px">Panel Supervisor</div>
+          <div style="font-size:17px;font-weight:900;color:#fff">Gestión de Logros</div>
+        </div>
+        <button onclick="document.getElementById('ladmin-modal').classList.remove('open')"
+          style="background:rgba(255,255,255,.08);border:none;border-radius:10px;width:36px;height:36px;cursor:pointer;color:#fff;font-size:18px;display:flex;align-items:center;justify-content:center;font-family:inherit">✕</button>
+      </div>
+      <div id="ladmin-body">
+        <div class="ladmin-tabs">
+          <button class="ladmin-tab active" onclick="_ladminTab('lista')">📋 Ver todos</button>
+          <button class="ladmin-tab" onclick="_ladminTab('crear')">➕ Crear logro</button>
+          <button class="ladmin-tab" onclick="_ladminTab('peligro')">⚠️ Zona peligrosa</button>
+        </div>
+        <div id="ladmin-panel-lista">
+          <input class="ladmin-search" id="ladmin-search" placeholder="Buscar logro..." oninput="_ladminFiltrar(this.value)">
+          <div id="ladmin-lista-logros"></div>
+        </div>
+        <div id="ladmin-panel-crear" style="display:none">
+          <div class="ladmin-form">
+            <div class="ladmin-form-title"><span>✨</span> <span id="ladmin-form-title-txt">Crear nuevo logro</span></div>
+            <input type="hidden" id="ladmin-edit-id">
+            <div class="ladmin-row">
+              <div class="ladmin-field">
+                <label>Ícono (emoji)</label>
+                <input class="ladmin-input" id="lf-icon" placeholder="🏆" maxlength="4">
+              </div>
+              <div class="ladmin-field">
+                <label>Rareza</label>
+                <select class="ladmin-select" id="lf-rarity">
+                  <option value="comun">Común</option>
+                  <option value="raro">Raro</option>
+                  <option value="epico">Épico</option>
+                  <option value="legendario">Legendario</option>
+                </select>
+              </div>
+            </div>
+            <div class="ladmin-row">
+              <div class="ladmin-field">
+                <label>Nombre del logro</label>
+                <input class="ladmin-input" id="lf-nombre" placeholder="El Imparable">
+              </div>
+              <div class="ladmin-field">
+                <label>Categoría</label>
+                <input class="ladmin-input" id="lf-cat" placeholder="Especial" list="ladmin-cats">
+                <datalist id="ladmin-cats">
+                  <option value="Inicio"><option value="Porcentaje"><option value="Racha">
+                  <option value="Mejora"><option value="Consistencia"><option value="Posición">
+                  <option value="Especial"><option value="Rangos"><option value="Social"><option value="Personalizado">
+                </datalist>
+              </div>
+            </div>
+            <div class="ladmin-row full">
+              <div class="ladmin-field">
+                <label>Descripción</label>
+                <input class="ladmin-input" id="lf-desc" placeholder="Descripción del logro...">
+              </div>
+            </div>
+            <div style="display:flex;gap:10px;margin-top:8px;flex-wrap:wrap">
+              <button class="ladmin-btn-primary" onclick="_ladminGuardarLogro()">
+                <span id="ladmin-save-txt">✓ Crear logro</span>
+              </button>
+              <button class="ladmin-btn-danger" onclick="_ladminCancelarEdicion()" style="background:transparent;color:rgba(255,255,255,.4);border-color:rgba(255,255,255,.15)">
+                Cancelar
+              </button>
+            </div>
+            <div id="ladmin-form-status" style="margin-top:12px;font-size:12px;display:none"></div>
+          </div>
+        </div>
+        <div id="ladmin-panel-peligro" style="display:none">
+          <div class="ladmin-danger-zone">
+            <div class="ladmin-danger-title">⚠️ Reiniciar logros de todos los asesores</div>
+            <div class="ladmin-danger-desc">
+              Esta acción elimina <strong style="color:#fff">todos los logros obtenidos</strong> por todos los asesores. No se puede deshacer.
+              Los logros configurados (personalizados) no se eliminan, solo los progesos de los asesores.
+            </div>
+            <button class="ladmin-btn-danger" onclick="_ladminReiniciarTodos()">
+              🗑️ Reiniciar todos los logros de asesores
+            </button>
+          </div>
+          <div class="ladmin-danger-zone" style="margin-top:16px">
+            <div class="ladmin-danger-title">⚠️ Eliminar logros personalizados</div>
+            <div class="ladmin-danger-desc">
+              Elimina todos los logros creados por supervisores. Los 54 logros base del sistema se mantendrán.
+            </div>
+            <button class="ladmin-btn-danger" onclick="_ladminEliminarPersonalizados()">
+              🗑️ Eliminar todos los logros personalizados
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>`;
+  document.body.appendChild(modal);
+  modal.addEventListener('click', e => { if(e.target===modal) modal.classList.remove('open'); });
+
+  // ── Estado ────────────────────────────────────────────────────
+  let _ladminTabActiva = 'lista';
+  let _logrosCustom    = []; // logros de Firebase
+  let _filtroActual    = '';
+
+  // ── Rareza colores ────────────────────────────────────────────
+  const RARITY_COLORS = {
+    comun:      '#9CA3AF',
+    raro:       '#60A5FA',
+    epico:      '#A78BFA',
+    legendario: '#FFD700',
+  };
+
+  // ── Abrir modal ───────────────────────────────────────────────
+  window._satAbrirAdminLogros = async function() {
+    await _ladminCargarCustom();
+    _ladminTab('lista');
+    modal.classList.add('open');
+  };
+
+  // ── Tabs ──────────────────────────────────────────────────────
+  window._ladminTab = function(tab) {
+    _ladminTabActiva = tab;
+    ['lista','crear','peligro'].forEach(t => {
+      document.getElementById('ladmin-panel-'+t).style.display = t===tab?'block':'none';
+    });
+    document.querySelectorAll('.ladmin-tab').forEach((btn,i) => {
+      btn.classList.toggle('active', ['lista','crear','peligro'][i]===tab);
+    });
+    if (tab==='lista') _ladminRenderLista();
+    if (tab==='crear') _ladminResetForm();
+  };
+
+  // ── Cargar logros personalizados de Firebase ──────────────────
+  async function _ladminCargarCustom() {
+    const {getFirestore,collection,getDocs} = window._fbModules||{};
+    if (!getFirestore) return;
+    try {
+      const snap = await getDocs(collection(getFirestore(), 'logros_config'));
+      _logrosCustom = snap.docs.map(d=>({...d.data(), _fbId:d.id}));
+    } catch(e) { _logrosCustom = []; }
+  }
+
+  // ── Render lista completa ─────────────────────────────────────
+  function _ladminRenderLista() {
+    const LOGROS_TODOS = window._LOGROS_DEF_BASE || [];
+    const todos = [
+      ...LOGROS_TODOS.map(l=>({...l, _tipo:'base'})),
+      ..._logrosCustom.map(l=>({...l, _tipo:'custom'})),
+    ];
+
+    const filtro = _filtroActual.toLowerCase();
+    const filtered = filtro
+      ? todos.filter(l => l.nombre?.toLowerCase().includes(filtro) || l.desc?.toLowerCase().includes(filtro) || l.cat?.toLowerCase().includes(filtro))
+      : todos;
+
+    const el = document.getElementById('ladmin-lista-logros');
+    if (!filtered.length) {
+      el.innerHTML = '<div style="text-align:center;color:rgba(255,255,255,.3);padding:40px;font-size:13px">No hay logros que coincidan</div>';
+      return;
+    }
+
+    const rc = RARITY_COLORS;
+    el.innerHTML = `<div style="font-size:11px;color:rgba(255,255,255,.3);margin-bottom:10px;font-weight:600">${filtered.length} logros</div>` +
+      filtered.map(l => `
+        <div class="ladmin-logro-row">
+          <div class="ladmin-logro-icon">${l.icon||'🏆'}</div>
+          <div class="ladmin-logro-info">
+            <div class="ladmin-logro-nombre">${l.nombre||'Sin nombre'}</div>
+            <div class="ladmin-logro-desc">${l.desc||''}</div>
+            <div class="ladmin-logro-meta">
+              <span class="ladmin-rarity-badge" style="color:${rc[l.rarity]||'#fff'};border-color:${rc[l.rarity]||'#fff'}">${l.rarity||'comun'}</span>
+              <span class="ladmin-cat-badge">${l.cat||'General'}</span>
+              ${l._tipo==='custom' ? '<span class="ladmin-custom-badge">✨ Personalizado</span>' : '<span style="font-size:9px;color:rgba(255,255,255,.2);padding:2px 6px">Base</span>'}
+            </div>
+          </div>
+          <button class="ladmin-btn-edit" onclick="_ladminEditarLogro('${(l.id||l._fbId||'').replace(/'/g,"\\'")}','${l._tipo}')">✏️ Editar</button>
+          ${l._tipo==='custom'
+            ? `<button class="ladmin-btn-del" onclick="_ladminBorrarLogro('${(l._fbId||'').replace(/'/g,"\\'")}')">🗑️</button>`
+            : ''}
+        </div>`).join('');
+  }
+
+  window._ladminFiltrar = function(q) {
+    _filtroActual = q;
+    _ladminRenderLista();
+  };
+
+  // ── Editar logro existente ────────────────────────────────────
+  window._ladminEditarLogro = function(id, tipo) {
+    const LOGROS_TODOS = window._LOGROS_DEF_BASE || [];
+    let logro;
+    if (tipo==='base') {
+      logro = LOGROS_TODOS.find(l=>l.id===id);
+    } else {
+      logro = _logrosCustom.find(l=>l._fbId===id||l.id===id);
+    }
+    if (!logro) return;
+
+    _ladminTab('crear');
+    document.getElementById('ladmin-form-title-txt').textContent = 'Editar logro';
+    document.getElementById('ladmin-save-txt').textContent = '✓ Guardar cambios';
+    document.getElementById('ladmin-edit-id').value = logro._fbId||logro.id||'';
+    document.getElementById('lf-icon').value    = logro.icon||'';
+    document.getElementById('lf-nombre').value  = logro.nombre||'';
+    document.getElementById('lf-desc').value    = logro.desc||'';
+    document.getElementById('lf-cat').value     = logro.cat||'';
+    document.getElementById('lf-rarity').value  = logro.rarity||'comun';
+    document.getElementById('ladmin-edit-id').dataset.tipo = tipo;
+    document.getElementById('ladmin-edit-id').dataset.baseId = logro.id||'';
+  };
+
+  // ── Reset form ────────────────────────────────────────────────
+  function _ladminResetForm() {
+    document.getElementById('ladmin-form-title-txt').textContent = 'Crear nuevo logro';
+    document.getElementById('ladmin-save-txt').textContent = '✓ Crear logro';
+    document.getElementById('ladmin-edit-id').value = '';
+    document.getElementById('ladmin-edit-id').dataset.tipo = '';
+    document.getElementById('lf-icon').value    = '';
+    document.getElementById('lf-nombre').value  = '';
+    document.getElementById('lf-desc').value    = '';
+    document.getElementById('lf-cat').value     = 'Personalizado';
+    document.getElementById('lf-rarity').value  = 'comun';
+    document.getElementById('ladmin-form-status').style.display = 'none';
+  }
+
+  window._ladminCancelarEdicion = function() {
+    _ladminResetForm();
+    _ladminTab('lista');
+  };
+
+  // ── Guardar logro (crear o editar) ────────────────────────────
+  window._ladminGuardarLogro = async function() {
+    const icon    = document.getElementById('lf-icon').value.trim();
+    const nombre  = document.getElementById('lf-nombre').value.trim();
+    const desc    = document.getElementById('lf-desc').value.trim();
+    const cat     = document.getElementById('lf-cat').value.trim();
+    const rarity  = document.getElementById('lf-rarity').value;
+    const editId  = document.getElementById('ladmin-edit-id').value;
+    const editTipo= document.getElementById('ladmin-edit-id').dataset.tipo;
+    const baseId  = document.getElementById('ladmin-edit-id').dataset.baseId;
+    const statusEl= document.getElementById('ladmin-form-status');
+
+    if (!icon||!nombre||!desc||!cat) {
+      statusEl.style.display='block';
+      statusEl.style.color='#f87171';
+      statusEl.textContent='⚠️ Completa todos los campos';
+      return;
+    }
+
+    const {getFirestore,collection,doc,setDoc,addDoc,serverTimestamp} = window._fbModules||{};
+    if (!getFirestore) return;
+    const db = getFirestore();
+
+    statusEl.style.display='block';
+    statusEl.style.color='#a78bfa';
+    statusEl.textContent='Guardando...';
+
+    try {
+      const data = { icon, nombre, desc, cat, rarity, actualizado:serverTimestamp() };
+
+      if (editId && editTipo==='custom') {
+        // Editar logro personalizado existente
+        await setDoc(doc(db,'logros_config',editId), data, {merge:true});
+      } else if (editId && editTipo==='base') {
+        // Guardar override de logro base en Firebase
+        const overrideId = 'override_' + baseId;
+        await setDoc(doc(db,'logros_config',overrideId), {...data, id:baseId, esOverride:true}, {merge:true});
+      } else {
+        // Crear logro nuevo
+        const newId = 'custom_' + Date.now();
+        await addDoc(collection(db,'logros_config'), {...data, id:newId, esCustom:true});
+      }
+
+      statusEl.style.color='#4ade80';
+      statusEl.textContent='✅ Guardado correctamente';
+
+      await _ladminCargarCustom();
+      // Actualizar la definición de logros en memoria
+      if (window._satActualizarLogrosConfig) window._satActualizarLogrosConfig();
+
+      setTimeout(()=>{ _ladminResetForm(); _ladminTab('lista'); }, 1200);
+    } catch(e) {
+      statusEl.style.color='#f87171';
+      statusEl.textContent='❌ Error: '+e.message;
+    }
+  };
+
+  // ── Borrar logro personalizado ────────────────────────────────
+  window._ladminBorrarLogro = async function(fbId) {
+    if (!confirm('¿Eliminar este logro personalizado? Los asesores que lo tenían lo perderán.')) return;
+    const {getFirestore,doc,deleteDoc} = window._fbModules||{};
+    if (!getFirestore) return;
+    try {
+      await deleteDoc(doc(getFirestore(),'logros_config',fbId));
+      showToast('Logro eliminado ✓');
+      await _ladminCargarCustom();
+      _ladminRenderLista();
+    } catch(e) { showToast('Error: '+e.message,'error'); }
+  };
+
+  // ── Reiniciar logros de TODOS los asesores ────────────────────
+  window._ladminReiniciarTodos = async function() {
+    const confirmMsg = '⚠️ ¿Reiniciar TODOS los logros de TODOS los asesores?\n\nEsta acción no se puede deshacer.';
+    if (!confirm(confirmMsg)) return;
+    const {getFirestore,collection,getDocs,doc,deleteDoc} = window._fbModules||{};
+    if (!getFirestore) return;
+
+    showToast('Reiniciando logros...');
+    try {
+      const snap = await getDocs(collection(getFirestore(),'logros_asesores'));
+      await Promise.all(snap.docs.map(d => deleteDoc(doc(getFirestore(),'logros_asesores',d.id))));
+      showToast('Logros de todos los asesores reiniciados ✓');
+      modal.classList.remove('open');
+    } catch(e) { showToast('Error: '+e.message,'error'); }
+  };
+
+  // ── Eliminar solo logros personalizados ───────────────────────
+  window._ladminEliminarPersonalizados = async function() {
+    if (!confirm('¿Eliminar todos los logros personalizados creados por supervisores?')) return;
+    const {getFirestore,collection,getDocs,doc,deleteDoc} = window._fbModules||{};
+    if (!getFirestore) return;
+
+    try {
+      const snap = await getDocs(collection(getFirestore(),'logros_config'));
+      const customs = snap.docs.filter(d => d.data().esCustom || d.data().esOverride);
+      await Promise.all(customs.map(d => deleteDoc(doc(getFirestore(),'logros_config',d.id))));
+      showToast('Logros personalizados eliminados ✓');
+      await _ladminCargarCustom();
+      _ladminRenderLista();
+    } catch(e) { showToast('Error: '+e.message,'error'); }
+  };
+
+  // ── Exponer función para que el botón del supervisor se muestre solo si corresponde ──
+  window.addEventListener('sise:rolCargado', () => {
+    const rol = (window.currentUserRol||'').toLowerCase();
+    const esSup = rol==='supervisor'||rol==='bo'||rol==='formador';
+    const btn = document.getElementById('btn-admin-logros');
+    if (btn) btn.style.display = esSup ? 'flex' : 'none';
+  });
+  // También ocultar por defecto hasta que cargue el rol
+  const btnAdmin = document.getElementById('btn-admin-logros');
+  if (btnAdmin) btnAdmin.style.display = 'none';
 
 })();
 
