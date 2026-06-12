@@ -170,6 +170,19 @@
 </head>
 <body>
 
+<!-- ── Splash inmediato mientras carga Firebase ── -->
+<div id="idx-splash" style="position:fixed;inset:0;background:#0D0D0D;z-index:99999;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:20px;transition:opacity .35s">
+  <div style="display:flex;flex-direction:column;align-items:center;gap:10px">
+    <div style="width:64px;height:64px;background:#fff;border-radius:16px;display:flex;align-items:center;justify-content:center;box-shadow:0 8px 32px rgba(196,30,58,.35)">
+      <span style="font-size:18px;font-weight:900;color:#0D0D0D;letter-spacing:-1px">SISE</span>
+    </div>
+    <div style="font-size:11px;font-weight:700;color:#C41E3A;letter-spacing:.12em;text-transform:uppercase">Portal SAES</div>
+  </div>
+  <div style="width:32px;height:32px;border:3px solid rgba(255,255,255,.1);border-top-color:#C41E3A;border-radius:50%;animation:splash-spin .8s linear infinite"></div>
+  <div id="idx-splash-msg" style="font-size:12px;color:rgba(255,255,255,.4);font-weight:500">Cargando...</div>
+</div>
+<style>@keyframes splash-spin { to { transform:rotate(360deg); } }</style>
+
 <video class="bg-video" autoplay muted loop playsinline>
   <source src="fondo_sise.mp4" type="video/mp4">
 </video>
@@ -313,9 +326,37 @@
   const saved = localStorage.getItem('remembered_saes_email');
   if (saved) { emailInput.value = saved; rememberCb.checked = true; }
 
+  // ── Splash: ocultar cuando Firebase responde ─────────────────
+  const splash    = document.getElementById('idx-splash');
+  const splashMsg = document.getElementById('idx-splash-msg');
+  let   splashDone = false;
+
+  function hideSplash() {
+    if (splashDone) return;
+    splashDone = true;
+    if (splash) {
+      splash.style.opacity = '0';
+      setTimeout(() => { splash.style.display = 'none'; }, 380);
+    }
+  }
+
+  // Timeout: si Firebase no responde en 6s, mostrar la página igual
+  const splashTimeout = setTimeout(() => {
+    if (!splashDone) {
+      if (splashMsg) splashMsg.textContent = 'Sin conexión — verifica tu internet';
+      setTimeout(hideSplash, 1500);
+    }
+  }, 6000);
+
   // ── Si ya hay sesión → portal ─────────────────────────────────
   onAuthStateChanged(auth, user => {
-    if (user) window.location.href = 'Portal.html';
+    clearTimeout(splashTimeout);
+    if (user) {
+      if (splashMsg) splashMsg.textContent = 'Redirigiendo...';
+      setTimeout(() => { window.location.href = 'Portal.html'; }, 300);
+      return;
+    }
+    hideSplash(); // No hay sesión → mostrar login
   });
 
   // ── Toggle contraseña ─────────────────────────────────────────
