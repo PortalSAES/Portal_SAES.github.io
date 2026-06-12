@@ -44,6 +44,13 @@ mark.plt-hl {
 #plt-search-count {
   font-variant-numeric: tabular-nums;
 }
+
+/* ── Tipificaciones: scrollbar naranja visible ───────────────── */
+.tipi-table-wrap::-webkit-scrollbar        { height: 8px; }
+.tipi-table-wrap::-webkit-scrollbar-track  { background: var(--border); border-radius: 99px; }
+.tipi-table-wrap::-webkit-scrollbar-thumb  { background: var(--orange); border-radius: 99px; }
+.tipi-table-wrap::-webkit-scrollbar-thumb:hover { background: var(--orange-dark); }
+.tipi-table-wrap { scrollbar-width: thin; scrollbar-color: var(--orange) var(--border); }
 </style>
 </head>
 <body>
@@ -2192,10 +2199,13 @@ document.getElementById('user-av').textContent   = user.email.substring(0, 2).to
 document.getElementById('user-name').textContent = user.email.split('@')[0];
 try {
 const snap = await getDoc(doc(db, 'asesores_autorizados', user.email.toLowerCase()));
-if (snap.exists()) currentUserRol = snap.data().Rol || '';
-} catch(e) { currentUserRol = ''; }
+if (snap.exists()) {
+  currentUserRol = snap.data().Rol || '';
+  window.currentUserNombre = snap.data().Nombre || '';
+}
+} catch(e) { currentUserRol = ''; window.currentUserNombre = ''; }
 window.currentUserRol = currentUserRol;
-window.dispatchEvent(new CustomEvent('sise:rolCargado', { detail: { rol: currentUserRol } }));
+window.dispatchEvent(new CustomEvent('sise:rolCargado', { detail: { rol: currentUserRol, nombre: window.currentUserNombre } }));
 // Iniciar listeners de Firestore AHORA que hay sesión activa
 if (!_tipiListenersStarted) { _tipiListenersStarted = true; await iniciarListenersTipi(); }
 else refreshTipi();
@@ -4686,12 +4696,26 @@ zoomImg.addEventListener('touchstart', e => { if (e.touches.length === 1) { drag
 zoomImg.addEventListener('touchmove', e => { e.preventDefault(); if (e.touches.length === 1 && dragging) { zX = startZX + (e.touches[0].clientX - startX); zY = startZY + (e.touches[0].clientY - startY); clampPan(); applyZoom(); } else if (e.touches.length === 2) { const dx = e.touches[0].clientX - e.touches[1].clientX; const dy = e.touches[0].clientY - e.touches[1].clientY; const dist = Math.sqrt(dx*dx + dy*dy); zScale = Math.min(Math.max(zScale * (dist / lastTouchDist), 0.5), 5); lastTouchDist = dist; clampPan(); applyZoom(); } }, { passive: false });
 zoomImg.addEventListener('touchend', () => { dragging = false; });
 zoomImg.addEventListener('dblclick', e => { e.stopPropagation(); if (zScale > 1.2) { zScale = 1; zX = 0; zY = 0; } else { zScale = 2.5; } applyZoom(); });
-(function() {
-const h = new Date().getHours();
-const greet = h < 12 ? '¡Buenos días' : h < 18 ? '¡Buenas tardes' : '¡Buenas noches';
-const el = document.querySelector('.home-hero-title');
-if (el) el.innerHTML = greet + '! Portal SAES <span style="color:var(--orange)">·</span> Canal WhatsApp';
-})();
+function _updateHeroGreeting() {
+  const h = new Date().getHours();
+  const greet = h < 12 ? 'Buenos dias' : h < 18 ? 'Buenas tardes' : 'Buenas noches';
+  const nombre = window.currentUserNombre || '';
+  const rol    = window.currentUserRol   || '';
+  const el = document.querySelector('.home-hero-title');
+  if (!el) return;
+  // Nombre part: first name only
+  const firstName = nombre ? nombre.split(' ')[0] : '';
+  const nameHtml  = firstName
+    ? ', <span style="color:var(--orange)">' + firstName + '</span>'
+    : '';
+  // Role badge
+  const rolHtml = rol
+    ? ' <span style="font-size:13px;font-weight:600;color:var(--text-muted,#9B8F88);vertical-align:middle">· ' + rol + '</span>'
+    : '';
+  el.innerHTML = '¡' + greet + nameHtml + '!' + rolHtml;
+}
+_updateHeroGreeting();
+window.addEventListener('sise:rolCargado', _updateHeroGreeting);
 (function() {
 const sesionInicio = new Date();
 let statPlantillas = 0, statCasos = 0, statVistas = 0;
@@ -5442,6 +5466,1200 @@ renderFaqView();
 const btn = document.getElementById('btn-faq-nueva');
 if (btn) btn.style.display = puedeGestionar() ? '' : 'none';
 };
+
+
+// ══════════════════════════════════════════════════════════════════
+// REPORTE MENSUAL — BO LLAMADAS
+// ══════════════════════════════════════════════════════════════════
+document.getElementById('btn-bo-export-mensual').addEventListener('click', () => {
+  const { jsPDF } = window.jspdf;
+  if (!allCasos || !allCasos.length) { showToast('No hay datos para generar el reporte', 'error'); return; }
+
+  // Mes actual de la vista
+  const ref   = boViewDay;
+  const mes   = ref.getMonth();
+  const anio  = ref.getFullYear();
+  const MESES_N = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+  const mesNombre = MESES_N[mes];
+  const generado  = new Date().toLocaleDateString('es-PE');
+
+  // Filtrar datos del mes
+  const data = allCasos.filter(r => {
+    const f = r.fechaRegistro || '';
+    if (!f) return false;
+    const parts = f.split('-');
+    return parseInt(parts[0]) === anio && parseInt(parts[1]) - 1 === mes;
+  });
+
+  if (!data.length) { showToast('No hay casos en ' + mesNombre + ' ' + anio, 'error'); return; }
+
+  // ── Estadísticas ──────────────────────────────────────────────
+  const total      = data.length;
+  const atendidas  = data.filter(r => r.estadoLlamada === 'atendida').length;
+  const noContesta = data.filter(r => r.estadoLlamada === 'no_contesta').length;
+  const pendientes = data.filter(r => (r.estadoLlamada||'pendiente') === 'pendiente').length;
+  const nivel      = total > 0 ? Math.round((atendidas / total) * 100) : 0;
+  const alto       = data.filter(r => (r.prioridad||'medio') === 'alto').length;
+  const medio      = data.filter(r => (r.prioridad||'medio') === 'medio').length;
+  const bajo       = data.filter(r => (r.prioridad||'medio') === 'bajo').length;
+
+  // Casos por día
+  const porDia = {};
+  data.forEach(r => {
+    const f = r.fechaRegistro || '';
+    if (!porDia[f]) porDia[f] = { total:0, atendida:0, no_contesta:0, pendiente:0 };
+    porDia[f].total++;
+    porDia[f][r.estadoLlamada || 'pendiente']++;
+  });
+  const dias = Object.keys(porDia).sort();
+
+  // Asesores
+  const porAsesor = {};
+  data.forEach(r => {
+    const a = r.asesorWsp || 'Sin asignar';
+    if (!porAsesor[a]) porAsesor[a] = { total:0, atendida:0, no_contesta:0, pendiente:0 };
+    porAsesor[a].total++;
+    porAsesor[a][r.estadoLlamada || 'pendiente']++;
+  });
+
+  // ── Colores ───────────────────────────────────────────────────
+  const NEGRO   = [13,13,13];
+  const ROJO    = [196,30,58];
+  const ROJOCL  = [255,235,238];
+  const BLANCO  = [255,255,255];
+  const GRIS1   = [245,245,245];
+  const GRIS2   = [220,220,220];
+  const GRIS3   = [140,140,140];
+  const GRIS4   = [60,60,60];
+  const VERDE   = [26,122,69];
+  const VERDECL = [232,250,240];
+  const NARANJA = [234,140,0];
+  const NARCL   = [255,243,220];
+  const PURPURA = [91,33,182];
+  const PURCL   = [245,240,255];
+  const AZUL    = [30,80,160];
+
+  const pdf = new jsPDF({ orientation:'portrait', unit:'mm', format:'a4' });
+  const pw  = pdf.internal.pageSize.width;
+  const ph  = pdf.internal.pageSize.height;
+
+  // ── Helpers ───────────────────────────────────────────────────
+  const lineaRoja = (x,y,w) => { pdf.setFillColor(...ROJO); pdf.rect(x,y,w,0.7,'F'); };
+  const seccion = (texto, y) => {
+    pdf.setFillColor(...NEGRO); pdf.roundedRect(10,y,3.5,8,0.8,0.8,'F');
+    pdf.setTextColor(...NEGRO); pdf.setFont('helvetica','bold'); pdf.setFontSize(10);
+    pdf.text(texto, 16.5, y+5.8);
+    lineaRoja(10, y+10, pw-20);
+    return y+15;
+  };
+  const nuevaPagina = (curY, needed) => {
+    if (curY + needed > ph - 18) { pdf.addPage(); return 16; }
+    return curY;
+  };
+
+  // ════════════════════════════════════════════════════════════
+  // PÁGINA 1
+  // ════════════════════════════════════════════════════════════
+
+  // ── CABECERA ──────────────────────────────────────────────────
+  pdf.setFillColor(...NEGRO); pdf.rect(0,0,pw,30,'F');
+  pdf.setFillColor(...ROJO);  pdf.rect(0,30,pw,2.5,'F');
+  pdf.setFillColor(40,40,40); pdf.roundedRect(10,5,22,12,1.5,1.5,'F');
+  pdf.setDrawColor(...BLANCO); pdf.setLineWidth(0.4);
+  pdf.roundedRect(10,5,22,12,1.5,1.5,'S');
+  pdf.setTextColor(...BLANCO); pdf.setFont('helvetica','bold'); pdf.setFontSize(9);
+  pdf.text('SISE', 21, 12.5, {align:'center'});
+  pdf.setTextColor(...ROJO); pdf.setFontSize(5);
+  pdf.text('PORTAL SAES', 21, 21, {align:'center'});
+  pdf.setTextColor(...BLANCO); pdf.setFont('helvetica','bold'); pdf.setFontSize(13);
+  pdf.text('REPORTE MENSUAL BO - LLAMADAS', 38, 11);
+  pdf.setTextColor(...ROJO); pdf.setFontSize(10);
+  pdf.text(mesNombre.toUpperCase() + ' ' + anio, 38, 19);
+  pdf.setTextColor(180,180,180); pdf.setFont('helvetica','normal'); pdf.setFontSize(6.5);
+  pdf.text('Generado: ' + generado, pw-12, 18.5, {align:'right'});
+
+  // ── META INFO ─────────────────────────────────────────────────
+  const mY = 35;
+  pdf.setFillColor(...GRIS1); pdf.rect(0,mY,pw,18,'F');
+  pdf.setFillColor(...GRIS2); pdf.rect(0,mY+18,pw,0.4,'F');
+  const meta = [
+    {label:'Periodo',         val: mesNombre + ' ' + anio},
+    {label:'Total dias',      val: dias.length + ' dias con registros'},
+    {label:'Area',            val: 'BO - Seguimiento y Calidad'},
+    {label:'Nivel de atencion', val: nivel + '%'},
+  ];
+  const mW = pw/4;
+  meta.forEach((m,i) => {
+    const mx = i*mW+6;
+    if(i>0){ pdf.setDrawColor(...GRIS2); pdf.setLineWidth(0.3); pdf.line(i*mW,mY+3,i*mW,mY+15); }
+    pdf.setTextColor(...ROJO); pdf.setFont('helvetica','bold'); pdf.setFontSize(6.5);
+    pdf.text(m.label, mx, mY+8.5);
+    pdf.setTextColor(...GRIS4); pdf.setFont('helvetica','normal'); pdf.setFontSize(7);
+    pdf.text(m.val, mx, mY+14);
+  });
+
+  // ── KPI CARDS ─────────────────────────────────────────────────
+  let curY = mY + 24;
+  curY = seccion('RESUMEN EJECUTIVO', curY);
+
+  const kpis = [
+    {label:'Total Casos',    val:String(total),      bg:NEGRO,  text:BLANCO,  bdr:NEGRO},
+    {label:'Atendidas',      val:String(atendidas),  bg:VERDECL,text:VERDE,   bdr:VERDE},
+    {label:'No Contesta',    val:String(noContesta), bg:ROJOCL, text:ROJO,    bdr:ROJO},
+    {label:'Pendientes',     val:String(pendientes), bg:PURCL,  text:PURPURA, bdr:PURPURA},
+    {label:'Nivel Atencion', val:nivel+'%',          bg:NEGRO,  text:BLANCO,  bdr:NEGRO},
+  ];
+  const kW = (pw-20-4*3)/5, kH = 22;
+  kpis.forEach((k,i) => {
+    const kx = 10+i*(kW+3);
+    pdf.setFillColor(...k.bg); pdf.roundedRect(kx,curY,kW,kH,2,2,'F');
+    pdf.setDrawColor(...k.bdr); pdf.setLineWidth(0.4); pdf.roundedRect(kx,curY,kW,kH,2,2,'S');
+    pdf.setTextColor(...k.text); pdf.setFont('helvetica','bold'); pdf.setFontSize(15);
+    pdf.text(k.val, kx+kW/2, curY+13.5, {align:'center'});
+    pdf.setFont('helvetica','normal'); pdf.setFontSize(5.5);
+    pdf.text(k.label, kx+kW/2, curY+19, {align:'center'});
+  });
+  curY += kH + 8;
+
+  // ── GRÁFICA 1: BARRAS POR ESTADO ─────────────────────────────
+  curY = seccion('DISTRIBUCION POR ESTADO', curY);
+  const barData = [
+    {label:'Atendidas',  val:atendidas,  color:VERDE,   pct: total>0?atendidas/total:0},
+    {label:'No Contesta',val:noContesta, color:ROJO,    pct: total>0?noContesta/total:0},
+    {label:'Pendientes', val:pendientes, color:PURPURA,  pct: total>0?pendientes/total:0},
+  ];
+  const bX=10, bY=curY, bH=32, bMaxW=pw-90;
+  barData.forEach((b,i) => {
+    const y = bY + i*12;
+    // Label
+    pdf.setFont('helvetica','bold'); pdf.setFontSize(7); pdf.setTextColor(...GRIS4);
+    pdf.text(b.label, bX, y+5);
+    // Barra fondo
+    pdf.setFillColor(230,230,230); pdf.roundedRect(bX+38,y,bMaxW,7,1,1,'F');
+    // Barra valor
+    const bw = Math.max(b.pct*bMaxW, 2);
+    pdf.setFillColor(...b.color); pdf.roundedRect(bX+38,y,bw,7,1,1,'F');
+    // Valor y %
+    pdf.setFont('helvetica','bold'); pdf.setFontSize(7); pdf.setTextColor(...b.color);
+    pdf.text(b.val+' ('+Math.round(b.pct*100)+'%)', bX+38+bw+3, y+5.5);
+  });
+  curY += bH + 6;
+
+  // ── GRÁFICA 2: BARRAS POR PRIORIDAD ──────────────────────────
+  curY = seccion('DISTRIBUCION POR PRIORIDAD', curY);
+  const prioData = [
+    {label:'Alta',  val:alto,  color:ROJO,    pct:total>0?alto/total:0},
+    {label:'Media', val:medio, color:NARANJA,  pct:total>0?medio/total:0},
+    {label:'Baja',  val:bajo,  color:VERDE,    pct:total>0?bajo/total:0},
+  ];
+  prioData.forEach((b,i) => {
+    const y = curY + i*11;
+    pdf.setFont('helvetica','bold'); pdf.setFontSize(7); pdf.setTextColor(...GRIS4);
+    pdf.text(b.label, bX, y+5);
+    pdf.setFillColor(230,230,230); pdf.roundedRect(bX+28,y,bMaxW+10,7,1,1,'F');
+    const bw = Math.max(b.pct*(bMaxW+10),2);
+    pdf.setFillColor(...b.color); pdf.roundedRect(bX+28,y,bw,7,1,1,'F');
+    pdf.setFont('helvetica','bold'); pdf.setFontSize(7); pdf.setTextColor(...b.color);
+    pdf.text(b.val+' ('+Math.round(b.pct*100)+'%)', bX+28+bw+3, y+5.5);
+  });
+  curY += 40;
+
+  // ── GRÁFICA 3: TENDENCIA DIARIA (línea simulada con barras) ──
+  curY = nuevaPagina(curY, 60);
+  curY = seccion('EVOLUCION DIARIA DE CASOS', curY);
+
+  const maxDia = Math.max(...dias.map(d => porDia[d].total), 1);
+  const grafW  = pw - 20;
+  const grafH  = 45;
+  const grafX  = 10;
+  const grafY  = curY;
+  const barW   = Math.min(grafW / Math.max(dias.length,1) - 1, 10);
+
+  // Fondo del gráfico
+  pdf.setFillColor(...GRIS1); pdf.rect(grafX,grafY,grafW,grafH,'F');
+  pdf.setDrawColor(...GRIS2); pdf.setLineWidth(0.3); pdf.rect(grafX,grafY,grafW,grafH,'S');
+
+  // Líneas de referencia
+  [0.25,0.5,0.75,1].forEach(frac => {
+    const ly = grafY + grafH - grafH*frac;
+    pdf.setDrawColor(210,210,210); pdf.setLineWidth(0.2);
+    pdf.line(grafX, ly, grafX+grafW, ly);
+    pdf.setFont('helvetica','normal'); pdf.setFontSize(5); pdf.setTextColor(...GRIS3);
+    pdf.text(String(Math.round(maxDia*frac)), grafX-1, ly+1.5, {align:'right'});
+  });
+
+  // Barras por día
+  dias.forEach((dia, i) => {
+    const d = porDia[dia];
+    const x  = grafX + 4 + i*(grafW-8)/Math.max(dias.length,1);
+    const drawBar = (val, color, offsetH) => {
+      const h = Math.max((val/maxDia)*grafH*0.9, 0.5);
+      pdf.setFillColor(...color);
+      pdf.rect(x, grafY+grafH-offsetH-h, barW/3, h, 'F');
+    };
+    drawBar(d.atendida||0, VERDE, 0);
+    drawBar(d.no_contesta||0, ROJO, 0);
+    drawBar(d.pendiente||0, PURPURA, 0);
+
+    // Total encima
+    pdf.setFont('helvetica','bold'); pdf.setFontSize(5); pdf.setTextColor(...GRIS4);
+    pdf.text(String(d.total), x+barW/6, grafY+grafH-(d.total/maxDia*grafH*0.9)-1.5, {align:'center'});
+
+    // Etiqueta día
+    const dayNum = dia.split('-')[2];
+    pdf.setFont('helvetica','normal'); pdf.setFontSize(5); pdf.setTextColor(...GRIS3);
+    pdf.text(dayNum, x+barW/6, grafY+grafH+4, {align:'center'});
+  });
+
+  // Leyenda de la gráfica
+  const leyY = grafY + grafH + 8;
+  [[VERDE,'Atendidas'],[ROJO,'No contesta'],[PURPURA,'Pendientes']].forEach(([c,l],i) => {
+    const lx = grafX + i*50;
+    pdf.setFillColor(...c); pdf.rect(lx,leyY,4,3,'F');
+    pdf.setFont('helvetica','normal'); pdf.setFontSize(6); pdf.setTextColor(...GRIS4);
+    pdf.text(l, lx+6, leyY+2.5);
+  });
+  curY = leyY + 12;
+
+  // ── GRÁFICA 4: RANKING DE ASESORES ───────────────────────────
+  curY = nuevaPagina(curY, 60);
+  curY = seccion('RANKING DE ASESORES WSP', curY);
+
+  const asesoresList = Object.entries(porAsesor)
+    .sort((a,b) => b[1].total - a[1].total)
+    .slice(0, 8);
+
+  const maxAsesor = Math.max(...asesoresList.map(([,v])=>v.total), 1);
+  asesoresList.forEach(([nombre, vals], i) => {
+    const y   = curY + i*11;
+    const pct = vals.total / maxAsesor;
+    const nivelAse = vals.total>0 ? Math.round((vals.atendida||0)/vals.total*100) : 0;
+
+    pdf.setFont('helvetica','bold'); pdf.setFontSize(6.5); pdf.setTextColor(...GRIS4);
+    pdf.text((i+1)+'. '+nombre, bX, y+5);
+
+    // Barra fondo
+    pdf.setFillColor(230,230,230); pdf.roundedRect(bX+42,y,bMaxW-4,7,1,1,'F');
+    // Barra verde atendidas
+    if((vals.atendida||0)>0){
+      const bw = Math.max((vals.atendida/maxAsesor)*(bMaxW-4),1);
+      pdf.setFillColor(...VERDE); pdf.roundedRect(bX+42,y,bw,7,1,1,'F');
+    }
+    // Barra roja no contesta encima
+    if((vals.no_contesta||0)>0){
+      const bwA = (vals.atendida||0)/maxAsesor*(bMaxW-4);
+      const bwR = Math.max((vals.no_contesta/maxAsesor)*(bMaxW-4),1);
+      pdf.setFillColor(...ROJO); pdf.roundedRect(bX+42+bwA,y,bwR,7,0,0,'F');
+    }
+
+    // Texto valores
+    pdf.setFont('helvetica','bold'); pdf.setFontSize(6.5); pdf.setTextColor(...GRIS4);
+    pdf.text('Total:'+vals.total+'  Ate:'+nivelAse+'%', bX+42+pct*(bMaxW-4)+5, y+5.5);
+  });
+  curY += asesoresList.length * 11 + 8;
+
+  // ── TABLA RESUMEN DIARIO ──────────────────────────────────────
+  curY = nuevaPagina(curY, 50);
+  curY = seccion('RESUMEN POR DIA', curY);
+
+  pdf.autoTable({
+    startY: curY,
+    head: [['Fecha','Total','Atendidas','No Contesta','Pendientes','% Atencion']],
+    body: dias.map(dia => {
+      const d = porDia[dia];
+      const pctDia = d.total>0 ? Math.round((d.atendida||0)/d.total*100) : 0;
+      const [y,m,dd] = dia.split('-');
+      return [dd+'/'+m+'/'+y, d.total, d.atendida||0, d.no_contesta||0, d.pendiente||0, pctDia+'%'];
+    }),
+    styles:{font:'helvetica',fontSize:7.5,cellPadding:{top:3,bottom:3,left:3,right:3},lineColor:GRIS2,lineWidth:0.2,textColor:GRIS4},
+    headStyles:{fillColor:NEGRO,textColor:BLANCO,fontStyle:'bold',fontSize:7.5},
+    columnStyles:{
+      0:{cellWidth:28},1:{cellWidth:16,halign:'center'},2:{cellWidth:22,halign:'center'},
+      3:{cellWidth:25,halign:'center'},4:{cellWidth:22,halign:'center'},5:{cellWidth:22,halign:'center'},
+    },
+    alternateRowStyles:{fillColor:[249,249,249]},
+    margin:{left:10,right:10},
+    didDrawCell:(hk)=>{
+      if(hk.section!=='body') return;
+      if(hk.column.index===5){
+        const pctVal = parseInt(hk.cell.raw)||0;
+        const color = pctVal>=70 ? VERDE : pctVal>=40 ? NARANJA : ROJO;
+        const isAlt = hk.row.index%2===1;
+        pdf.setFillColor(isAlt?249:255,isAlt?249:255,isAlt?249:255);
+        pdf.rect(hk.cell.x+0.2,hk.cell.y+0.2,hk.cell.width-0.4,hk.cell.height-0.4,'F');
+        pdf.setTextColor(...color); pdf.setFont('helvetica','bold'); pdf.setFontSize(7.5);
+        pdf.text(hk.cell.raw, hk.cell.x+hk.cell.width/2, hk.cell.y+hk.cell.height/2+2.5, {align:'center'});
+      }
+    }
+  });
+  curY = (pdf.lastAutoTable&&pdf.lastAutoTable.finalY) ? pdf.lastAutoTable.finalY+8 : curY+40;
+
+  // ── TABLA DETALLE COMPLETO ────────────────────────────────────
+  curY = nuevaPagina(curY, 40);
+  curY = seccion('DETALLE COMPLETO DE LLAMADAS', curY);
+
+  const prioStr = p => p?p.charAt(0).toUpperCase()+p.slice(1):'Medio';
+  const estStr  = e => e==='atendida'?'Atendida':e==='no_contesta'?'No contesta':'Pendiente';
+
+  pdf.autoTable({
+    startY: curY,
+    head: [['#','Fecha','Alumno','Codigo','Asesor WSP','Prioridad','Estado','Motivo']],
+    body: data.map((r,i)=>[
+      i+1,
+      fmtDate(r.fechaRegistro||''),
+      (r.nombre||'-').toUpperCase(),
+      r.codigo||'-',
+      r.asesorWsp||'-',
+      prioStr(r.prioridad),
+      estStr(r.estadoLlamada),
+      r.motivo||'-',
+    ]),
+    styles:{font:'helvetica',fontSize:6.5,cellPadding:{top:2.5,bottom:2.5,left:3,right:3},lineColor:GRIS2,lineWidth:0.2,overflow:'linebreak',textColor:GRIS4},
+    headStyles:{fillColor:NEGRO,textColor:BLANCO,fontStyle:'bold',fontSize:7},
+    columnStyles:{
+      0:{cellWidth:6,halign:'center'},1:{cellWidth:18},2:{cellWidth:26},
+      3:{cellWidth:14},4:{cellWidth:18},5:{cellWidth:14},6:{cellWidth:18},7:{cellWidth:'auto'},
+    },
+    alternateRowStyles:{fillColor:[249,249,249]},
+    margin:{left:10,right:10},
+    didDrawCell:(hk)=>{
+      if(hk.section!=='body') return;
+      if(hk.column.index===6){
+        const val=hk.cell.raw;
+        const cx=hk.cell.x+1.5,cy=hk.cell.y+1.5,cw=hk.cell.width-3,ch=hk.cell.height-3;
+        if(val==='Atendida'){pdf.setFillColor(...VERDECL);pdf.roundedRect(cx,cy,cw,ch,1,1,'F');pdf.setTextColor(...VERDE);}
+        else if(val==='No contesta'){pdf.setFillColor(...ROJOCL);pdf.roundedRect(cx,cy,cw,ch,1,1,'F');pdf.setTextColor(...ROJO);}
+        else{pdf.setFillColor(...PURCL);pdf.roundedRect(cx,cy,cw,ch,1,1,'F');pdf.setTextColor(...PURPURA);}
+        pdf.setFontSize(6); pdf.setFont('helvetica','bold');
+        pdf.text(val, cx+cw/2, cy+ch/2+2, {align:'center'});
+      }
+      if(hk.column.index===5){
+        const val=(hk.cell.raw||'').toLowerCase();
+        const cx=hk.cell.x+1.5,cy=hk.cell.y+1.5,cw=hk.cell.width-3,ch=hk.cell.height-3;
+        if(val==='alto'){pdf.setFillColor(...ROJOCL);pdf.roundedRect(cx,cy,cw,ch,1,1,'F');pdf.setTextColor(...ROJO);}
+        else if(val==='bajo'){pdf.setFillColor(...VERDECL);pdf.roundedRect(cx,cy,cw,ch,1,1,'F');pdf.setTextColor(...VERDE);}
+        else{pdf.setFillColor(...NARCL);pdf.roundedRect(cx,cy,cw,ch,1,1,'F');pdf.setTextColor(...NARANJA);}
+        pdf.setFontSize(6); pdf.setFont('helvetica','bold');
+        pdf.text(hk.cell.raw||'', cx+cw/2, cy+ch/2+2, {align:'center'});
+      }
+    }
+  });
+
+  // ── FOOTER ────────────────────────────────────────────────────
+  const pgs = pdf.internal.getNumberOfPages();
+  for(let i=1;i<=pgs;i++){
+    pdf.setPage(i);
+    pdf.setFillColor(...GRIS1); pdf.rect(0,ph-13,pw,13,'F');
+    pdf.setFillColor(...ROJO);  pdf.rect(0,ph-13,pw,0.8,'F');
+    pdf.setFont('helvetica','normal'); pdf.setFontSize(6.5); pdf.setTextColor(...GRIS3);
+    pdf.text('Documento de uso interno y confidencial', 13, ph-7.5);
+    pdf.text('SISE - Portal SAES', 13, ph-3.5);
+    pdf.setTextColor(...ROJO); pdf.setFont('helvetica','bold'); pdf.setFontSize(6.5);
+    pdf.text('REPORTE MENSUAL - ' + mesNombre.toUpperCase() + ' ' + anio, pw/2, ph-5.5, {align:'center'});
+    pdf.setTextColor(...GRIS3); pdf.setFont('helvetica','normal');
+    pdf.text('Pagina ' + i + ' de ' + pgs, pw-12, ph-5.5, {align:'right'});
+  }
+
+  pdf.save('ReporteMensualBO_' + mesNombre + '_' + anio + '.pdf');
+  showToast('Reporte mensual descargado ✓');
+});
+
+// ══════════════════════════════════════════════════════════════════
+// REPORTE MENSUAL — CASOS PENDIENTES
+// ══════════════════════════════════════════════════════════════════
+document.getElementById('btn-pend-export-mensual').addEventListener('click', () => {
+  const { jsPDF } = window.jspdf;
+  if (!allPendientes || !allPendientes.length) { showToast('No hay datos para generar el reporte', 'error'); return; }
+
+  const ref   = pendViewDay;
+  const mes   = ref.getMonth();
+  const anio  = ref.getFullYear();
+  const MESES_N = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+  const mesNombre = MESES_N[mes];
+  const generado  = new Date().toLocaleDateString('es-PE');
+
+  const data = allPendientes.filter(r => {
+    const f = r.fechaRegistro || r.fecha || '';
+    if (!f) return false;
+    const parts = f.split('-');
+    return parseInt(parts[0]) === anio && parseInt(parts[1]) - 1 === mes;
+  });
+
+  if (!data.length) { showToast('No hay casos en ' + mesNombre + ' ' + anio, 'error'); return; }
+
+  const total     = data.length;
+  const resueltos  = data.filter(r=>r.resuelto).length;
+  const pendientes = data.filter(r=>!r.resuelto).length;
+  const alertados  = data.filter(r=>r.alertado).length;
+  const sinAlertar = data.filter(r=>!r.alertado&&!r.resuelto).length;
+
+  const porDia = {};
+  data.forEach(r => {
+    const f = r.fechaRegistro || r.fecha || '';
+    if(!porDia[f]) porDia[f] = {total:0,resuelto:0,pendiente:0,alertado:0};
+    porDia[f].total++;
+    if(r.resuelto) porDia[f].resuelto++;
+    else porDia[f].pendiente++;
+    if(r.alertado) porDia[f].alertado++;
+  });
+  const dias = Object.keys(porDia).sort();
+
+  const porAsesor = {};
+  data.forEach(r => {
+    const a = r.asesor || 'Sin asignar';
+    if(!porAsesor[a]) porAsesor[a] = {total:0,resuelto:0,alertado:0};
+    porAsesor[a].total++;
+    if(r.resuelto) porAsesor[a].resuelto++;
+    if(r.alertado) porAsesor[a].alertado++;
+  });
+
+  const NEGRO=[13,13,13],ROJO=[196,30,58],ROJOCL=[255,235,238],BLANCO=[255,255,255];
+  const GRIS1=[245,245,245],GRIS2=[220,220,220],GRIS3=[140,140,140],GRIS4=[60,60,60];
+  const VERDE=[26,122,69],VERDECL=[232,250,240];
+  const NARANJA=[234,140,0],NARCL=[255,243,220];
+  const PURPURA=[91,33,182],PURCL=[245,240,255];
+
+  const pdf = new jsPDF({orientation:'portrait',unit:'mm',format:'a4'});
+  const pw=pdf.internal.pageSize.width, ph=pdf.internal.pageSize.height;
+
+  const lineaRoja=(x,y,w)=>{pdf.setFillColor(...ROJO);pdf.rect(x,y,w,0.7,'F');};
+  const seccion=(texto,y)=>{
+    pdf.setFillColor(...NEGRO); pdf.roundedRect(10,y,3.5,8,0.8,0.8,'F');
+    pdf.setTextColor(...NEGRO); pdf.setFont('helvetica','bold'); pdf.setFontSize(10);
+    pdf.text(texto, 16.5, y+5.8);
+    lineaRoja(10, y+10, pw-20);
+    return y+15;
+  };
+  const nuevaPagina=(curY,needed)=>{
+    if(curY+needed>ph-18){pdf.addPage();return 16;}
+    return curY;
+  };
+
+  // CABECERA
+  pdf.setFillColor(...NEGRO); pdf.rect(0,0,pw,30,'F');
+  pdf.setFillColor(...ROJO);  pdf.rect(0,30,pw,2.5,'F');
+  pdf.setFillColor(40,40,40); pdf.roundedRect(10,5,22,12,1.5,1.5,'F');
+  pdf.setDrawColor(...BLANCO); pdf.setLineWidth(0.4); pdf.roundedRect(10,5,22,12,1.5,1.5,'S');
+  pdf.setTextColor(...BLANCO); pdf.setFont('helvetica','bold'); pdf.setFontSize(9);
+  pdf.text('SISE', 21, 12.5, {align:'center'});
+  pdf.setTextColor(...ROJO); pdf.setFontSize(5);
+  pdf.text('PORTAL SAES', 21, 21, {align:'center'});
+  pdf.setTextColor(...BLANCO); pdf.setFont('helvetica','bold'); pdf.setFontSize(13);
+  pdf.text('REPORTE MENSUAL - CASOS PENDIENTES', 38, 11);
+  pdf.setTextColor(...ROJO); pdf.setFontSize(10);
+  pdf.text(mesNombre.toUpperCase() + ' ' + anio, 38, 19);
+  pdf.setTextColor(180,180,180); pdf.setFont('helvetica','normal'); pdf.setFontSize(6.5);
+  pdf.text('Generado: ' + generado, pw-12, 18.5, {align:'right'});
+
+  // META INFO
+  const mY=35;
+  pdf.setFillColor(...GRIS1); pdf.rect(0,mY,pw,18,'F');
+  pdf.setFillColor(...GRIS2); pdf.rect(0,mY+18,pw,0.4,'F');
+  const tasaRe = total>0 ? Math.round(resueltos/total*100) : 0;
+  const meta=[
+    {label:'Periodo',         val:mesNombre+' '+anio},
+    {label:'Dias con casos',  val:dias.length+' dias registrados'},
+    {label:'Area',            val:'Seguimiento y Calidad - BO'},
+    {label:'Tasa resolucion', val:tasaRe+'%'},
+  ];
+  const mW=pw/4;
+  meta.forEach((m,i)=>{
+    const mx=i*mW+6;
+    if(i>0){pdf.setDrawColor(...GRIS2);pdf.setLineWidth(0.3);pdf.line(i*mW,mY+3,i*mW,mY+15);}
+    pdf.setTextColor(...ROJO); pdf.setFont('helvetica','bold'); pdf.setFontSize(6.5);
+    pdf.text(m.label, mx, mY+8.5);
+    pdf.setTextColor(...GRIS4); pdf.setFont('helvetica','normal'); pdf.setFontSize(7);
+    pdf.text(m.val, mx, mY+14);
+  });
+
+  // KPI CARDS
+  let curY = mY+24;
+  curY = seccion('RESUMEN EJECUTIVO', curY);
+  const kpis=[
+    {label:'Total Casos',   val:String(total),     bg:NEGRO,  text:BLANCO,  bdr:NEGRO},
+    {label:'Resueltos',     val:String(resueltos),  bg:VERDECL,text:VERDE,   bdr:VERDE},
+    {label:'Pendientes',    val:String(pendientes), bg:ROJOCL, text:ROJO,    bdr:ROJO},
+    {label:'Alertados',     val:String(alertados),  bg:PURCL,  text:PURPURA, bdr:PURPURA},
+    {label:'Sin gestionar', val:String(sinAlertar), bg:NARCL,  text:NARANJA, bdr:NARANJA},
+  ];
+  const kW=(pw-20-4*3)/5, kH=22;
+  kpis.forEach((k,i)=>{
+    const kx=10+i*(kW+3);
+    pdf.setFillColor(...k.bg); pdf.roundedRect(kx,curY,kW,kH,2,2,'F');
+    pdf.setDrawColor(...k.bdr); pdf.setLineWidth(0.4); pdf.roundedRect(kx,curY,kW,kH,2,2,'S');
+    pdf.setTextColor(...k.text); pdf.setFont('helvetica','bold'); pdf.setFontSize(15);
+    pdf.text(k.val, kx+kW/2, curY+13.5, {align:'center'});
+    pdf.setFont('helvetica','normal'); pdf.setFontSize(5.5);
+    pdf.text(k.label, kx+kW/2, curY+19, {align:'center'});
+  });
+  curY += kH+8;
+
+  // GRAFICA ESTADO
+  curY = seccion('DISTRIBUCION POR ESTADO', curY);
+  const bX=10, bMaxW=pw-90;
+  [
+    {label:'Resueltos',     val:resueltos,  color:VERDE},
+    {label:'Pendientes',    val:pendientes, color:ROJO},
+    {label:'Alertados',     val:alertados,  color:PURPURA},
+    {label:'Sin gestionar', val:sinAlertar, color:NARANJA},
+  ].forEach((b,i)=>{
+    const y=curY+i*11;
+    const pct=total>0?b.val/total:0;
+    pdf.setFont('helvetica','bold'); pdf.setFontSize(7); pdf.setTextColor(...GRIS4);
+    pdf.text(b.label, bX, y+5);
+    pdf.setFillColor(230,230,230); pdf.roundedRect(bX+36,y,bMaxW+4,7,1,1,'F');
+    const bw=Math.max(pct*(bMaxW+4),2);
+    pdf.setFillColor(...b.color); pdf.roundedRect(bX+36,y,bw,7,1,1,'F');
+    pdf.setFont('helvetica','bold'); pdf.setFontSize(7); pdf.setTextColor(...b.color);
+    pdf.text(b.val+' ('+Math.round(pct*100)+'%)', bX+36+bw+3, y+5.5);
+  });
+  curY += 52;
+
+  // GRAFICA EVOLUCION DIARIA
+  curY = nuevaPagina(curY, 65);
+  curY = seccion('EVOLUCION DIARIA', curY);
+  const maxDia=Math.max(...dias.map(d=>porDia[d].total),1);
+  const grafW=pw-20, grafH=45, grafX=10, grafY=curY;
+  pdf.setFillColor(...GRIS1); pdf.rect(grafX,grafY,grafW,grafH,'F');
+  pdf.setDrawColor(...GRIS2); pdf.setLineWidth(0.3); pdf.rect(grafX,grafY,grafW,grafH,'S');
+  [0.25,0.5,0.75,1].forEach(frac=>{
+    const ly=grafY+grafH-grafH*frac;
+    pdf.setDrawColor(210,210,210); pdf.setLineWidth(0.2); pdf.line(grafX,ly,grafX+grafW,ly);
+    pdf.setFont('helvetica','normal'); pdf.setFontSize(5); pdf.setTextColor(...GRIS3);
+    pdf.text(String(Math.round(maxDia*frac)), grafX-1, ly+1.5, {align:'right'});
+  });
+  const barW2=Math.min((grafW-8)/Math.max(dias.length,1)-1,12);
+  dias.forEach((dia,i)=>{
+    const dd=porDia[dia];
+    const x=grafX+4+i*(grafW-8)/Math.max(dias.length,1);
+    [[dd.resuelto||0,VERDE],[dd.pendiente||0,ROJO]].forEach(([val,color],j)=>{
+      const h=Math.max((val/maxDia)*grafH*0.9,0.5);
+      pdf.setFillColor(...color);
+      pdf.rect(x+j*(barW2/2), grafY+grafH-h, barW2/2, h, 'F');
+    });
+    pdf.setFont('helvetica','bold'); pdf.setFontSize(5); pdf.setTextColor(...GRIS4);
+    pdf.text(String(dd.total), x+barW2/2, grafY+grafH-(dd.total/maxDia*grafH*0.9)-1.5, {align:'center'});
+    const dNum=dia.split('-')[2];
+    pdf.setFont('helvetica','normal'); pdf.setFontSize(5); pdf.setTextColor(...GRIS3);
+    pdf.text(dNum, x+barW2/2, grafY+grafH+4, {align:'center'});
+  });
+  const leyY=grafY+grafH+8;
+  [[VERDE,'Resueltos'],[ROJO,'Pendientes']].forEach(([c,l],i)=>{
+    const lx=grafX+i*45;
+    pdf.setFillColor(...c); pdf.rect(lx,leyY,4,3,'F');
+    pdf.setFont('helvetica','normal'); pdf.setFontSize(6); pdf.setTextColor(...GRIS4);
+    pdf.text(l, lx+6, leyY+2.5);
+  });
+  curY = leyY+12;
+
+  // RANKING ASESORES
+  curY = nuevaPagina(curY, 60);
+  curY = seccion('RANKING DE ASESORES', curY);
+  const asesores=Object.entries(porAsesor).sort((a,b)=>b[1].total-a[1].total).slice(0,8);
+  const maxAse=Math.max(...asesores.map(([,v])=>v.total),1);
+  asesores.forEach(([nombre,vals],i)=>{
+    const y=curY+i*11;
+    const pct=vals.total/maxAse;
+    const tasa=vals.total>0?Math.round(vals.resuelto/vals.total*100):0;
+    pdf.setFont('helvetica','bold'); pdf.setFontSize(6.5); pdf.setTextColor(...GRIS4);
+    pdf.text((i+1)+'. '+nombre, bX, y+5);
+    pdf.setFillColor(230,230,230); pdf.roundedRect(bX+42,y,bMaxW-4,7,1,1,'F');
+    const bwTot=Math.max(pct*(bMaxW-4),2);
+    pdf.setFillColor(...ROJO); pdf.roundedRect(bX+42,y,bwTot,7,1,1,'F');
+    if(vals.resuelto>0){
+      const bwR=Math.max((vals.resuelto/maxAse)*(bMaxW-4),1);
+      pdf.setFillColor(...VERDE); pdf.roundedRect(bX+42,y,bwR,7,1,1,'F');
+    }
+    pdf.setFont('helvetica','bold'); pdf.setFontSize(6.5); pdf.setTextColor(...GRIS4);
+    pdf.text('Total:'+vals.total+'  Resueltos:'+tasa+'%', bX+42+bwTot+5, y+5.5);
+  });
+  curY += asesores.length*11+8;
+
+  // TABLA RESUMEN DIARIO
+  curY = nuevaPagina(curY, 50);
+  curY = seccion('RESUMEN POR DIA', curY);
+  pdf.autoTable({
+    startY:curY,
+    head:[['Fecha','Total','Resueltos','Pendientes','Alertados','% Resolucion']],
+    body:dias.map(dia=>{
+      const d=porDia[dia];
+      const pctDia=d.total>0?Math.round(d.resuelto/d.total*100):0;
+      const [y,m,dd]=dia.split('-');
+      return [dd+'/'+m+'/'+y, d.total, d.resuelto||0, d.pendiente||0, d.alertado||0, pctDia+'%'];
+    }),
+    styles:{font:'helvetica',fontSize:7.5,cellPadding:{top:3,bottom:3,left:3,right:3},lineColor:GRIS2,lineWidth:0.2,textColor:GRIS4},
+    headStyles:{fillColor:NEGRO,textColor:BLANCO,fontStyle:'bold',fontSize:7.5},
+    columnStyles:{0:{cellWidth:28},1:{cellWidth:16,halign:'center'},2:{cellWidth:22,halign:'center'},3:{cellWidth:22,halign:'center'},4:{cellWidth:20,halign:'center'},5:{cellWidth:26,halign:'center'}},
+    alternateRowStyles:{fillColor:[249,249,249]},
+    margin:{left:10,right:10},
+    didDrawCell:(hk)=>{
+      if(hk.section!=='body'||hk.column.index!==5) return;
+      const v=parseInt(hk.cell.raw)||0;
+      const c=v>=70?VERDE:v>=40?NARANJA:ROJO;
+      const isAlt=hk.row.index%2===1;
+      pdf.setFillColor(isAlt?249:255,isAlt?249:255,isAlt?249:255);
+      pdf.rect(hk.cell.x+0.2,hk.cell.y+0.2,hk.cell.width-0.4,hk.cell.height-0.4,'F');
+      pdf.setTextColor(...c); pdf.setFont('helvetica','bold'); pdf.setFontSize(7.5);
+      pdf.text(hk.cell.raw, hk.cell.x+hk.cell.width/2, hk.cell.y+hk.cell.height/2+2.5, {align:'center'});
+    }
+  });
+  curY=(pdf.lastAutoTable&&pdf.lastAutoTable.finalY)?pdf.lastAutoTable.finalY+8:curY+40;
+
+  // TABLA DETALLE COMPLETO
+  curY = nuevaPagina(curY, 40);
+  curY = seccion('DETALLE COMPLETO DE CASOS', curY);
+  pdf.autoTable({
+    startY:curY,
+    head:[['#','Fecha Reg.','Caso desde','N Caso','Descripcion','Asesor','Estado','Alertado']],
+    body:data.sort((a,b)=>(a.fechaRegistro||a.fecha)<(b.fechaRegistro||b.fecha)?-1:1).map((r,i)=>[
+      i+1,
+      fmtDate(r.fechaRegistro||r.fecha||''),
+      fmtDate(r.fechaCaso||''),
+      r.numeroCaso||'-',
+      r.descripcion||'-',
+      r.asesor||'-',
+      r.resuelto?'Resuelto':'Pendiente',
+      r.alertado?'Si':'No',
+    ]),
+    styles:{font:'helvetica',fontSize:6.5,cellPadding:{top:2.5,bottom:2.5,left:3,right:3},lineColor:GRIS2,lineWidth:0.2,overflow:'linebreak',textColor:GRIS4},
+    headStyles:{fillColor:NEGRO,textColor:BLANCO,fontStyle:'bold',fontSize:7},
+    columnStyles:{0:{cellWidth:6,halign:'center'},1:{cellWidth:18},2:{cellWidth:18},3:{cellWidth:18},4:{cellWidth:'auto'},5:{cellWidth:22},6:{cellWidth:16},7:{cellWidth:12,halign:'center'}},
+    alternateRowStyles:{fillColor:[249,249,249]},
+    margin:{left:10,right:10},
+    didDrawCell:(hk)=>{
+      if(hk.section!=='body'||hk.column.index!==6) return;
+      const val=hk.cell.raw;
+      const cx=hk.cell.x+1.5,cy=hk.cell.y+1.5,cw=hk.cell.width-3,ch=hk.cell.height-3;
+      if(val==='Resuelto'){pdf.setFillColor(...VERDECL);pdf.roundedRect(cx,cy,cw,ch,1,1,'F');pdf.setTextColor(...VERDE);}
+      else{pdf.setFillColor(...ROJOCL);pdf.roundedRect(cx,cy,cw,ch,1,1,'F');pdf.setTextColor(...ROJO);}
+      pdf.setFontSize(6); pdf.setFont('helvetica','bold');
+      pdf.text(val, cx+cw/2, cy+ch/2+2, {align:'center'});
+    }
+  });
+
+  // FOOTER
+  const pgs=pdf.internal.getNumberOfPages();
+  for(let i=1;i<=pgs;i++){
+    pdf.setPage(i);
+    pdf.setFillColor(...GRIS1); pdf.rect(0,ph-13,pw,13,'F');
+    pdf.setFillColor(...ROJO);  pdf.rect(0,ph-13,pw,0.8,'F');
+    pdf.setFont('helvetica','normal'); pdf.setFontSize(6.5); pdf.setTextColor(...GRIS3);
+    pdf.text('Documento de uso interno y confidencial', 13, ph-7.5);
+    pdf.text('SISE - Portal SAES', 13, ph-3.5);
+    pdf.setTextColor(...ROJO); pdf.setFont('helvetica','bold'); pdf.setFontSize(6.5);
+    pdf.text('REPORTE MENSUAL - CASOS PENDIENTES - '+mesNombre.toUpperCase()+' '+anio, pw/2, ph-5.5, {align:'center'});
+    pdf.setTextColor(...GRIS3); pdf.setFont('helvetica','normal');
+    pdf.text('Pagina '+i+' de '+pgs, pw-12, ph-5.5, {align:'right'});
+  }
+
+  pdf.save('ReporteMensualPendientes_' + mesNombre + '_' + anio + '.pdf');
+  showToast('Reporte mensual descargado \u2713');
+});
+
+
+// ══════════════════════════════════════════════════════
+// TIP DEL ASESOR — popup cada 3 horas (solo rol Asesor)
+// ══════════════════════════════════════════════════════
+(function() {
+  const TIPS = [
+    { icon:"ti-coffee",        cat:"Bienestar",    txt:"Tómate un break de 5 minutos y ve al baño cuando lo necesites. No esperes a estar incómodo." },
+    { icon:"ti-book",          cat:"Atención",     txt:"Lee todo el mensaje antes de responder. Muchas incidencias se resuelven entendiendo bien el contexto." },
+    { icon:"ti-mood-happy",    cat:"Actitud",      txt:"No respondas en caliente. Si el estudiante está molesto, mantén siempre la calma." },
+    { icon:"ti-template",      cat:"Herramientas", txt:"Utiliza plantillas, pero personalízalas. Evita que parezcan respuestas automáticas." },
+    { icon:"ti-pencil",        cat:"Calidad",      txt:"Revisa la ortografía antes de enviar. Una buena redacción transmite profesionalismo." },
+    { icon:"ti-brain",         cat:"Eficiencia",   txt:"Aprende los procedimientos más frecuentes de memoria. Ahorrarás mucho tiempo." },
+    { icon:"ti-device-laptop", cat:"Enfoque",      txt:"Mantén abiertas solo las pestañas necesarias. Menos distracciones, más velocidad." },
+    { icon:"ti-keyboard",      cat:"Productividad",txt:"Usa atajos de teclado. Te harán ganar minutos todos los días." },
+    { icon:"ti-hand-stop",     cat:"Compromiso",   txt:"No prometas algo que no depende de ti. Indica siempre los plazos y procesos reales." },
+    { icon:"ti-ear",           cat:"Escucha",      txt:"Confirma que entendiste la consulta antes de responder." },
+    { icon:"ti-checklist",     cat:"Organización", txt:"Organiza tus casos pendientes. Lleva un control de seguimientos y escalamientos." },
+    { icon:"ti-heart",         cat:"Empatía",      txt:"Mantén una actitud empática. Un estudiante frustrado suele calmarse cuando se siente escuchado." },
+    { icon:"ti-armchair",      cat:"Bienestar",    txt:"No descuides tu postura. Pasar horas frente a la computadora puede afectar tu espalda." },
+    { icon:"ti-droplet",       cat:"Bienestar",    txt:"Ten agua cerca. La hidratación ayuda a mantener la concentración." },
+    { icon:"ti-help-circle",   cat:"Aprendizaje",  txt:"Pregunta cuando tengas dudas. Es mejor consultar que brindar información incorrecta." },
+    { icon:"ti-news",          cat:"Información",  txt:"Lee los comunicados internos diariamente. Muchos errores ocurren por desconocer actualizaciones." },
+    { icon:"ti-flag",          cat:"Mentalidad",   txt:"No te obsesiones con los casos difíciles. Haz la gestión correcta y continúa." },
+    { icon:"ti-school",        cat:"Crecimiento",  txt:"Aprovecha los tiempos bajos para capacitarte. Aprende nuevos procesos y herramientas." },
+    { icon:"ti-users",         cat:"Equipo",       txt:"Mantén una buena relación con coordinadores y compañeros. Te ayudarán a resolver casos complejos más rápido." },
+    { icon:"ti-star",          cat:"Propósito",    txt:"Recuerda que detrás de cada chat hay una persona. Trata a cada estudiante como te gustaría que te atendieran a ti." },
+  ];
+
+  let tipIdx = Math.floor(Math.random() * TIPS.length);
+
+  // ── Estilos ───────────────────────────────────────────────────
+  const style = document.createElement('style');
+  style.textContent = `
+    #tip-overlay {
+      position: fixed; inset: 0;
+      background: rgba(0,0,0,0.65);
+      backdrop-filter: blur(4px);
+      display: flex; align-items: center; justify-content: center;
+      z-index: 99999;
+      opacity: 0; transition: opacity 0.3s;
+      pointer-events: none;
+    }
+    #tip-overlay.visible { opacity: 1; pointer-events: all; }
+
+    #tip-card {
+      width: 420px; max-width: calc(100vw - 32px);
+      background: #fff;
+      border-radius: 24px;
+      overflow: hidden;
+      box-shadow: 0 32px 80px rgba(0,0,0,0.35), 0 0 0 1px rgba(0,0,0,0.06);
+      transform: translateY(28px) scale(0.96);
+      transition: transform 0.38s cubic-bezier(.22,.68,0,1.2);
+    }
+    #tip-overlay.visible #tip-card { transform: translateY(0) scale(1); }
+
+    /* Cabecera negra SISE */
+    #tip-head {
+      background: #0D0D0D;
+      padding: 20px 24px 18px;
+      display: flex; align-items: center; gap: 16px;
+      position: relative;
+    }
+    #tip-head::after {
+      content: '';
+      position: absolute; bottom: 0; left: 0; right: 0;
+      height: 3px;
+      background: linear-gradient(90deg, #C41E3A, #ff6b6b);
+    }
+    #tip-logo-box {
+      width: 48px; height: 48px; border-radius: 14px;
+      background: #fff;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+      font-weight: 900; font-size: 13px; color: #0D0D0D;
+      letter-spacing: -0.5px; font-family: inherit;
+      line-height: 1;
+      flex-direction: column; gap: 0;
+    }
+    #tip-logo-box span.logo-sise { font-size: 14px; font-weight: 900; color:#0D0D0D; }
+    #tip-logo-box span.logo-sub  { font-size: 7px;  font-weight: 700; color:#C41E3A; letter-spacing:0.05em; }
+    #tip-head-text { flex: 1; min-width: 0; }
+    #tip-label {
+      font-size: 10px; font-weight: 800; letter-spacing: 0.12em;
+      color: #C41E3A; text-transform: uppercase; margin-bottom: 3px;
+    }
+    #tip-title {
+      font-size: 17px; font-weight: 800; color: #fff;
+      line-height: 1.2; margin-bottom: 2px;
+    }
+    #tip-counter { font-size: 11px; color: rgba(255,255,255,0.45); }
+
+    /* Barra de progreso */
+    #tip-prog-wrap {
+      background: #0D0D0D;
+      padding: 0 24px 14px;
+      display: flex; gap: 3px;
+    }
+    .tip-prog-seg {
+      flex: 1; height: 3px; border-radius: 99px;
+      background: rgba(255,255,255,0.12);
+      transition: background 0.3s;
+    }
+    .tip-prog-seg.done   { background: rgba(196,30,58,0.5); }
+    .tip-prog-seg.active { background: #C41E3A; }
+
+    /* Categoría badge */
+    #tip-cat-row {
+      padding: 18px 24px 0;
+      display: flex; align-items: center; gap: 8px;
+    }
+    #tip-cat-icon-wrap {
+      width: 36px; height: 36px; border-radius: 10px;
+      background: #C41E3A;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+    }
+    #tip-cat-icon-wrap i { font-size: 18px; color: #fff; }
+    #tip-cat-badge {
+      font-size: 10px; font-weight: 700; letter-spacing: 0.08em;
+      text-transform: uppercase;
+      background: #fff0f3; color: #C41E3A;
+      border: 1px solid rgba(196,30,58,0.2);
+      border-radius: 99px; padding: 3px 10px;
+    }
+
+    /* Texto del tip */
+    #tip-body {
+      margin: 14px 24px 20px;
+      padding: 18px 20px;
+      background: #fafafa;
+      border: 1px solid #f0f0f0;
+      border-left: 4px solid #C41E3A;
+      border-radius: 0 14px 14px 0;
+      font-size: 15px; line-height: 1.7;
+      color: #1a1a1a; font-weight: 500;
+    }
+
+    /* Footer */
+    #tip-footer {
+      padding: 0 24px 24px;
+      display: flex; gap: 10px;
+    }
+    #tip-btn-next {
+      flex: 1; padding: 12px 0;
+      border-radius: 12px;
+      font-size: 13px; font-weight: 700;
+      cursor: pointer;
+      background: #f5f5f5; color: #333;
+      border: 1.5px solid #e5e5e5;
+      transition: all 0.18s;
+      display: flex; align-items: center; justify-content: center; gap: 6px;
+    }
+    #tip-btn-next:hover { background: #eee; border-color: #ccc; }
+    #tip-btn-close {
+      flex: 1.4; padding: 12px 0;
+      border-radius: 12px;
+      font-size: 13px; font-weight: 700;
+      cursor: pointer;
+      background: #C41E3A; color: #fff;
+      border: none;
+      transition: all 0.18s;
+      display: flex; align-items: center; justify-content: center; gap: 6px;
+    }
+    #tip-btn-close:hover { background: #a01830; }
+  `;
+  document.head.appendChild(style);
+
+  // ── Markup ────────────────────────────────────────────────────
+  const overlay = document.createElement('div');
+  overlay.id = 'tip-overlay';
+  overlay.innerHTML = `
+    <div id="tip-card">
+      <div id="tip-head">
+        <div id="tip-logo-box">
+          <span class="logo-sise">SISE</span>
+          <span class="logo-sub">SAES</span>
+        </div>
+        <div id="tip-head-text">
+          <div id="tip-label">Consejo del día</div>
+          <div id="tip-title">Para ti, asesor</div>
+          <div id="tip-counter">Tip 1 de ${TIPS.length}</div>
+        </div>
+      </div>
+      <div id="tip-prog-wrap">
+        ${TIPS.map((_,i) => `<div class="tip-prog-seg" id="tps${i}"></div>`).join('')}
+      </div>
+      <div id="tip-cat-row">
+        <div id="tip-cat-icon-wrap"><i id="tip-cat-icon" class="ti ti-star"></i></div>
+        <span id="tip-cat-badge">Categoría</span>
+      </div>
+      <div id="tip-body"></div>
+      <div id="tip-footer">
+        <button id="tip-btn-next"><i class="ti ti-arrow-right" style="font-size:14px"></i> Siguiente</button>
+        <button id="tip-btn-close"><i class="ti ti-check" style="font-size:14px"></i> Entendido</button>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(overlay);
+
+  function renderTip() {
+    const t = TIPS[tipIdx];
+    document.getElementById('tip-body').textContent     = t.txt;
+    document.getElementById('tip-cat-icon').className   = 'ti ' + t.icon;
+    document.getElementById('tip-cat-badge').textContent= t.cat;
+    document.getElementById('tip-counter').textContent  = 'Tip ' + (tipIdx+1) + ' de ' + TIPS.length;
+    TIPS.forEach((_,i) => {
+      const seg = document.getElementById('tps'+i);
+      if (!seg) return;
+      seg.className = 'tip-prog-seg' + (i < tipIdx ? ' done' : i === tipIdx ? ' active' : '');
+    });
+  }
+
+  function showTip() {
+    const rol = (window.currentUserRol || '').toLowerCase();
+    if (rol && rol !== 'asesor' && rol !== 'asesor wsp') return;
+    renderTip();
+    overlay.classList.add('visible');
+  }
+
+  function hideTip()  { overlay.classList.remove('visible'); }
+
+  function nextTip()  {
+    tipIdx = (tipIdx + 1) % TIPS.length;
+    renderTip();
+  }
+
+  document.getElementById('tip-btn-close').addEventListener('click', hideTip);
+  document.getElementById('tip-btn-next').addEventListener('click', nextTip);
+  overlay.addEventListener('click', e => { if (e.target === overlay) hideTip(); });
+
+  function iniciarTimer() {
+    const rol = (window.currentUserRol || '').toLowerCase();
+    if (rol && rol !== 'asesor' && rol !== 'asesor wsp') return;
+
+    // Tips a las 8:00, 11:00, 14:00, 17:00, 20:00 — ultimo a las 20:30
+    const HORAS_TIP  = [8, 11, 14, 17, 20];
+    const MIN_LIMITE = 20 * 60 + 30; // 20:30
+
+    function msHastaProximo() {
+      const ahora = new Date();
+      const minAhora = ahora.getHours() * 60 + ahora.getMinutes();
+      for (const h of HORAS_TIP) {
+        const minTip = h * 60;
+        if (minTip > minAhora && minTip <= MIN_LIMITE) {
+          const target = new Date();
+          target.setHours(h, 0, 0, 0);
+          return target - ahora;
+        }
+      }
+      // Todos pasaron hoy -> mañana a las 8:00
+      const manana = new Date();
+      manana.setDate(manana.getDate() + 1);
+      manana.setHours(8, 0, 0, 0);
+      return manana - ahora;
+    }
+
+    function programar() {
+      setTimeout(() => {
+        const minAhora = new Date().getHours() * 60 + new Date().getMinutes();
+        if (minAhora >= 8 * 60 && minAhora <= MIN_LIMITE) {
+          tipIdx = (tipIdx + 1) % TIPS.length;
+          showTip();
+        }
+        programar();
+      }, msHastaProximo());
+    }
+
+    programar();
+  }
+
+  if (window.currentUserRol !== undefined && window.currentUserRol !== '') {
+    iniciarTimer();
+  } else {
+    window.addEventListener('sise:rolCargado', iniciarTimer, { once: true });
+  }
+})();
+
+
+// ══════════════════════════════════════════════════════
+// ALARMAS DE FIN DE TURNO — 17:30 y 21:00 (solo Asesores)
+// ══════════════════════════════════════════════════════
+(function() {
+
+  const FRASES_MANANA = [
+    "Diste lo mejor de ti hoy. Ahora es tu turno de descansar.",
+    "Cada alumno que ayudaste hoy marcó una diferencia. Bien hecho.",
+    "El trabajo de hoy ya está hecho. Desconéctate y recarga energías.",
+    "Fuiste la voz amable que alguien necesitaba hoy. Gracias.",
+    "Hoy cumpliste. Mañana será otro gran día. Descansa.",
+  ];
+
+  const FRASES_TARDE = [
+    "Terminaste el día con energía y dedicación. Ahora ve a casa y descansa bien.",
+    "El turno tarde exige mucho. Tú lo diste todo. Es hora de soltar y descansar.",
+    "Gracias por quedarte hasta el final. Tu esfuerzo no pasa desapercibido.",
+    "La jornada terminó. Lo que no se resolvió hoy, mañana tendrá solución. Descansa.",
+    "Eres parte de algo importante. Y hoy lo demostraste. ¡A casa!",
+  ];
+
+  // Estilos del popup de alarma
+  const style = document.createElement('style');
+  style.textContent = `
+    #alarm-overlay {
+      position:fixed; inset:0; background:rgba(0,0,0,0.7);
+      display:flex; align-items:center; justify-content:center;
+      z-index:999999; opacity:0; transition:opacity 0.4s;
+      pointer-events:none;
+    }
+    #alarm-overlay.visible { opacity:1; pointer-events:all; }
+    #alarm-card {
+      background:var(--surface,#1A1714);
+      border-radius:24px; padding:0;
+      max-width:440px; width:calc(100% - 40px);
+      box-shadow:0 32px 80px rgba(0,0,0,0.6);
+      overflow:hidden;
+      transform:translateY(30px) scale(0.96);
+      transition:transform 0.4s cubic-bezier(.22,.68,0,1.2);
+    }
+    #alarm-overlay.visible #alarm-card { transform:translateY(0) scale(1); }
+    #alarm-banner {
+      padding:28px 28px 22px;
+      display:flex; flex-direction:column; align-items:center; gap:10px;
+      text-align:center;
+    }
+    #alarm-clock-wrap {
+      width:64px; height:64px; border-radius:50%;
+      display:flex; align-items:center; justify-content:center;
+      font-size:30px; margin-bottom:4px;
+    }
+    #alarm-turno-label {
+      font-size:11px; font-weight:800; letter-spacing:0.1em;
+      text-transform:uppercase; padding:4px 14px;
+      border-radius:99px; margin-bottom:2px;
+    }
+    #alarm-title {
+      font-size:22px; font-weight:800;
+      color:var(--text,#F5F0E8); line-height:1.25;
+    }
+    #alarm-time-display {
+      font-size:13px; font-weight:600;
+      color:var(--text-muted,#9B8F88); margin-top:2px;
+    }
+    #alarm-body {
+      margin:0 24px 24px;
+      padding:18px 20px;
+      background:rgba(255,255,255,0.04);
+      border-radius:14px;
+      font-size:14px; line-height:1.75;
+      color:var(--text-muted,#C8C0B8);
+      font-style:italic; text-align:center;
+    }
+    #alarm-body::before { content:'"'; font-size:24px; line-height:0; vertical-align:-8px; margin-right:4px; opacity:0.4; }
+    #alarm-body::after  { content:'"'; font-size:24px; line-height:0; vertical-align:-8px; margin-left:4px;  opacity:0.4; }
+    #alarm-footer {
+      padding:0 24px 24px;
+      display:flex; gap:10px; justify-content:center;
+    }
+    #alarm-btn-close {
+      padding:11px 32px; border-radius:12px;
+      font-size:14px; font-weight:700;
+      cursor:pointer; border:none;
+      transition:all 0.2s; width:100%;
+    }
+    #alarm-wave {
+      width:100%; height:6px;
+    }
+  `;
+  document.head.appendChild(style);
+
+  // Markup
+  const overlay = document.createElement('div');
+  overlay.id = 'alarm-overlay';
+  overlay.innerHTML = `
+    <div id="alarm-card">
+      <canvas id="alarm-wave"></canvas>
+      <div id="alarm-banner">
+        <div id="alarm-clock-wrap">⏰</div>
+        <span id="alarm-turno-label">Turno mañana</span>
+        <div id="alarm-title">Es hora de desconectarte</div>
+        <div id="alarm-time-display">17:30 · Fin de turno</div>
+      </div>
+      <div id="alarm-body">Frase aquí</div>
+      <div id="alarm-footer">
+        <button id="alarm-btn-close">¡Hasta mañana! 👋</button>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(overlay);
+
+  // Animar la barra superior (onda de color)
+  function paintWave(color1, color2) {
+    const canvas = document.getElementById('alarm-wave');
+    if (!canvas) return;
+    canvas.width = canvas.offsetWidth || 440;
+    canvas.height = 6;
+    const ctx = canvas.getContext('2d');
+    const grad = ctx.createLinearGradient(0, 0, canvas.width, 0);
+    grad.addColorStop(0, color1);
+    grad.addColorStop(1, color2);
+    ctx.fillStyle = grad;
+    ctx.fillRect(0, 0, canvas.width, 6);
+  }
+
+  function showAlarm(turno) {
+    // Solo asesores
+    const rol = (window.currentUserRol || '').toLowerCase();
+    const esAsesor = !rol || rol === 'asesor' || rol === 'asesor wsp';
+    if (!esAsesor) return;
+
+    const esTarde = turno === 'tarde';
+    const frases  = esTarde ? FRASES_TARDE : FRASES_MANANA;
+    const frase   = frases[Math.floor(Math.random() * frases.length)];
+
+    document.getElementById('alarm-turno-label').textContent = esTarde ? 'Turno tarde' : 'Turno mañana';
+    document.getElementById('alarm-turno-label').style.cssText = esTarde
+      ? 'background:rgba(91,33,182,0.18);color:#a78bfa;font-size:11px;font-weight:800;letter-spacing:0.1em;text-transform:uppercase;padding:4px 14px;border-radius:99px;margin-bottom:2px;'
+      : 'background:rgba(234,140,0,0.18);color:#fbbf24;font-size:11px;font-weight:800;letter-spacing:0.1em;text-transform:uppercase;padding:4px 14px;border-radius:99px;margin-bottom:2px;';
+
+    document.getElementById('alarm-title').textContent = esTarde
+      ? '¡Fue un gran día! Es hora de ir a casa'
+      : '¡Es hora de desconectarte!';
+
+    document.getElementById('alarm-time-display').textContent = esTarde
+      ? '21:00 · Fin de turno tarde'
+      : '17:30 · Fin de turno mañana';
+
+    document.getElementById('alarm-body').textContent = frase;
+
+    document.getElementById('alarm-btn-close').textContent = esTarde
+      ? '¡A casa a descansar! 🏠'
+      : '¡Hasta mañana! 👋';
+    document.getElementById('alarm-btn-close').style.cssText = esTarde
+      ? 'background:linear-gradient(135deg,#5b21b6,#7c3aed);color:#fff;padding:11px 32px;border-radius:12px;font-size:14px;font-weight:700;cursor:pointer;border:none;transition:all 0.2s;width:100%;'
+      : 'background:linear-gradient(135deg,#C41E3A,#8B0000);color:#fff;padding:11px 32px;border-radius:12px;font-size:14px;font-weight:700;cursor:pointer;border:none;transition:all 0.2s;width:100%;';
+
+    document.getElementById('alarm-clock-wrap').style.background = esTarde
+      ? 'linear-gradient(135deg,#5b21b6,#7c3aed)'
+      : 'linear-gradient(135deg,#C41E3A,#8B0000)';
+
+    paintWave(
+      esTarde ? '#5b21b6' : '#C41E3A',
+      esTarde ? '#7c3aed' : '#ff6b6b'
+    );
+
+    overlay.classList.add('visible');
+
+    // Sonido suave (beep del sistema si está disponible)
+    try {
+      const ctx = new (window.AudioContext || window.webkitAudioContext)();
+      [0, 200, 400].forEach(delay => {
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.connect(gain); gain.connect(ctx.destination);
+        osc.frequency.value = esTarde ? 523 : 659; // Do / Mi
+        osc.type = 'sine';
+        gain.gain.setValueAtTime(0, ctx.currentTime + delay/1000);
+        gain.gain.linearRampToValueAtTime(0.18, ctx.currentTime + delay/1000 + 0.05);
+        gain.gain.linearRampToValueAtTime(0, ctx.currentTime + delay/1000 + 0.4);
+        osc.start(ctx.currentTime + delay/1000);
+        osc.stop(ctx.currentTime + delay/1000 + 0.5);
+      });
+    } catch(e) {}
+  }
+
+  function hideAlarm() { overlay.classList.remove('visible'); }
+
+  document.getElementById('alarm-btn-close').addEventListener('click', hideAlarm);
+  overlay.addEventListener('click', e => { if (e.target === overlay) hideAlarm(); });
+
+  // Programar alarmas
+  function msHasta(hh, mm) {
+    const ahora = new Date();
+    const target = new Date();
+    target.setHours(hh, mm, 0, 0);
+    let diff = target - ahora;
+    if (diff <= 0) diff += 24 * 60 * 60 * 1000; // si ya pasó, programar para mañana
+    return diff;
+  }
+
+  function programarAlarmas() {
+    const rol = (window.currentUserRol || '').toLowerCase();
+    const esAsesor = !rol || rol === 'asesor' || rol === 'asesor wsp';
+    if (!esAsesor) return;
+
+    // 17:30 — turno mañana
+    setTimeout(() => {
+      showAlarm('manana');
+      setInterval(() => showAlarm('manana'), 24 * 60 * 60 * 1000);
+    }, msHasta(17, 30));
+
+    // 21:00 — turno tarde
+    setTimeout(() => {
+      showAlarm('tarde');
+      setInterval(() => showAlarm('tarde'), 24 * 60 * 60 * 1000);
+    }, msHasta(21, 0));
+  }
+
+  if (window.currentUserRol !== undefined && window.currentUserRol !== '') {
+    programarAlarmas();
+  } else {
+    window.addEventListener('sise:rolCargado', programarAlarmas, { once: true });
+  }
+})();
+
 })();</script>
 
 <script type="module">
@@ -6402,686 +7620,5 @@ btn.innerHTML = '<i class="ti ti-download"></i>Descargar lista (.docx)';
 }
 }</script>
 
-</body></html><script>
-// ══════════════════════════════════════════════════════════════════
-// REPORTE MENSUAL — BO LLAMADAS
-// ══════════════════════════════════════════════════════════════════
-document.getElementById('btn-bo-export-mensual').addEventListener('click', () => {
-  const { jsPDF } = window.jspdf;
-  if (!allCasos || !allCasos.length) { showToast('No hay datos para generar el reporte', 'error'); return; }
 
-  // Mes actual de la vista
-  const ref   = boViewDay;
-  const mes   = ref.getMonth();
-  const anio  = ref.getFullYear();
-  const MESES_N = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
-  const mesNombre = MESES_N[mes];
-  const generado  = new Date().toLocaleDateString('es-PE');
-
-  // Filtrar datos del mes
-  const data = allCasos.filter(r => {
-    const f = r.fechaRegistro || '';
-    if (!f) return false;
-    const parts = f.split('-');
-    return parseInt(parts[0]) === anio && parseInt(parts[1]) - 1 === mes;
-  });
-
-  if (!data.length) { showToast('No hay casos en ' + mesNombre + ' ' + anio, 'error'); return; }
-
-  // ── Estadísticas ──────────────────────────────────────────────
-  const total      = data.length;
-  const atendidas  = data.filter(r => r.estadoLlamada === 'atendida').length;
-  const noContesta = data.filter(r => r.estadoLlamada === 'no_contesta').length;
-  const pendientes = data.filter(r => (r.estadoLlamada||'pendiente') === 'pendiente').length;
-  const nivel      = total > 0 ? Math.round((atendidas / total) * 100) : 0;
-  const alto       = data.filter(r => (r.prioridad||'medio') === 'alto').length;
-  const medio      = data.filter(r => (r.prioridad||'medio') === 'medio').length;
-  const bajo       = data.filter(r => (r.prioridad||'medio') === 'bajo').length;
-
-  // Casos por día
-  const porDia = {};
-  data.forEach(r => {
-    const f = r.fechaRegistro || '';
-    if (!porDia[f]) porDia[f] = { total:0, atendida:0, no_contesta:0, pendiente:0 };
-    porDia[f].total++;
-    porDia[f][r.estadoLlamada || 'pendiente']++;
-  });
-  const dias = Object.keys(porDia).sort();
-
-  // Asesores
-  const porAsesor = {};
-  data.forEach(r => {
-    const a = r.asesorWsp || 'Sin asignar';
-    if (!porAsesor[a]) porAsesor[a] = { total:0, atendida:0, no_contesta:0, pendiente:0 };
-    porAsesor[a].total++;
-    porAsesor[a][r.estadoLlamada || 'pendiente']++;
-  });
-
-  // ── Colores ───────────────────────────────────────────────────
-  const NEGRO   = [13,13,13];
-  const ROJO    = [196,30,58];
-  const ROJOCL  = [255,235,238];
-  const BLANCO  = [255,255,255];
-  const GRIS1   = [245,245,245];
-  const GRIS2   = [220,220,220];
-  const GRIS3   = [140,140,140];
-  const GRIS4   = [60,60,60];
-  const VERDE   = [26,122,69];
-  const VERDECL = [232,250,240];
-  const NARANJA = [234,140,0];
-  const NARCL   = [255,243,220];
-  const PURPURA = [91,33,182];
-  const PURCL   = [245,240,255];
-  const AZUL    = [30,80,160];
-
-  const pdf = new jsPDF({ orientation:'portrait', unit:'mm', format:'a4' });
-  const pw  = pdf.internal.pageSize.width;
-  const ph  = pdf.internal.pageSize.height;
-
-  // ── Helpers ───────────────────────────────────────────────────
-  const lineaRoja = (x,y,w) => { pdf.setFillColor(...ROJO); pdf.rect(x,y,w,0.7,'F'); };
-  const seccion = (texto, y) => {
-    pdf.setFillColor(...NEGRO); pdf.roundedRect(10,y,3.5,8,0.8,0.8,'F');
-    pdf.setTextColor(...NEGRO); pdf.setFont('helvetica','bold'); pdf.setFontSize(10);
-    pdf.text(texto, 16.5, y+5.8);
-    lineaRoja(10, y+10, pw-20);
-    return y+15;
-  };
-  const nuevaPagina = (curY, needed) => {
-    if (curY + needed > ph - 18) { pdf.addPage(); return 16; }
-    return curY;
-  };
-
-  // ════════════════════════════════════════════════════════════
-  // PÁGINA 1
-  // ════════════════════════════════════════════════════════════
-
-  // ── CABECERA ──────────────────────────────────────────────────
-  pdf.setFillColor(...NEGRO); pdf.rect(0,0,pw,30,'F');
-  pdf.setFillColor(...ROJO);  pdf.rect(0,30,pw,2.5,'F');
-  pdf.setFillColor(40,40,40); pdf.roundedRect(10,5,22,12,1.5,1.5,'F');
-  pdf.setDrawColor(...BLANCO); pdf.setLineWidth(0.4);
-  pdf.roundedRect(10,5,22,12,1.5,1.5,'S');
-  pdf.setTextColor(...BLANCO); pdf.setFont('helvetica','bold'); pdf.setFontSize(9);
-  pdf.text('SISE', 21, 12.5, {align:'center'});
-  pdf.setTextColor(...ROJO); pdf.setFontSize(5);
-  pdf.text('PORTAL SAES', 21, 21, {align:'center'});
-  pdf.setTextColor(...BLANCO); pdf.setFont('helvetica','bold'); pdf.setFontSize(13);
-  pdf.text('REPORTE MENSUAL BO - LLAMADAS', 38, 11);
-  pdf.setTextColor(...ROJO); pdf.setFontSize(10);
-  pdf.text(mesNombre.toUpperCase() + ' ' + anio, 38, 19);
-  pdf.setTextColor(180,180,180); pdf.setFont('helvetica','normal'); pdf.setFontSize(6.5);
-  pdf.text('Generado: ' + generado, pw-12, 18.5, {align:'right'});
-
-  // ── META INFO ─────────────────────────────────────────────────
-  const mY = 35;
-  pdf.setFillColor(...GRIS1); pdf.rect(0,mY,pw,18,'F');
-  pdf.setFillColor(...GRIS2); pdf.rect(0,mY+18,pw,0.4,'F');
-  const meta = [
-    {label:'Periodo',         val: mesNombre + ' ' + anio},
-    {label:'Total dias',      val: dias.length + ' dias con registros'},
-    {label:'Area',            val: 'BO - Seguimiento y Calidad'},
-    {label:'Nivel de atencion', val: nivel + '%'},
-  ];
-  const mW = pw/4;
-  meta.forEach((m,i) => {
-    const mx = i*mW+6;
-    if(i>0){ pdf.setDrawColor(...GRIS2); pdf.setLineWidth(0.3); pdf.line(i*mW,mY+3,i*mW,mY+15); }
-    pdf.setTextColor(...ROJO); pdf.setFont('helvetica','bold'); pdf.setFontSize(6.5);
-    pdf.text(m.label, mx, mY+8.5);
-    pdf.setTextColor(...GRIS4); pdf.setFont('helvetica','normal'); pdf.setFontSize(7);
-    pdf.text(m.val, mx, mY+14);
-  });
-
-  // ── KPI CARDS ─────────────────────────────────────────────────
-  let curY = mY + 24;
-  curY = seccion('RESUMEN EJECUTIVO', curY);
-
-  const kpis = [
-    {label:'Total Casos',    val:String(total),      bg:NEGRO,  text:BLANCO,  bdr:NEGRO},
-    {label:'Atendidas',      val:String(atendidas),  bg:VERDECL,text:VERDE,   bdr:VERDE},
-    {label:'No Contesta',    val:String(noContesta), bg:ROJOCL, text:ROJO,    bdr:ROJO},
-    {label:'Pendientes',     val:String(pendientes), bg:PURCL,  text:PURPURA, bdr:PURPURA},
-    {label:'Nivel Atencion', val:nivel+'%',          bg:NEGRO,  text:BLANCO,  bdr:NEGRO},
-  ];
-  const kW = (pw-20-4*3)/5, kH = 22;
-  kpis.forEach((k,i) => {
-    const kx = 10+i*(kW+3);
-    pdf.setFillColor(...k.bg); pdf.roundedRect(kx,curY,kW,kH,2,2,'F');
-    pdf.setDrawColor(...k.bdr); pdf.setLineWidth(0.4); pdf.roundedRect(kx,curY,kW,kH,2,2,'S');
-    pdf.setTextColor(...k.text); pdf.setFont('helvetica','bold'); pdf.setFontSize(15);
-    pdf.text(k.val, kx+kW/2, curY+13.5, {align:'center'});
-    pdf.setFont('helvetica','normal'); pdf.setFontSize(5.5);
-    pdf.text(k.label, kx+kW/2, curY+19, {align:'center'});
-  });
-  curY += kH + 8;
-
-  // ── GRÁFICA 1: BARRAS POR ESTADO ─────────────────────────────
-  curY = seccion('DISTRIBUCION POR ESTADO', curY);
-  const barData = [
-    {label:'Atendidas',  val:atendidas,  color:VERDE,   pct: total>0?atendidas/total:0},
-    {label:'No Contesta',val:noContesta, color:ROJO,    pct: total>0?noContesta/total:0},
-    {label:'Pendientes', val:pendientes, color:PURPURA,  pct: total>0?pendientes/total:0},
-  ];
-  const bX=10, bY=curY, bH=32, bMaxW=pw-90;
-  barData.forEach((b,i) => {
-    const y = bY + i*12;
-    // Label
-    pdf.setFont('helvetica','bold'); pdf.setFontSize(7); pdf.setTextColor(...GRIS4);
-    pdf.text(b.label, bX, y+5);
-    // Barra fondo
-    pdf.setFillColor(230,230,230); pdf.roundedRect(bX+38,y,bMaxW,7,1,1,'F');
-    // Barra valor
-    const bw = Math.max(b.pct*bMaxW, 2);
-    pdf.setFillColor(...b.color); pdf.roundedRect(bX+38,y,bw,7,1,1,'F');
-    // Valor y %
-    pdf.setFont('helvetica','bold'); pdf.setFontSize(7); pdf.setTextColor(...b.color);
-    pdf.text(b.val+' ('+Math.round(b.pct*100)+'%)', bX+38+bw+3, y+5.5);
-  });
-  curY += bH + 6;
-
-  // ── GRÁFICA 2: BARRAS POR PRIORIDAD ──────────────────────────
-  curY = seccion('DISTRIBUCION POR PRIORIDAD', curY);
-  const prioData = [
-    {label:'Alta',  val:alto,  color:ROJO,    pct:total>0?alto/total:0},
-    {label:'Media', val:medio, color:NARANJA,  pct:total>0?medio/total:0},
-    {label:'Baja',  val:bajo,  color:VERDE,    pct:total>0?bajo/total:0},
-  ];
-  prioData.forEach((b,i) => {
-    const y = curY + i*11;
-    pdf.setFont('helvetica','bold'); pdf.setFontSize(7); pdf.setTextColor(...GRIS4);
-    pdf.text(b.label, bX, y+5);
-    pdf.setFillColor(230,230,230); pdf.roundedRect(bX+28,y,bMaxW+10,7,1,1,'F');
-    const bw = Math.max(b.pct*(bMaxW+10),2);
-    pdf.setFillColor(...b.color); pdf.roundedRect(bX+28,y,bw,7,1,1,'F');
-    pdf.setFont('helvetica','bold'); pdf.setFontSize(7); pdf.setTextColor(...b.color);
-    pdf.text(b.val+' ('+Math.round(b.pct*100)+'%)', bX+28+bw+3, y+5.5);
-  });
-  curY += 40;
-
-  // ── GRÁFICA 3: TENDENCIA DIARIA (línea simulada con barras) ──
-  curY = nuevaPagina(curY, 60);
-  curY = seccion('EVOLUCION DIARIA DE CASOS', curY);
-
-  const maxDia = Math.max(...dias.map(d => porDia[d].total), 1);
-  const grafW  = pw - 20;
-  const grafH  = 45;
-  const grafX  = 10;
-  const grafY  = curY;
-  const barW   = Math.min(grafW / Math.max(dias.length,1) - 1, 10);
-
-  // Fondo del gráfico
-  pdf.setFillColor(...GRIS1); pdf.rect(grafX,grafY,grafW,grafH,'F');
-  pdf.setDrawColor(...GRIS2); pdf.setLineWidth(0.3); pdf.rect(grafX,grafY,grafW,grafH,'S');
-
-  // Líneas de referencia
-  [0.25,0.5,0.75,1].forEach(frac => {
-    const ly = grafY + grafH - grafH*frac;
-    pdf.setDrawColor(210,210,210); pdf.setLineWidth(0.2);
-    pdf.line(grafX, ly, grafX+grafW, ly);
-    pdf.setFont('helvetica','normal'); pdf.setFontSize(5); pdf.setTextColor(...GRIS3);
-    pdf.text(String(Math.round(maxDia*frac)), grafX-1, ly+1.5, {align:'right'});
-  });
-
-  // Barras por día
-  dias.forEach((dia, i) => {
-    const d = porDia[dia];
-    const x  = grafX + 4 + i*(grafW-8)/Math.max(dias.length,1);
-    const drawBar = (val, color, offsetH) => {
-      const h = Math.max((val/maxDia)*grafH*0.9, 0.5);
-      pdf.setFillColor(...color);
-      pdf.rect(x, grafY+grafH-offsetH-h, barW/3, h, 'F');
-    };
-    drawBar(d.atendida||0, VERDE, 0);
-    drawBar(d.no_contesta||0, ROJO, 0);
-    drawBar(d.pendiente||0, PURPURA, 0);
-
-    // Total encima
-    pdf.setFont('helvetica','bold'); pdf.setFontSize(5); pdf.setTextColor(...GRIS4);
-    pdf.text(String(d.total), x+barW/6, grafY+grafH-(d.total/maxDia*grafH*0.9)-1.5, {align:'center'});
-
-    // Etiqueta día
-    const dayNum = dia.split('-')[2];
-    pdf.setFont('helvetica','normal'); pdf.setFontSize(5); pdf.setTextColor(...GRIS3);
-    pdf.text(dayNum, x+barW/6, grafY+grafH+4, {align:'center'});
-  });
-
-  // Leyenda de la gráfica
-  const leyY = grafY + grafH + 8;
-  [[VERDE,'Atendidas'],[ROJO,'No contesta'],[PURPURA,'Pendientes']].forEach(([c,l],i) => {
-    const lx = grafX + i*50;
-    pdf.setFillColor(...c); pdf.rect(lx,leyY,4,3,'F');
-    pdf.setFont('helvetica','normal'); pdf.setFontSize(6); pdf.setTextColor(...GRIS4);
-    pdf.text(l, lx+6, leyY+2.5);
-  });
-  curY = leyY + 12;
-
-  // ── GRÁFICA 4: RANKING DE ASESORES ───────────────────────────
-  curY = nuevaPagina(curY, 60);
-  curY = seccion('RANKING DE ASESORES WSP', curY);
-
-  const asesoresList = Object.entries(porAsesor)
-    .sort((a,b) => b[1].total - a[1].total)
-    .slice(0, 8);
-
-  const maxAsesor = Math.max(...asesoresList.map(([,v])=>v.total), 1);
-  asesoresList.forEach(([nombre, vals], i) => {
-    const y   = curY + i*11;
-    const pct = vals.total / maxAsesor;
-    const nivelAse = vals.total>0 ? Math.round((vals.atendida||0)/vals.total*100) : 0;
-
-    pdf.setFont('helvetica','bold'); pdf.setFontSize(6.5); pdf.setTextColor(...GRIS4);
-    pdf.text((i+1)+'. '+nombre, bX, y+5);
-
-    // Barra fondo
-    pdf.setFillColor(230,230,230); pdf.roundedRect(bX+42,y,bMaxW-4,7,1,1,'F');
-    // Barra verde atendidas
-    if((vals.atendida||0)>0){
-      const bw = Math.max((vals.atendida/maxAsesor)*(bMaxW-4),1);
-      pdf.setFillColor(...VERDE); pdf.roundedRect(bX+42,y,bw,7,1,1,'F');
-    }
-    // Barra roja no contesta encima
-    if((vals.no_contesta||0)>0){
-      const bwA = (vals.atendida||0)/maxAsesor*(bMaxW-4);
-      const bwR = Math.max((vals.no_contesta/maxAsesor)*(bMaxW-4),1);
-      pdf.setFillColor(...ROJO); pdf.roundedRect(bX+42+bwA,y,bwR,7,0,0,'F');
-    }
-
-    // Texto valores
-    pdf.setFont('helvetica','bold'); pdf.setFontSize(6.5); pdf.setTextColor(...GRIS4);
-    pdf.text('Total:'+vals.total+'  Ate:'+nivelAse+'%', bX+42+pct*(bMaxW-4)+5, y+5.5);
-  });
-  curY += asesoresList.length * 11 + 8;
-
-  // ── TABLA RESUMEN DIARIO ──────────────────────────────────────
-  curY = nuevaPagina(curY, 50);
-  curY = seccion('RESUMEN POR DIA', curY);
-
-  pdf.autoTable({
-    startY: curY,
-    head: [['Fecha','Total','Atendidas','No Contesta','Pendientes','% Atencion']],
-    body: dias.map(dia => {
-      const d = porDia[dia];
-      const pctDia = d.total>0 ? Math.round((d.atendida||0)/d.total*100) : 0;
-      const [y,m,dd] = dia.split('-');
-      return [dd+'/'+m+'/'+y, d.total, d.atendida||0, d.no_contesta||0, d.pendiente||0, pctDia+'%'];
-    }),
-    styles:{font:'helvetica',fontSize:7.5,cellPadding:{top:3,bottom:3,left:3,right:3},lineColor:GRIS2,lineWidth:0.2,textColor:GRIS4},
-    headStyles:{fillColor:NEGRO,textColor:BLANCO,fontStyle:'bold',fontSize:7.5},
-    columnStyles:{
-      0:{cellWidth:28},1:{cellWidth:16,halign:'center'},2:{cellWidth:22,halign:'center'},
-      3:{cellWidth:25,halign:'center'},4:{cellWidth:22,halign:'center'},5:{cellWidth:22,halign:'center'},
-    },
-    alternateRowStyles:{fillColor:[249,249,249]},
-    margin:{left:10,right:10},
-    didDrawCell:(hk)=>{
-      if(hk.section!=='body') return;
-      if(hk.column.index===5){
-        const pctVal = parseInt(hk.cell.raw)||0;
-        const color = pctVal>=70 ? VERDE : pctVal>=40 ? NARANJA : ROJO;
-        pdf.setTextColor(...color); pdf.setFont('helvetica','bold');
-        pdf.text(hk.cell.raw, hk.cell.x+hk.cell.width/2, hk.cell.y+hk.cell.height/2+2, {align:'center'});
-      }
-    }
-  });
-  curY = (pdf.lastAutoTable&&pdf.lastAutoTable.finalY) ? pdf.lastAutoTable.finalY+8 : curY+40;
-
-  // ── TABLA DETALLE COMPLETO ────────────────────────────────────
-  curY = nuevaPagina(curY, 40);
-  curY = seccion('DETALLE COMPLETO DE LLAMADAS', curY);
-
-  const prioStr = p => p?p.charAt(0).toUpperCase()+p.slice(1):'Medio';
-  const estStr  = e => e==='atendida'?'Atendida':e==='no_contesta'?'No contesta':'Pendiente';
-
-  pdf.autoTable({
-    startY: curY,
-    head: [['#','Fecha','Alumno','Codigo','Asesor WSP','Prioridad','Estado','Motivo']],
-    body: data.map((r,i)=>[
-      i+1,
-      fmtDate(r.fechaRegistro||''),
-      (r.nombre||'-').toUpperCase(),
-      r.codigo||'-',
-      r.asesorWsp||'-',
-      prioStr(r.prioridad),
-      estStr(r.estadoLlamada),
-      r.motivo||'-',
-    ]),
-    styles:{font:'helvetica',fontSize:6.5,cellPadding:{top:2.5,bottom:2.5,left:3,right:3},lineColor:GRIS2,lineWidth:0.2,overflow:'linebreak',textColor:GRIS4},
-    headStyles:{fillColor:NEGRO,textColor:BLANCO,fontStyle:'bold',fontSize:7},
-    columnStyles:{
-      0:{cellWidth:6,halign:'center'},1:{cellWidth:18},2:{cellWidth:26},
-      3:{cellWidth:14},4:{cellWidth:18},5:{cellWidth:14},6:{cellWidth:18},7:{cellWidth:'auto'},
-    },
-    alternateRowStyles:{fillColor:[249,249,249]},
-    margin:{left:10,right:10},
-    didDrawCell:(hk)=>{
-      if(hk.section!=='body') return;
-      if(hk.column.index===6){
-        const val=hk.cell.raw;
-        const cx=hk.cell.x+1.5,cy=hk.cell.y+1.5,cw=hk.cell.width-3,ch=hk.cell.height-3;
-        if(val==='Atendida'){pdf.setFillColor(...VERDECL);pdf.roundedRect(cx,cy,cw,ch,1,1,'F');pdf.setTextColor(...VERDE);}
-        else if(val==='No contesta'){pdf.setFillColor(...ROJOCL);pdf.roundedRect(cx,cy,cw,ch,1,1,'F');pdf.setTextColor(...ROJO);}
-        else{pdf.setFillColor(...PURCL);pdf.roundedRect(cx,cy,cw,ch,1,1,'F');pdf.setTextColor(...PURPURA);}
-        pdf.setFontSize(6); pdf.setFont('helvetica','bold');
-        pdf.text(val, cx+cw/2, cy+ch/2+2, {align:'center'});
-      }
-      if(hk.column.index===5){
-        const val=(hk.cell.raw||'').toLowerCase();
-        const cx=hk.cell.x+1.5,cy=hk.cell.y+1.5,cw=hk.cell.width-3,ch=hk.cell.height-3;
-        if(val==='alto'){pdf.setFillColor(...ROJOCL);pdf.roundedRect(cx,cy,cw,ch,1,1,'F');pdf.setTextColor(...ROJO);}
-        else if(val==='bajo'){pdf.setFillColor(...VERDECL);pdf.roundedRect(cx,cy,cw,ch,1,1,'F');pdf.setTextColor(...VERDE);}
-        else{pdf.setFillColor(...NARCL);pdf.roundedRect(cx,cy,cw,ch,1,1,'F');pdf.setTextColor(...NARANJA);}
-        pdf.setFontSize(6); pdf.setFont('helvetica','bold');
-        pdf.text(hk.cell.raw||'', cx+cw/2, cy+ch/2+2, {align:'center'});
-      }
-    }
-  });
-
-  // ── FOOTER ────────────────────────────────────────────────────
-  const pgs = pdf.internal.getNumberOfPages();
-  for(let i=1;i<=pgs;i++){
-    pdf.setPage(i);
-    pdf.setFillColor(...GRIS1); pdf.rect(0,ph-13,pw,13,'F');
-    pdf.setFillColor(...ROJO);  pdf.rect(0,ph-13,pw,0.8,'F');
-    pdf.setFont('helvetica','normal'); pdf.setFontSize(6.5); pdf.setTextColor(...GRIS3);
-    pdf.text('Documento de uso interno y confidencial', 13, ph-7.5);
-    pdf.text('SISE - Portal SAES', 13, ph-3.5);
-    pdf.setTextColor(...ROJO); pdf.setFont('helvetica','bold'); pdf.setFontSize(6.5);
-    pdf.text('REPORTE MENSUAL - ' + mesNombre.toUpperCase() + ' ' + anio, pw/2, ph-5.5, {align:'center'});
-    pdf.setTextColor(...GRIS3); pdf.setFont('helvetica','normal');
-    pdf.text('Pagina ' + i + ' de ' + pgs, pw-12, ph-5.5, {align:'right'});
-  }
-
-  pdf.save('ReporteMensualBO_' + mesNombre + '_' + anio + '.pdf');
-  showToast('Reporte mensual descargado ✓');
-});
-
-// ══════════════════════════════════════════════════════════════════
-// REPORTE MENSUAL — CASOS PENDIENTES
-// ══════════════════════════════════════════════════════════════════
-document.getElementById('btn-pend-export-mensual').addEventListener('click', () => {
-  const { jsPDF } = window.jspdf;
-  if (!allPendientes || !allPendientes.length) { showToast('No hay datos para generar el reporte', 'error'); return; }
-
-  const ref   = pendViewDay;
-  const mes   = ref.getMonth();
-  const anio  = ref.getFullYear();
-  const MESES_N = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
-  const mesNombre = MESES_N[mes];
-  const generado  = new Date().toLocaleDateString('es-PE');
-
-  const data = allPendientes.filter(r => {
-    const f = r.fechaRegistro || r.fecha || '';
-    if (!f) return false;
-    const parts = f.split('-');
-    return parseInt(parts[0]) === anio && parseInt(parts[1]) - 1 === mes;
-  });
-
-  if (!data.length) { showToast('No hay casos en ' + mesNombre + ' ' + anio, 'error'); return; }
-
-  const total     = data.length;
-  const resueltos  = data.filter(r=>r.resuelto).length;
-  const pendientes = data.filter(r=>!r.resuelto).length;
-  const alertados  = data.filter(r=>r.alertado).length;
-  const sinAlertar = data.filter(r=>!r.alertado&&!r.resuelto).length;
-
-  const porDia = {};
-  data.forEach(r => {
-    const f = r.fechaRegistro || r.fecha || '';
-    if(!porDia[f]) porDia[f] = {total:0,resuelto:0,pendiente:0,alertado:0};
-    porDia[f].total++;
-    if(r.resuelto) porDia[f].resuelto++;
-    else porDia[f].pendiente++;
-    if(r.alertado) porDia[f].alertado++;
-  });
-  const dias = Object.keys(porDia).sort();
-
-  const porAsesor = {};
-  data.forEach(r => {
-    const a = r.asesor || 'Sin asignar';
-    if(!porAsesor[a]) porAsesor[a] = {total:0,resuelto:0,alertado:0};
-    porAsesor[a].total++;
-    if(r.resuelto) porAsesor[a].resuelto++;
-    if(r.alertado) porAsesor[a].alertado++;
-  });
-
-  const NEGRO=[13,13,13],ROJO=[196,30,58],ROJOCL=[255,235,238],BLANCO=[255,255,255];
-  const GRIS1=[245,245,245],GRIS2=[220,220,220],GRIS3=[140,140,140],GRIS4=[60,60,60];
-  const VERDE=[26,122,69],VERDECL=[232,250,240];
-  const NARANJA=[234,140,0],NARCL=[255,243,220];
-  const PURPURA=[91,33,182],PURCL=[245,240,255];
-
-  const pdf = new jsPDF({orientation:'portrait',unit:'mm',format:'a4'});
-  const pw=pdf.internal.pageSize.width, ph=pdf.internal.pageSize.height;
-
-  const lineaRoja=(x,y,w)=>{pdf.setFillColor(...ROJO);pdf.rect(x,y,w,0.7,'F');};
-  const seccion=(texto,y)=>{
-    pdf.setFillColor(...NEGRO); pdf.roundedRect(10,y,3.5,8,0.8,0.8,'F');
-    pdf.setTextColor(...NEGRO); pdf.setFont('helvetica','bold'); pdf.setFontSize(10);
-    pdf.text(texto, 16.5, y+5.8);
-    lineaRoja(10, y+10, pw-20);
-    return y+15;
-  };
-  const nuevaPagina=(curY,needed)=>{
-    if(curY+needed>ph-18){pdf.addPage();return 16;}
-    return curY;
-  };
-
-  // CABECERA
-  pdf.setFillColor(...NEGRO); pdf.rect(0,0,pw,30,'F');
-  pdf.setFillColor(...ROJO);  pdf.rect(0,30,pw,2.5,'F');
-  pdf.setFillColor(40,40,40); pdf.roundedRect(10,5,22,12,1.5,1.5,'F');
-  pdf.setDrawColor(...BLANCO); pdf.setLineWidth(0.4); pdf.roundedRect(10,5,22,12,1.5,1.5,'S');
-  pdf.setTextColor(...BLANCO); pdf.setFont('helvetica','bold'); pdf.setFontSize(9);
-  pdf.text('SISE', 21, 12.5, {align:'center'});
-  pdf.setTextColor(...ROJO); pdf.setFontSize(5);
-  pdf.text('PORTAL SAES', 21, 21, {align:'center'});
-  pdf.setTextColor(...BLANCO); pdf.setFont('helvetica','bold'); pdf.setFontSize(13);
-  pdf.text('REPORTE MENSUAL - CASOS PENDIENTES', 38, 11);
-  pdf.setTextColor(...ROJO); pdf.setFontSize(10);
-  pdf.text(mesNombre.toUpperCase() + ' ' + anio, 38, 19);
-  pdf.setTextColor(180,180,180); pdf.setFont('helvetica','normal'); pdf.setFontSize(6.5);
-  pdf.text('Generado: ' + generado, pw-12, 18.5, {align:'right'});
-
-  // META INFO
-  const mY=35;
-  pdf.setFillColor(...GRIS1); pdf.rect(0,mY,pw,18,'F');
-  pdf.setFillColor(...GRIS2); pdf.rect(0,mY+18,pw,0.4,'F');
-  const tasaRe = total>0 ? Math.round(resueltos/total*100) : 0;
-  const meta=[
-    {label:'Periodo',         val:mesNombre+' '+anio},
-    {label:'Dias con casos',  val:dias.length+' dias registrados'},
-    {label:'Area',            val:'Seguimiento y Calidad - BO'},
-    {label:'Tasa resolucion', val:tasaRe+'%'},
-  ];
-  const mW=pw/4;
-  meta.forEach((m,i)=>{
-    const mx=i*mW+6;
-    if(i>0){pdf.setDrawColor(...GRIS2);pdf.setLineWidth(0.3);pdf.line(i*mW,mY+3,i*mW,mY+15);}
-    pdf.setTextColor(...ROJO); pdf.setFont('helvetica','bold'); pdf.setFontSize(6.5);
-    pdf.text(m.label, mx, mY+8.5);
-    pdf.setTextColor(...GRIS4); pdf.setFont('helvetica','normal'); pdf.setFontSize(7);
-    pdf.text(m.val, mx, mY+14);
-  });
-
-  // KPI CARDS
-  let curY = mY+24;
-  curY = seccion('RESUMEN EJECUTIVO', curY);
-  const kpis=[
-    {label:'Total Casos',   val:String(total),     bg:NEGRO,  text:BLANCO,  bdr:NEGRO},
-    {label:'Resueltos',     val:String(resueltos),  bg:VERDECL,text:VERDE,   bdr:VERDE},
-    {label:'Pendientes',    val:String(pendientes), bg:ROJOCL, text:ROJO,    bdr:ROJO},
-    {label:'Alertados',     val:String(alertados),  bg:PURCL,  text:PURPURA, bdr:PURPURA},
-    {label:'Sin gestionar', val:String(sinAlertar), bg:NARCL,  text:NARANJA, bdr:NARANJA},
-  ];
-  const kW=(pw-20-4*3)/5, kH=22;
-  kpis.forEach((k,i)=>{
-    const kx=10+i*(kW+3);
-    pdf.setFillColor(...k.bg); pdf.roundedRect(kx,curY,kW,kH,2,2,'F');
-    pdf.setDrawColor(...k.bdr); pdf.setLineWidth(0.4); pdf.roundedRect(kx,curY,kW,kH,2,2,'S');
-    pdf.setTextColor(...k.text); pdf.setFont('helvetica','bold'); pdf.setFontSize(15);
-    pdf.text(k.val, kx+kW/2, curY+13.5, {align:'center'});
-    pdf.setFont('helvetica','normal'); pdf.setFontSize(5.5);
-    pdf.text(k.label, kx+kW/2, curY+19, {align:'center'});
-  });
-  curY += kH+8;
-
-  // GRAFICA ESTADO
-  curY = seccion('DISTRIBUCION POR ESTADO', curY);
-  const bX=10, bMaxW=pw-90;
-  [
-    {label:'Resueltos',     val:resueltos,  color:VERDE},
-    {label:'Pendientes',    val:pendientes, color:ROJO},
-    {label:'Alertados',     val:alertados,  color:PURPURA},
-    {label:'Sin gestionar', val:sinAlertar, color:NARANJA},
-  ].forEach((b,i)=>{
-    const y=curY+i*11;
-    const pct=total>0?b.val/total:0;
-    pdf.setFont('helvetica','bold'); pdf.setFontSize(7); pdf.setTextColor(...GRIS4);
-    pdf.text(b.label, bX, y+5);
-    pdf.setFillColor(230,230,230); pdf.roundedRect(bX+36,y,bMaxW+4,7,1,1,'F');
-    const bw=Math.max(pct*(bMaxW+4),2);
-    pdf.setFillColor(...b.color); pdf.roundedRect(bX+36,y,bw,7,1,1,'F');
-    pdf.setFont('helvetica','bold'); pdf.setFontSize(7); pdf.setTextColor(...b.color);
-    pdf.text(b.val+' ('+Math.round(pct*100)+'%)', bX+36+bw+3, y+5.5);
-  });
-  curY += 52;
-
-  // GRAFICA EVOLUCION DIARIA
-  curY = nuevaPagina(curY, 65);
-  curY = seccion('EVOLUCION DIARIA', curY);
-  const maxDia=Math.max(...dias.map(d=>porDia[d].total),1);
-  const grafW=pw-20, grafH=45, grafX=10, grafY=curY;
-  pdf.setFillColor(...GRIS1); pdf.rect(grafX,grafY,grafW,grafH,'F');
-  pdf.setDrawColor(...GRIS2); pdf.setLineWidth(0.3); pdf.rect(grafX,grafY,grafW,grafH,'S');
-  [0.25,0.5,0.75,1].forEach(frac=>{
-    const ly=grafY+grafH-grafH*frac;
-    pdf.setDrawColor(210,210,210); pdf.setLineWidth(0.2); pdf.line(grafX,ly,grafX+grafW,ly);
-    pdf.setFont('helvetica','normal'); pdf.setFontSize(5); pdf.setTextColor(...GRIS3);
-    pdf.text(String(Math.round(maxDia*frac)), grafX-1, ly+1.5, {align:'right'});
-  });
-  const barW2=Math.min((grafW-8)/Math.max(dias.length,1)-1,12);
-  dias.forEach((dia,i)=>{
-    const dd=porDia[dia];
-    const x=grafX+4+i*(grafW-8)/Math.max(dias.length,1);
-    [[dd.resuelto||0,VERDE],[dd.pendiente||0,ROJO]].forEach(([val,color],j)=>{
-      const h=Math.max((val/maxDia)*grafH*0.9,0.5);
-      pdf.setFillColor(...color);
-      pdf.rect(x+j*(barW2/2), grafY+grafH-h, barW2/2, h, 'F');
-    });
-    pdf.setFont('helvetica','bold'); pdf.setFontSize(5); pdf.setTextColor(...GRIS4);
-    pdf.text(String(dd.total), x+barW2/2, grafY+grafH-(dd.total/maxDia*grafH*0.9)-1.5, {align:'center'});
-    const dNum=dia.split('-')[2];
-    pdf.setFont('helvetica','normal'); pdf.setFontSize(5); pdf.setTextColor(...GRIS3);
-    pdf.text(dNum, x+barW2/2, grafY+grafH+4, {align:'center'});
-  });
-  const leyY=grafY+grafH+8;
-  [[VERDE,'Resueltos'],[ROJO,'Pendientes']].forEach(([c,l],i)=>{
-    const lx=grafX+i*45;
-    pdf.setFillColor(...c); pdf.rect(lx,leyY,4,3,'F');
-    pdf.setFont('helvetica','normal'); pdf.setFontSize(6); pdf.setTextColor(...GRIS4);
-    pdf.text(l, lx+6, leyY+2.5);
-  });
-  curY = leyY+12;
-
-  // RANKING ASESORES
-  curY = nuevaPagina(curY, 60);
-  curY = seccion('RANKING DE ASESORES', curY);
-  const asesores=Object.entries(porAsesor).sort((a,b)=>b[1].total-a[1].total).slice(0,8);
-  const maxAse=Math.max(...asesores.map(([,v])=>v.total),1);
-  asesores.forEach(([nombre,vals],i)=>{
-    const y=curY+i*11;
-    const pct=vals.total/maxAse;
-    const tasa=vals.total>0?Math.round(vals.resuelto/vals.total*100):0;
-    pdf.setFont('helvetica','bold'); pdf.setFontSize(6.5); pdf.setTextColor(...GRIS4);
-    pdf.text((i+1)+'. '+nombre, bX, y+5);
-    pdf.setFillColor(230,230,230); pdf.roundedRect(bX+42,y,bMaxW-4,7,1,1,'F');
-    const bwTot=Math.max(pct*(bMaxW-4),2);
-    pdf.setFillColor(...ROJO); pdf.roundedRect(bX+42,y,bwTot,7,1,1,'F');
-    if(vals.resuelto>0){
-      const bwR=Math.max((vals.resuelto/maxAse)*(bMaxW-4),1);
-      pdf.setFillColor(...VERDE); pdf.roundedRect(bX+42,y,bwR,7,1,1,'F');
-    }
-    pdf.setFont('helvetica','bold'); pdf.setFontSize(6.5); pdf.setTextColor(...GRIS4);
-    pdf.text('Total:'+vals.total+'  Resueltos:'+tasa+'%', bX+42+bwTot+5, y+5.5);
-  });
-  curY += asesores.length*11+8;
-
-  // TABLA RESUMEN DIARIO
-  curY = nuevaPagina(curY, 50);
-  curY = seccion('RESUMEN POR DIA', curY);
-  pdf.autoTable({
-    startY:curY,
-    head:[['Fecha','Total','Resueltos','Pendientes','Alertados','% Resolucion']],
-    body:dias.map(dia=>{
-      const d=porDia[dia];
-      const pctDia=d.total>0?Math.round(d.resuelto/d.total*100):0;
-      const [y,m,dd]=dia.split('-');
-      return [dd+'/'+m+'/'+y, d.total, d.resuelto||0, d.pendiente||0, d.alertado||0, pctDia+'%'];
-    }),
-    styles:{font:'helvetica',fontSize:7.5,cellPadding:{top:3,bottom:3,left:3,right:3},lineColor:GRIS2,lineWidth:0.2,textColor:GRIS4},
-    headStyles:{fillColor:NEGRO,textColor:BLANCO,fontStyle:'bold',fontSize:7.5},
-    columnStyles:{0:{cellWidth:28},1:{cellWidth:16,halign:'center'},2:{cellWidth:22,halign:'center'},3:{cellWidth:22,halign:'center'},4:{cellWidth:20,halign:'center'},5:{cellWidth:26,halign:'center'}},
-    alternateRowStyles:{fillColor:[249,249,249]},
-    margin:{left:10,right:10},
-    didDrawCell:(hk)=>{
-      if(hk.section!=='body'||hk.column.index!==5) return;
-      const v=parseInt(hk.cell.raw)||0;
-      const c=v>=70?VERDE:v>=40?NARANJA:ROJO;
-      pdf.setTextColor(...c); pdf.setFont('helvetica','bold');
-      pdf.text(hk.cell.raw, hk.cell.x+hk.cell.width/2, hk.cell.y+hk.cell.height/2+2, {align:'center'});
-    }
-  });
-  curY=(pdf.lastAutoTable&&pdf.lastAutoTable.finalY)?pdf.lastAutoTable.finalY+8:curY+40;
-
-  // TABLA DETALLE COMPLETO
-  curY = nuevaPagina(curY, 40);
-  curY = seccion('DETALLE COMPLETO DE CASOS', curY);
-  pdf.autoTable({
-    startY:curY,
-    head:[['#','Fecha Reg.','Caso desde','N Caso','Descripcion','Asesor','Estado','Alertado']],
-    body:data.sort((a,b)=>(a.fechaRegistro||a.fecha)<(b.fechaRegistro||b.fecha)?-1:1).map((r,i)=>[
-      i+1,
-      fmtDate(r.fechaRegistro||r.fecha||''),
-      fmtDate(r.fechaCaso||''),
-      r.numeroCaso||'-',
-      r.descripcion||'-',
-      r.asesor||'-',
-      r.resuelto?'Resuelto':'Pendiente',
-      r.alertado?'Si':'No',
-    ]),
-    styles:{font:'helvetica',fontSize:6.5,cellPadding:{top:2.5,bottom:2.5,left:3,right:3},lineColor:GRIS2,lineWidth:0.2,overflow:'linebreak',textColor:GRIS4},
-    headStyles:{fillColor:NEGRO,textColor:BLANCO,fontStyle:'bold',fontSize:7},
-    columnStyles:{0:{cellWidth:6,halign:'center'},1:{cellWidth:18},2:{cellWidth:18},3:{cellWidth:18},4:{cellWidth:'auto'},5:{cellWidth:22},6:{cellWidth:16},7:{cellWidth:12,halign:'center'}},
-    alternateRowStyles:{fillColor:[249,249,249]},
-    margin:{left:10,right:10},
-    didDrawCell:(hk)=>{
-      if(hk.section!=='body'||hk.column.index!==6) return;
-      const val=hk.cell.raw;
-      const cx=hk.cell.x+1.5,cy=hk.cell.y+1.5,cw=hk.cell.width-3,ch=hk.cell.height-3;
-      if(val==='Resuelto'){pdf.setFillColor(...VERDECL);pdf.roundedRect(cx,cy,cw,ch,1,1,'F');pdf.setTextColor(...VERDE);}
-      else{pdf.setFillColor(...ROJOCL);pdf.roundedRect(cx,cy,cw,ch,1,1,'F');pdf.setTextColor(...ROJO);}
-      pdf.setFontSize(6); pdf.setFont('helvetica','bold');
-      pdf.text(val, cx+cw/2, cy+ch/2+2, {align:'center'});
-    }
-  });
-
-  // FOOTER
-  const pgs=pdf.internal.getNumberOfPages();
-  for(let i=1;i<=pgs;i++){
-    pdf.setPage(i);
-    pdf.setFillColor(...GRIS1); pdf.rect(0,ph-13,pw,13,'F');
-    pdf.setFillColor(...ROJO);  pdf.rect(0,ph-13,pw,0.8,'F');
-    pdf.setFont('helvetica','normal'); pdf.setFontSize(6.5); pdf.setTextColor(...GRIS3);
-    pdf.text('Documento de uso interno y confidencial', 13, ph-7.5);
-    pdf.text('SISE - Portal SAES', 13, ph-3.5);
-    pdf.setTextColor(...ROJO); pdf.setFont('helvetica','bold'); pdf.setFontSize(6.5);
-    pdf.text('REPORTE MENSUAL - CASOS PENDIENTES - '+mesNombre.toUpperCase()+' '+anio, pw/2, ph-5.5, {align:'center'});
-    pdf.setTextColor(...GRIS3); pdf.setFont('helvetica','normal');
-    pdf.text('Pagina '+i+' de '+pgs, pw-12, ph-5.5, {align:'right'});
-  }
-
-  pdf.save('ReporteMensualPendientes_' + mesNombre + '_' + anio + '.pdf');
-  showToast('Reporte mensual descargado \u2713');
-});
-</script>
+</body></html>
