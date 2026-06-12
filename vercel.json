@@ -1,0 +1,9 @@
+{
+  "rewrites": [
+    { "source": "/", "destination": "/Index.html" },
+    { "source": "/index.html", "destination": "/Index.html" },
+    { "source": "/portal.html", "destination": "/Portal.html" },
+    { "source": "/Portal.html", "destination": "/Portal.html" }
+  ],
+  "cleanUrls": false
+}
