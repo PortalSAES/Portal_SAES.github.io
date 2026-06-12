@@ -54,6 +54,26 @@ mark.plt-hl {
 </style>
 </head>
 <body>
+<!-- ── Splash de carga ── -->
+<div id="app-splash" style="position:fixed;inset:0;background:linear-gradient(135deg,#0D0D0D,#1a0a0a);z-index:999999;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:20px">
+  <!-- Logo SISE -->
+  <div style="display:flex;flex-direction:column;align-items:center;gap:8px">
+    <div style="width:72px;height:72px;background:#fff;border-radius:18px;display:flex;align-items:center;justify-content:center;box-shadow:0 8px 32px rgba(196,30,58,.4)">
+      <span style="font-size:22px;font-weight:900;color:#0D0D0D;letter-spacing:-1px">SISE</span>
+    </div>
+    <div style="font-size:12px;font-weight:700;color:#C41E3A;letter-spacing:.1em;text-transform:uppercase">Portal SAES</div>
+  </div>
+  <!-- Spinner -->
+  <div style="display:flex;flex-direction:column;align-items:center;gap:12px">
+    <div style="width:36px;height:36px;border:3px solid rgba(255,255,255,.1);border-top-color:#C41E3A;border-radius:50%;animation:splash-spin 0.8s linear infinite"></div>
+    <div style="font-size:13px;color:rgba(255,255,255,.45);font-weight:500">Verificando sesión...</div>
+  </div>
+</div>
+<style>
+@keyframes splash-spin {
+  to { transform: rotate(360deg); }
+}
+</style>
 <div class="portal">
 <header class="topbar">
 <div class="topbar-left">
@@ -1818,6 +1838,11 @@ getAnalytics(app);
 const auth = getAuth(app);
 const db      = getFirestore(app);
 const storage = getStorage(app);
+
+// Persistir sesión en localStorage para evitar re-login en recargas
+import('https://www.gstatic.com/firebasejs/11.8.1/firebase-auth.js').then(({ browserLocalPersistence, setPersistence }) => {
+  setPersistence(auth, browserLocalPersistence).catch(() => {});
+});
 let currentUser    = null;
 let currentUserRol = "";          // cargado de Firestore: "Supervisor", "Formador", etc.
 let allCasos       = [];
@@ -2316,8 +2341,42 @@ setTimeout(() => t.classList.remove('show'), 3500);
 let _tipiListenersStarted    = false;
 let _pltListenersStarted     = false;
 let _tipiFormadorSetupDone   = false;
+// ── Splash de carga mientras Firebase verifica sesión ────────
+const _splashEl = document.getElementById('app-splash');
+let _authResolved = false;
+
+// Si Firebase tarda más de 8s en responder, mostrar error con retry
+const _authTimeout = setTimeout(() => {
+  if (!_authResolved) {
+    if (_splashEl) {
+      _splashEl.innerHTML = `
+        <div style="text-align:center">
+          <div style="font-size:40px;margin-bottom:16px">⚠️</div>
+          <div style="font-size:16px;font-weight:700;color:#fff;margin-bottom:8px">Problema de conexión</div>
+          <div style="font-size:13px;color:rgba(255,255,255,.6);margin-bottom:24px">Verifica tu internet e intenta de nuevo</div>
+          <button onclick="window.location.reload()" style="padding:12px 28px;background:#C41E3A;color:#fff;border:none;border-radius:12px;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit">Reintentar</button>
+        </div>`;
+    }
+  }
+}, 8000);
+
 onAuthStateChanged(auth, async user => {
-if (!user) { window.location.href = 'Index.html'; return; }
+_authResolved = true;
+clearTimeout(_authTimeout);
+
+if (!user) {
+  // Esperar 800ms antes de redirigir — evita falsos negativos en conexiones lentas
+  setTimeout(() => { window.location.href = 'index.html'; }, 800);
+  return;
+}
+
+// Ocultar splash con fade
+if (_splashEl) {
+  _splashEl.style.transition = 'opacity .35s';
+  _splashEl.style.opacity = '0';
+  setTimeout(() => { _splashEl.style.display = 'none'; }, 380);
+}
+
 currentUser = user;
 window.currentUser = user;
 document.getElementById('user-av').textContent   = user.email.substring(0, 2).toUpperCase();
@@ -2352,7 +2411,7 @@ setTimeout(() => { if (window._rerenderFaqs) window._rerenderFaqs(); }, 1500);
 });
 document.getElementById('btn-logout').addEventListener('click', async () => {
 await signOut(auth);
-window.location.href = 'Index.html';
+window.location.href = 'index.html';
 });
 document.querySelectorAll('.nav-item[data-view]').forEach(item => {
 item.addEventListener('click', () => {
@@ -7284,6 +7343,9 @@ document.getElementById('btn-pend-export-mensual').addEventListener('click', () 
   async function checkReinicio(db,collection,getDocs,mes) {
     const KEY='sat_mes_'+(window.currentUser?.uid||'x');
     if(localStorage.getItem(KEY)===mes) return;
+    // Solo mostrar el 1ro del mes
+    const hoy=new Date();
+    if(hoy.getDate()!==1) { localStorage.setItem(KEY,mes); return; }
     const [y,m]=mes.split('-');
     const pm=parseInt(m)-1, py=pm===0?parseInt(y)-1:parseInt(y);
     const pMes=py+'-'+String(pm===0?12:pm).padStart(2,'0');
@@ -7291,29 +7353,173 @@ document.getElementById('btn-pend-export-mensual').addEventListener('click', () 
     const snap=await getDocs(query(collection(db,'satisfaccion'),where('mes','==',pMes)));
     if(!snap.empty){
       const rank=calcRankingRaw(snap.docs.map(d=>d.data()));
-      if(rank.length) showResetModal(rank[0],MESES_N[pm===0?11:pm-1]+' '+py,mes);
+      if(rank.length) showCelebracion(rank.slice(0,3), MESES_N[pm===0?11:pm-1]+' '+py, mes);
     }
     localStorage.setItem(KEY,mes);
   }
 
-  function showResetModal(ganador,mesNombre,mesNuevo) {
-    const modal=document.getElementById('sat-reset-modal');
-    if(!modal) return;
-    const [y2,m2]=mesNuevo.split('-');
-    const mesN2=MESES_N[parseInt(m2)-1]+' '+y2;
-    const niv=getNivel(ganador.pct);
-    document.getElementById('sat-reset-title').textContent='¡Cerramos '+mesNombre+'!';
-    document.getElementById('sat-reset-winner').innerHTML=`
-      <div style="font-size:48px;margin-bottom:6px">🏆</div>
-      <div style="font-size:11px;font-weight:700;color:#B87000;text-transform:uppercase;letter-spacing:.08em;margin-bottom:6px">Campeón de ${mesNombre}</div>
-      <div style="font-size:22px;font-weight:900;color:#0D0D0D;margin-bottom:4px">${ganador.asesor}</div>
-      <div style="font-size:34px;font-weight:900;color:${niv.color}">${ganador.pct}%</div>
-      <div class="sat-badge" style="color:${niv.color};border-color:${niv.bdr};background:${niv.bg};margin-top:8px;font-size:12px;padding:4px 14px">${niv.icon} ${niv.label}</div>`;
-    const frases=['¡Equipo increíble! Nuevo mes, nuevas oportunidades. Vamos con todo en '+mesN2+' 🚀','¡Gracias a todos por su esfuerzo! Cada encuesta cuenta. ¡A por '+mesN2+'! 💪','Lo dieron todo. Ahora a recargar y volver más fuertes en '+mesN2+' ⭐','¡Que orgullo este equipo! Nuevo mes, nuevas metas. ¡A por ello! 🎯'];
-    document.getElementById('sat-reset-msg').textContent=frases[Math.floor(Math.random()*frases.length)];
-    modal.style.display='flex';
-    document.getElementById('sat-reset-close').onclick=()=>{modal.style.display='none';};
-    modal.addEventListener('click',e=>{if(e.target===modal)modal.style.display='none';});
+  function showCelebracion(top3, mesNombre, mesNuevo) {
+    // Crear modal si no existe
+    let modal = document.getElementById('sat-celeb-modal');
+    if (!modal) {
+      modal = document.createElement('div');
+      modal.id = 'sat-celeb-modal';
+      document.body.appendChild(modal);
+    }
+
+    const [y2,m2] = mesNuevo.split('-');
+    const mesN2   = MESES_N[parseInt(m2)-1]+' '+y2;
+    const medals  = ['🥇','🥈','🥉'];
+    const podioH  = ['190px','140px','110px'];
+    const podioColors = [
+      'linear-gradient(180deg,#FFD700,#C8A000)',
+      'linear-gradient(180deg,#C0C0C0,#909090)',
+      'linear-gradient(180deg,#CD7F32,#A05A20)',
+    ];
+    const glows = [
+      '0 0 40px rgba(255,215,0,.5)',
+      '0 0 24px rgba(192,192,192,.4)',
+      '0 0 20px rgba(205,127,50,.4)',
+    ];
+
+    const frases = [
+      '¡El equipo lo dio todo! Gracias a cada uno por su esfuerzo. ¡A por ' + mesN2 + '! 🚀',
+      '¡Resultados increíbles! Cada encuesta es una historia de atención real. ¡Nuevo mes, nuevas metas! ⭐',
+      '¡Orgullo de equipo! Así se construye la excelencia día a día. ¡Vamos con todo! 💪',
+      '¡Mes cerrado con fuerza! El podio lo dice todo. ¡A repetirlo en ' + mesN2 + '! 🏆',
+    ];
+    const frase = frases[Math.floor(Math.random()*frases.length)];
+
+    modal.innerHTML = `
+      <div id="sat-celeb-overlay" style="position:fixed;inset:0;background:rgba(0,0,0,.92);backdrop-filter:blur(12px);z-index:999999;display:flex;align-items:center;justify-content:center;padding:20px;overflow-y:auto">
+        <!-- Confeti canvas -->
+        <canvas id="sat-confetti-canvas" style="position:fixed;inset:0;pointer-events:none;z-index:1000000"></canvas>
+
+        <div style="background:linear-gradient(160deg,#1a0a3d,#0d0020,#1a0a3d);border:1px solid rgba(255,255,255,.1);border-radius:28px;max-width:580px;width:100%;overflow:hidden;box-shadow:0 40px 120px rgba(0,0,0,.9);position:relative;z-index:1000001">
+
+          <!-- Cabecera -->
+          <div style="background:linear-gradient(135deg,#2d1b69,#1a0a3d);padding:32px 28px 24px;text-align:center;position:relative;overflow:hidden">
+            <!-- Estrellas decorativas -->
+            <div style="position:absolute;inset:0;background:radial-gradient(circle at 20% 50%,rgba(255,215,0,.08),transparent 50%),radial-gradient(circle at 80% 50%,rgba(167,139,250,.08),transparent 50%)"></div>
+            <div style="position:relative;z-index:1">
+              <div style="font-size:13px;font-weight:800;color:#a78bfa;text-transform:uppercase;letter-spacing:.15em;margin-bottom:10px">✨ Cierre de mes ✨</div>
+              <div style="font-size:28px;font-weight:900;color:#fff;line-height:1.2;margin-bottom:6px">¡Los mejores de ${mesNombre}!</div>
+              <div style="font-size:14px;color:rgba(255,255,255,.5)">${mesN2} empieza con todo</div>
+            </div>
+          </div>
+
+          <!-- Podio top 3 -->
+          <div style="padding:28px 24px 12px;display:flex;align-items:flex-end;justify-content:center;gap:14px">
+            ${[top3[1], top3[0], top3[2]].filter(Boolean).map((r, vi) => {
+              const pos   = top3[1] ? [1,0,2][vi] : vi;
+              const niv   = getNivel(r.pct);
+              const init  = r.asesor.split(' ').slice(0,2).map(w=>w[0]||'').join('').toUpperCase();
+              const sz    = pos===0 ? 72 : 58;
+              const nameS = pos===0 ? '14px' : '12px';
+              const pctS  = pos===0 ? '30px' : '22px';
+              return `
+                <div style="display:flex;flex-direction:column;align-items:center;flex:1;max-width:160px">
+                  <div style="position:relative;margin-bottom:8px">
+                    <div style="width:${sz}px;height:${sz}px;border-radius:50%;background:${pos===0?'linear-gradient(135deg,#FFD700,#C8A000)':pos===1?'linear-gradient(135deg,#C0C0C0,#888)':'linear-gradient(135deg,#CD7F32,#8B4A1A)'};display:flex;align-items:center;justify-content:center;font-size:${pos===0?26:19}px;font-weight:900;color:${pos===0?'#5A3E00':'#fff'};box-shadow:${glows[pos]};animation:sat-celeb-pop .6s cubic-bezier(.22,.68,0,1.6) ${pos===0?'.1':pos===1?'.3':'.5'}s both">
+                      ${init}
+                    </div>
+                    <div style="position:absolute;top:-10px;left:50%;transform:translateX(-50%);font-size:${pos===0?28:20}px;line-height:1;animation:sat-celeb-bounce 1s ease-in-out infinite alternate">${medals[pos]}</div>
+                  </div>
+                  <div style="font-size:${nameS};font-weight:800;color:#fff;text-align:center;line-height:1.3;margin-bottom:4px">${r.asesor}</div>
+                  <div style="font-size:${pctS};font-weight:900;color:${pos===0?'#FFD700':pos===1?'#C0C0C0':'#CD7F32'};line-height:1;margin-bottom:4px">${r.pct}%</div>
+                  <div style="display:inline-flex;align-items:center;gap:4px;border-radius:99px;padding:3px 10px;font-size:9.5px;font-weight:800;border:1.5px solid ${niv.bdr};background:${niv.bg};color:${niv.color}">${niv.icon} ${niv.label}</div>
+                  <!-- Pedestal -->
+                  <div style="width:100%;height:${podioH[pos]};background:${podioColors[pos]};border-radius:12px 12px 0 0;display:flex;align-items:flex-start;justify-content:center;padding-top:14px;font-size:${pos===0?36:28}px;margin-top:12px;box-shadow:${glows[pos]};position:relative;overflow:hidden">
+                    <div style="position:absolute;inset:0;background:linear-gradient(180deg,rgba(255,255,255,.15),transparent);border-radius:12px 12px 0 0"></div>
+                    <span style="position:relative;z-index:1">${medals[pos]}</span>
+                  </div>
+                </div>`;
+            }).join('')}
+          </div>
+
+          <!-- Frase motivacional -->
+          <div style="margin:0 24px 20px;padding:16px 20px;background:rgba(167,139,250,.08);border:1.5px solid rgba(167,139,250,.2);border-radius:14px;text-align:center;font-size:13.5px;font-weight:600;color:rgba(255,255,255,.8);line-height:1.65">
+            ${frase}
+          </div>
+
+          <!-- Botón cerrar -->
+          <div style="padding:0 24px 28px">
+            <button onclick="document.getElementById('sat-celeb-modal').innerHTML='';_satStopConfetti()" style="width:100%;padding:15px;background:linear-gradient(135deg,#7c3aed,#5b21b6);border:none;color:#fff;border-radius:14px;font-size:15px;font-weight:800;cursor:pointer;font-family:inherit;box-shadow:0 6px 24px rgba(124,58,237,.5);transition:transform .15s;letter-spacing:.02em" onmouseover="this.style.transform='scale(1.02)'" onmouseout="this.style.transform='scale(1)'">
+              ¡Comenzar ${mesN2}! 🚀
+            </button>
+          </div>
+        </div>
+      </div>`;
+
+    // Animación de entrada
+    const overlay = document.getElementById('sat-celeb-overlay');
+    overlay.style.opacity = '0';
+    overlay.style.transition = 'opacity .4s';
+    setTimeout(() => { overlay.style.opacity = '1'; }, 50);
+
+    // Cerrar al click en fondo
+    overlay.addEventListener('click', e => {
+      if (e.target === overlay) {
+        overlay.style.opacity = '0';
+        setTimeout(() => { modal.innerHTML = ''; _satStopConfetti(); }, 400);
+      }
+    });
+
+    // Lanzar confeti
+    _satLanzarConfetti();
+  }
+
+  // ── Confeti ───────────────────────────────────────────────────
+  let _satConfettiRAF = null;
+  function _satLanzarConfetti() {
+    const canvas = document.getElementById('sat-confetti-canvas');
+    if (!canvas) { setTimeout(_satLanzarConfetti, 200); return; }
+    const ctx  = canvas.getContext('2d');
+    canvas.width  = window.innerWidth;
+    canvas.height = window.innerHeight;
+
+    const COLORS = ['#FFD700','#FF6B6B','#4ADE80','#60A5FA','#A78BFA','#F472B6','#FBBF24','#fff'];
+    const pieces = Array.from({length:120}, () => ({
+      x:     Math.random() * canvas.width,
+      y:     Math.random() * canvas.height - canvas.height,
+      w:     6 + Math.random()*8,
+      h:     10 + Math.random()*14,
+      color: COLORS[Math.floor(Math.random()*COLORS.length)],
+      rot:   Math.random() * 360,
+      vx:    (Math.random()-0.5)*3,
+      vy:    2 + Math.random()*4,
+      vr:    (Math.random()-0.5)*8,
+      opacity: 0.7 + Math.random()*0.3,
+    }));
+
+    function draw() {
+      ctx.clearRect(0,0,canvas.width,canvas.height);
+      let alive = false;
+      pieces.forEach(p => {
+        p.x  += p.vx;
+        p.y  += p.vy;
+        p.rot+= p.vr;
+        if (p.y < canvas.height + 20) alive = true;
+        if (p.y > canvas.height + 20) { p.y = -20; p.x = Math.random()*canvas.width; }
+        ctx.save();
+        ctx.globalAlpha = p.opacity;
+        ctx.translate(p.x, p.y);
+        ctx.rotate(p.rot * Math.PI/180);
+        ctx.fillStyle = p.color;
+        ctx.fillRect(-p.w/2, -p.h/2, p.w, p.h);
+        ctx.restore();
+      });
+      _satConfettiRAF = requestAnimationFrame(draw);
+    }
+    draw();
+    // Parar automático a los 8 segundos
+    setTimeout(_satStopConfetti, 8000);
+  }
+
+  function _satStopConfetti() {
+    if (_satConfettiRAF) { cancelAnimationFrame(_satConfettiRAF); _satConfettiRAF=null; }
+    const c = document.getElementById('sat-confetti-canvas');
+    if (c) { const ctx=c.getContext('2d'); ctx.clearRect(0,0,c.width,c.height); }
   }
 
 
