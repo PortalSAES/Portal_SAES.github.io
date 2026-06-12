@@ -353,7 +353,7 @@
     clearTimeout(splashTimeout);
     if (user) {
       if (splashMsg) splashMsg.textContent = 'Redirigiendo...';
-      setTimeout(() => { window.location.href = 'Portal.html'; }, 300);
+      setTimeout(() => { window.location.href = 'portal.html'; }, 300);
       return;
     }
     hideSplash(); // No hay sesión → mostrar login
