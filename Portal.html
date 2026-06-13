@@ -2397,7 +2397,7 @@ if (snap.exists()) {
 } catch(e) { currentUserRol = ''; window.currentUserNombre = ''; }
 window.currentUserRol = currentUserRol;
 // Expose firebase modules for satisfaccion module
-if (!window._fbModules) window._fbModules = { getFirestore, collection, onSnapshot, addDoc, query, where, orderBy, serverTimestamp, getDocs, deleteDoc, doc, updateDoc };
+if (!window._fbModules) window._fbModules = { getFirestore, collection, onSnapshot, addDoc, query, where, orderBy, serverTimestamp, getDocs, deleteDoc, doc, updateDoc, setDoc };
 if (window._initSatFirebase) window._initSatFirebase();
 window.dispatchEvent(new CustomEvent('sise:rolCargado', { detail: { rol: currentUserRol, nombre: window.currentUserNombre } }));
 // Iniciar listeners de Firestore AHORA que hay sesión activa
@@ -9275,10 +9275,22 @@ document.getElementById('btn-pend-export-mensual').addEventListener('click', () 
       if(conds.every(c=>evalC(c))) nuevos[id]=true;
     });
     if(!Object.keys(nuevos).length) return;
+
+    // Verificar sesión activa antes de escribir
+    if (!window.currentUser) {
+      console.warn('logros: sin sesión activa');
+      return;
+    }
+
     const update={...exist};
     const hoy=new Date().toLocaleDateString('es-PE');
     Object.keys(nuevos).forEach(id=>{update[id]={fecha:hoy,nuevo:true};});
-    try{await setDoc(ref,{logros:update,actualizado:serverTimestamp()},{merge:true});}catch(e){}
+    try {
+      await setDoc(ref,{logros:update,actualizado:serverTimestamp()},{merge:true});
+      console.log('logros guardados para', nombre, ':', Object.keys(nuevos));
+    } catch(e) {
+      console.warn('logros save error:', e.code, e.message);
+    }
   }
 
   // ── Hook en renderRanking para actualizar lista ───────────────
@@ -9290,10 +9302,11 @@ document.getElementById('btn-pend-export-mensual').addEventListener('click', () 
     _lgInyectarListaAsesores();
     _lgRenderAsesores(ranking);
 
-    // Auto-calcular logros para todos cuando se actualiza el ranking
-    if (_lgDefs.length && window._satData?.length) {
-      ranking.forEach(r => {
-        setTimeout(() => _lgCalcular(r.asesor), 0);
+    // Auto-calcular logros cuando el ranking se actualiza
+    if (_lgDefs.length && window._satData?.length && window.currentUser) {
+      ranking.forEach((r, i) => {
+        // Escalonar para no saturar Firebase
+        setTimeout(() => _lgCalcular(r.asesor), i * 200);
       });
     }
   };
