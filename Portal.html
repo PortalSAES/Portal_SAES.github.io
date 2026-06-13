@@ -7327,13 +7327,31 @@ document.getElementById('btn-pend-export-mensual').addEventListener('click', () 
             window._satLastRanking = ranking;
             window._satNotifComparar(ranking);
           }
-          // Calcular logros del usuario actual
-          if(window._satCalcularLogros && window.currentUserNombre) {
-            const miNombre = window.currentUserNombre;
-            const miData   = satData.filter(r=>r.asesor===miNombre||r.asesor.toLowerCase()===miNombre.toLowerCase());
-            const histAsesor = miData.sort((a,b)=>(a.mes+a.semana).localeCompare(b.mes+b.semana))
-              .map(r=>({pct:r.pct,mes:r.mes,semana:r.semana}));
-            window._satCalcularLogros(miNombre, histAsesor, ranking, window._satLastRanking);
+          // Calcular logros del usuario actual — buscar por nombre o apellido
+          if(window._satCalcularLogros && (window.currentUserNombre || window.currentUser)) {
+            const miNombreCompleto = window.currentUserNombre || '';
+            const miEmail = window.currentUser ? window.currentUser.email.split('@')[0].toLowerCase() : '';
+            const miParts = miNombreCompleto.toLowerCase().split(' ').filter(Boolean);
+
+            // Buscar coincidencia en ranking por nombre completo, primer nombre, apellido o email
+            const miEnRanking = ranking.find(r => {
+              const rLow = r.asesor.toLowerCase();
+              if (miNombreCompleto && rLow === miNombreCompleto.toLowerCase()) return true;
+              if (miParts.length >= 1 && rLow.includes(miParts[0])) return true;
+              if (miParts.length >= 2 && rLow.includes(miParts[1])) return true;
+              if (miEmail && rLow.replace(/\s+/g,'').includes(miEmail.replace(/\s+/g,''))) return true;
+              return false;
+            });
+
+            const nombreParaLogros = miEnRanking ? miEnRanking.asesor : miNombreCompleto;
+            if (nombreParaLogros) {
+              const miData = satData.filter(r => r.asesor === nombreParaLogros ||
+                r.asesor.toLowerCase() === nombreParaLogros.toLowerCase());
+              const histAsesor = miData.sort((a,b)=>(a.mes+a.semana).localeCompare(b.mes+b.semana))
+                .map(r=>({pct:r.pct, mes:r.mes, semana:r.semana}));
+              window._satNombreEnRanking = nombreParaLogros;
+              window._satCalcularLogros(nombreParaLogros, histAsesor, ranking, window._satLastRanking);
+            }
           }
           const mes=mesActual(), [y,m]=mes.split('-');
           document.getElementById('sat-periodo-label').textContent='Mes en curso: '+MESES_N[parseInt(m)-1]+' '+y;
@@ -7703,15 +7721,25 @@ document.getElementById('btn-pend-export-mensual').addEventListener('click', () 
       satHistBody.parentElement.appendChild(btnL);
     }
     const btnLogros = document.getElementById('btn-ver-logros');
-    if (btnLogros) btnLogros.onclick = () => {
-      // Calculate logros for this user when they open the modal
-      if (window._satCalcularLogros) {
-        const histAsesor = allHist.map(r=>({pct:r.pct, mes:r.mes, semana:r.semana}));
-        const ranking = window._satLastRanking || [];
-        window._satCalcularLogros(nombre, histAsesor, ranking, null);
-      }
-      window._satAbrirLogros(nombre);
-    };
+    if (btnLogros) {
+      // Check if this is the current user
+      const miNombre = window.currentUserNombre || '';
+      const miParts  = miNombre.toLowerCase().split(' ').filter(Boolean);
+      const esYo     = miNombre && (
+        nombre.toLowerCase() === miNombre.toLowerCase() ||
+        (miParts[0] && nombre.toLowerCase().includes(miParts[0]))
+      );
+      btnLogros.innerHTML = esYo ? '🏆 Ver mis logros' : '🏆 Ver logros de ' + nombre.split(' ')[0];
+      btnLogros.onclick = async () => {
+        // Recalculate logros before showing
+        if (window._satCalcularLogros && allHist.length) {
+          const histAsesor = allHist.map(r=>({pct:r.pct, mes:r.mes, semana:r.semana}));
+          const ranking = window._satLastRanking || [];
+          await window._satCalcularLogros(nombre, histAsesor, ranking, null);
+        }
+        window._satAbrirLogros(nombre);
+      };
+    }
 
     modal.style.display = 'flex';
     modal.addEventListener('click', e => { if(e.target===modal) modal.style.display='none'; }, {once:true});
