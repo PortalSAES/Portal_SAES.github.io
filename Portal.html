@@ -377,9 +377,9 @@ mark.plt-hl {
     // BO Llamadas — solo Pendiente + No contesta (excluye Atendida)
     getDocs(collection(db, 'bo_llamadas')).then(snap => {
       const activos = snap.docs.filter(d => {
-        const estado = (d.data().estado || '').toLowerCase();
-        // Solo contar pendiente y no contesta
-        return estado === 'pendiente' || estado === 'no contesta' || estado === 'no_contesta' || estado === '';
+        const estado = (d.data().estado || 'pendiente').toLowerCase();
+        // Solo contar pendiente y no_contesta — excluir atendida
+        return estado !== 'atendida';
       }).length;
       const el = document.getElementById('home-stat-bo');
       if (el) el.textContent = activos;
