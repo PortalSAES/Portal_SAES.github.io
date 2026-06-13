@@ -1460,7 +1460,9 @@ Amplio
     <i class="ti ti-table-export"></i> Subir Excel
     <input type="file" id="sat-file-input" accept=".xlsx,.xls,.csv" style="display:none">
   </label>
-
+  <button id="btn-gestionar-logros" onclick="window._satAbrirLogros()" style="display:none;align-items:center;gap:8px;background:rgba(255,215,0,.12);border:1.5px solid rgba(255,215,0,.35);color:#FFD700;border-radius:12px;padding:11px 18px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;white-space:nowrap">
+    <i class="ti ti-trophy"></i> Ver Logros
+  </button>
   <div id="sat-upload-status" style="font-size:12px;color:rgba(255,255,255,.5)"></div>
 </div>
 
@@ -7318,7 +7320,7 @@ document.getElementById('btn-pend-export-mensual').addEventListener('click', () 
       satUnsub=onSnapshot(
         query(collection(db,'satisfaccion'),orderBy('creadoEn','asc')),
         snap=>{
-          satData=snap.docs.map(d=>({id:d.id,...d.data()}));
+          satData=snap.docs.map(d=>({id:d.id,...d.data()})); window._satData=satData;
           const ranking=calcRanking(satData);
           renderPodio(ranking); renderRanking(ranking); renderStats(ranking); renderFilterBar(ranking);
           if(window._satNotifComparar) {
@@ -7921,6 +7923,8 @@ document.getElementById('btn-pend-export-mensual').addEventListener('click', () 
     const esSup=rol==='supervisor'||rol==='bo'||rol==='formador';
     const bar=document.getElementById('sat-supervisor-bar');
     if(bar) bar.style.display=esSup?'flex':'none';
+    const btnGL=document.getElementById('btn-gestionar-logros');
+    if(btnGL) btnGL.style.display=esSup?'flex':'none';
     const fi=document.getElementById('sat-file-input');
     if(fi&&!fi._bound){ fi._bound=true; fi.addEventListener('change',e=>{if(e.target.files[0])leerExcelGenesys(e.target.files[0]);e.target.value='';}); }
 
@@ -8845,7 +8849,7 @@ document.getElementById('btn-pend-export-mensual').addEventListener('click', () 
       if (!val) return;
 
       // Buscar en satData
-      const matches = satData ? [...new Set(satData
+      const matches = (window._satData||satData) ? [...new Set((window._satData||satData)
         .filter(r => r.asesor.toLowerCase().includes(val.toLowerCase()))
         .map(r => r.asesor))] : [];
 
@@ -8912,7 +8916,7 @@ document.getElementById('btn-pend-export-mensual').addEventListener('click', () 
     const db = getFirestore();
 
     // Get historial from satData
-    const hist = (satData||[])
+    const hist = (window._satData||satData||[])
       .filter(r => r.asesor === nombre)
       .sort((a,b) => (a.mes+a.semana).localeCompare(b.mes+b.semana));
     if (!hist.length) return;
