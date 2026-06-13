@@ -100,13 +100,13 @@ mark.plt-hl {
 <div>
 <div class="nav-label">Menú</div>
 <div class="nav-item active" data-view="inicio" data-label="Inicio"><i class="ti ti-layout-dashboard"></i><span>Inicio</span></div>
-<div class="nav-item" data-view="satisfaccion" data-label="Satisfacción" id="nav-satisfaccion"><i class="ti ti-trophy"></i><span>Satisfacción</span></div>
+<div class="nav-item nav-satisfaccion" data-view="satisfaccion" data-label="Satisfacción" id="nav-satisfaccion"><i class="ti ti-trophy"></i><span>Satisfacción</span></div>
 </div>
 <div>
 <div class="nav-label">Recursos</div>
 <div class="nav-item" data-view="plantillas" data-label="Plantillas"><i class="ti ti-file-text"></i><span>Plantillas</span></div>
 <div class="nav-item" data-view="tipificaciones" data-label="Tipificaciones"><i class="ti ti-tags"></i><span>Tipificaciones</span></div>
-<div class="nav-item" data-view="preguntas" data-label="Preguntas frecuentes"><i class="ti ti-award"></i><span>Preguntas frecuentes</span></div>
+<div class="nav-item nav-preguntas" data-view="preguntas" data-label="Preguntas frecuentes"><i class="ti ti-award"></i><span>Preguntas frecuentes</span></div>
 <div class="nav-item" data-view="herramientas" data-label="Herramientas de trabajo"><i class="ti ti-tools"></i><span>Herramientas de trabajo</span></div>
 </div>
 <div>
@@ -1334,7 +1334,7 @@ mark.plt-hl {
 <span><strong style="color:var(--orange)">Modo gestor activo</strong> — Puedes añadir, editar o eliminar videos y recursos.</span>
 <div style="display:flex;gap:8px;flex-wrap:wrap">
 <button class="btn-cap-add" id="btn-cap-nueva"><i class="ti ti-brand-youtube"></i>Agregar video</button>
-<button class="btn-cap-add" id="btn-cap-nueva-doc" style="background:var(--warning);"><i class="ti ti-upload"></i>Subir PPT / PDF</button>
+<button class="btn-cap-add" id="btn-cap-nueva-doc" style="background:var(--warning);"><i class="ti ti-upload"></i>Subir documento</button>
 </div>
 </div>
 <div class="cap-search-bar">
@@ -1419,7 +1419,7 @@ mark.plt-hl {
 <div class="modal-header">
 <div>
 <div class="modal-title" id="modal-cap-doc-title">Subir documento</div>
-<div class="modal-subtitle">PPT, PPTX o PDF — Formador, Supervisor y BO</div>
+<div class="modal-subtitle">PPT, PDF, Word o Excel — Formador, Supervisor y BO</div>
 </div>
 <button class="modal-close" id="modal-cap-doc-close"><i class="ti ti-x"></i></button>
 </div>
@@ -1430,6 +1430,12 @@ mark.plt-hl {
 </button>
 <button class="cap-tipo-btn" id="cap-doc-tipo-pdf" onclick="capDocSetTipo('pdf')">
 <i class="ti ti-file-type-pdf"></i>PDF
+</button>
+<button class="cap-tipo-btn" id="cap-doc-tipo-word" onclick="capDocSetTipo('word')">
+<i class="ti ti-file-type-doc"></i>Word
+</button>
+<button class="cap-tipo-btn" id="cap-doc-tipo-excel" onclick="capDocSetTipo('excel')">
+<i class="ti ti-file-type-xls"></i>Excel
 </button>
 </div>
 
@@ -7891,6 +7897,7 @@ document.getElementById('btn-pend-export-mensual').addEventListener('click', () 
       const {getFirestore,collection,onSnapshot,addDoc,query,where,orderBy,serverTimestamp,getDocs,doc,updateDoc}=window._fbModules||{};
       if(!getFirestore) return;
       const db=getFirestore();
+      _loadMeta();
       if(satUnsub) satUnsub();
       satUnsub=onSnapshot(
         query(collection(db,'satisfaccion'),orderBy('creadoEn','asc')),
@@ -10075,11 +10082,16 @@ const actionsHtml = canEdit ? `
 <button class="btn-row edit" title="Editar" onclick="event.stopPropagation();window._capEditar('${escH(v.id)}','${escH(src)}')"><i class="ti ti-pencil"></i></button>
 <button class="btn-row del"  title="Eliminar" onclick="event.stopPropagation();window._capEliminar('${escH(v.id)}')"><i class="ti ti-trash"></i></button>
 </div>` : '';
-if (src === 'ppt' || src === 'pdf') {
-const icon  = src === 'ppt' ? '📊' : '📄';
-const label = src === 'ppt'
-? '<i class="ti ti-presentation"></i> PowerPoint'
-: '<i class="ti ti-file-type-pdf"></i> PDF';
+if (src === 'ppt' || src === 'pdf' || src === 'word' || src === 'excel') {
+const ICONS  = { ppt:'📊', pdf:'📄', word:'📝', excel:'📈' };
+const LABELS = {
+  ppt:   '<i class="ti ti-presentation"></i> PowerPoint',
+  pdf:   '<i class="ti ti-file-type-pdf"></i> PDF',
+  word:  '<i class="ti ti-file-type-doc"></i> Word',
+  excel: '<i class="ti ti-file-type-xls"></i> Excel',
+};
+const icon  = ICONS[src];
+const label = LABELS[src];
 return `
 <div class="cap-doc-card" onclick="window._capVerDoc('${escH(v.id)}')">
 <div class="cap-doc-thumb ${src}">
@@ -10211,6 +10223,39 @@ loading.innerHTML = `
 if (iframe) iframe.style.display = 'none';
 }
 }, 12000);
+} else if (v.tipo === 'word') {
+const gdocsUrl = `https://docs.google.com/gview?url=${encodeURIComponent(fileUrl)}&embedded=true`;
+wrap.innerHTML = `
+<div style="position:relative">
+<iframe id="cdv-word-iframe" src="${escH(gdocsUrl)}" class="cap-doc-embed"
+title="${escH(v.titulo)}" allowfullscreen
+style="opacity:0;transition:opacity 0.5s"
+onload="this.style.opacity='1';document.getElementById('cdv-word-loading').style.display='none'">
+</iframe>
+<div id="cdv-word-loading" style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;background:var(--surface);border-radius:12px;gap:12px">
+<span style="font-size:44px">📝</span>
+<p style="font-size:13px;font-weight:600;color:var(--text)">Cargando documento…</p>
+<p style="font-size:11px;color:var(--muted)">Puede tardar unos segundos</p>
+</div>
+</div>
+<div style="margin-top:10px;display:flex;gap:8px;justify-content:center">
+<a href="${escH(fileUrl)}" target="_blank" style="display:inline-flex;align-items:center;gap:6px;font-size:12px;color:var(--orange);font-weight:600;text-decoration:none">
+<i class="ti ti-external-link"></i>Abrir en nueva pestaña
+</a>
+</div>`;
+setTimeout(() => {
+const loading = document.getElementById('cdv-word-loading');
+const iframe  = document.getElementById('cdv-word-iframe');
+if (loading && loading.style.display !== 'none') {
+loading.innerHTML = `<span style="font-size:44px">📝</span><p style="font-size:13px;font-weight:600;color:var(--text)">No se pudo previsualizar</p><p style="font-size:11px;color:var(--muted)">Usa el botón "Abrir en nueva pestaña" o descarga el archivo</p>`;
+}
+}, 12000);
+} else if (v.tipo === 'excel') {
+wrap.innerHTML = `<div style="padding:40px 32px;text-align:center;color:var(--muted)">
+<span style="font-size:52px;display:block;margin-bottom:14px">📈</span>
+<p style="font-size:14px;font-weight:700;color:var(--text);margin-bottom:6px">Archivo de Excel</p>
+<p style="font-size:12px;color:var(--muted)">Descárgalo para verlo completo</p>
+</div>`;
 } else {
 wrap.innerHTML = `<div style="padding:32px;text-align:center;color:var(--muted)"><i class="ti ti-file-off" style="font-size:36px;display:block;margin-bottom:8px"></i><p>Archivo no disponible</p></div>`;
 }
@@ -10313,15 +10358,16 @@ btn.innerHTML = '<i class="ti ti-device-floppy"></i><span id="btn-cap-form-save-
 });
 window.capDocSetTipo = function(tipo) {
 capDocTipo = tipo;
-['ppt','pdf'].forEach(t => {
+['ppt','pdf','word','excel'].forEach(t => {
 const btn = document.getElementById(`cap-doc-tipo-${t}`);
 if (!btn) return;
 btn.className = 'cap-tipo-btn' + (t===tipo ? ` active-${t}` : '');
 });
 const fi = document.getElementById('fdoc-file-input');
-fi.accept = tipo === 'pdf' ? '.pdf' : '.ppt,.pptx';
-document.getElementById('fdoc-drop-hint').textContent =
-tipo === 'pdf' ? 'PDF — sin límite de tamaño' : 'PPT, PPTX — sin límite de tamaño';
+const ACCEPT = { ppt:'.ppt,.pptx', pdf:'.pdf', word:'.doc,.docx', excel:'.xls,.xlsx,.csv' };
+const HINT   = { ppt:'PPT, PPTX', pdf:'PDF', word:'DOC, DOCX', excel:'XLS, XLSX, CSV' };
+fi.accept = ACCEPT[tipo] || '.pdf';
+document.getElementById('fdoc-drop-hint').textContent = (HINT[tipo] || 'Archivo') + ' — sin límite de tamaño';
 };
 document.getElementById('fdoc-file-input')?.addEventListener('change', e => {
 const file = e.target.files[0];
