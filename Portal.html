@@ -1884,10 +1884,21 @@ Amplio
     <span style="width:8px;height:8px;border-radius:50%;background:#4ade80;display:inline-block;box-shadow:0 0 8px #4ade80;animation:sat-blink 1.5s ease-in-out infinite"></span>
     <span style="font-size:11px;font-weight:700;color:rgba(255,255,255,.7);letter-spacing:.06em">EN VIVO</span>
   </div>
-  <h1 style="font-size:32px;font-weight:900;color:#fff;margin-bottom:6px;letter-spacing:-.5px">
+  <h1 style="font-size:28px;font-weight:900;color:#fff;margin-bottom:10px;letter-spacing:-.5px">
     🏆 Satisfacción del Equipo
   </h1>
-  <p id="sat-periodo-label" style="font-size:13px;color:rgba(255,255,255,.5);font-weight:600">Cargando...</p>
+  <!-- Calendario de fecha -->
+  <div style="display:flex;align-items:center;justify-content:center;gap:16px;margin-bottom:4px;flex-wrap:wrap">
+    <div id="sat-cal-box" style="background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);border-radius:16px;overflow:hidden;min-width:90px;text-align:center;box-shadow:0 4px 20px rgba(0,0,0,.3)">
+      <div id="sat-cal-mes" style="background:var(--orange);padding:5px 16px;font-size:10px;font-weight:800;color:#fff;text-transform:uppercase;letter-spacing:.1em">—</div>
+      <div id="sat-cal-dia" style="font-size:44px;font-weight:900;color:#fff;line-height:1;padding:8px 16px 4px">—</div>
+      <div id="sat-cal-año" style="font-size:11px;font-weight:600;color:rgba(255,255,255,.4);padding-bottom:8px">—</div>
+    </div>
+    <div style="text-align:left">
+      <p id="sat-periodo-label" style="font-size:13px;color:rgba(255,255,255,.5);font-weight:600;margin:0 0 4px">Cargando...</p>
+      <p id="sat-semana-label" style="font-size:11px;color:rgba(255,255,255,.3);font-weight:500;margin:0"></p>
+    </div>
+  </div>
 </div>
 
 <!-- Stats globales -->
@@ -7781,23 +7792,13 @@ document.getElementById('btn-pend-export-mensual').addEventListener('click', () 
   function _satDiaActual() {
     const data = window._satData || [];
     if (!data.length) return '—';
-    // Get the most recent semana (format 2026-W24)
-    const semanas = [...new Set(data.map(r=>r.semana||''))].filter(Boolean).sort();
+    const mes = mesActual();
+    const semanas = [...new Set(data.filter(r=>r.mes===mes).map(r=>r.semana||''))].filter(Boolean).sort();
     const ultima = semanas[semanas.length-1] || '';
     if (!ultima) return '—';
-    // Show the actual upload date from Firebase (creadoEn is not available here)
-    // Show the week in a friendly format
-    const match = ultima.match(/(\d{4})-W(\d+)/);
-    if (match) {
-      const [,year,week] = match;
-      // Calculate the Monday of that ISO week
-      const jan4 = new Date(parseInt(year),0,4);
-      const mon = new Date(jan4);
-      mon.setDate(jan4.getDate() - ((jan4.getDay()||7)-1) + (parseInt(week)-1)*7);
-      const sun = new Date(mon); sun.setDate(mon.getDate()+6);
-      const fmt = d => d.getDate()+'/'+(d.getMonth()+1);
-      return fmt(mon)+' – '+fmt(sun);
-    }
+    // New format: YYYY-MM-DD
+    const parts = ultima.split('-');
+    if (parts.length===3) return parts[2]+'/'+parts[1];
     return ultima;
   }
 
@@ -7850,7 +7851,7 @@ document.getElementById('btn-pend-export-mensual').addEventListener('click', () 
     const mapa={};
     delMes.forEach(r=>{
       if(!mapa[r.asesor]) mapa[r.asesor]={asesor:r.asesor,semanas:[],tmo:r.tmo};
-      mapa[r.asesor].semanas.push({semana:r.semana,pct:r.pct});
+      mapa[r.asesor].semanas.push({semana:r.semana,pct:r.pct,fecha:r.semana});
       mapa[r.asesor].tmo=r.tmo||mapa[r.asesor].tmo;
     });
     return Object.values(mapa).map(a=>{
@@ -7891,8 +7892,30 @@ document.getElementById('btn-pend-export-mensual').addEventListener('click', () 
 
           const mes=mesActual(), [y,m]=mes.split('-');
           document.getElementById('sat-periodo-label').textContent='Mes en curso: '+MESES_N[parseInt(m)-1]+' '+y;
+
+          // Actualizar calendario con fecha de hoy
+          const hoy = new Date();
+          const DIAS_S = ['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'];
+          const MESES_C = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+          const calMes = document.getElementById('sat-cal-mes');
+          const calDia = document.getElementById('sat-cal-dia');
+          const calAño = document.getElementById('sat-cal-año');
+          if(calMes) calMes.textContent = DIAS_S[hoy.getDay()]+' · '+MESES_C[hoy.getMonth()];
+          if(calDia) calDia.textContent = hoy.getDate();
+          if(calAño) calAño.textContent = hoy.getFullYear();
+
+          // Última carga
           const ultima=satData.filter(r=>r.mes===mes).sort((a,b)=>b.semana.localeCompare(a.semana))[0];
-          if(ultima) document.getElementById('sat-semana-label').textContent='Última carga: semana '+ultima.semana;
+          if(ultima) {
+            const parts = ultima.semana.split('-');
+            if(parts.length===3) {
+              const dUlt = new Date(parseInt(parts[0]),parseInt(parts[1])-1,parseInt(parts[2]));
+              const label = DIAS_S[dUlt.getDay()]+' '+dUlt.getDate()+' '+MESES_C[dUlt.getMonth()];
+              document.getElementById('sat-semana-label').textContent='Última carga: '+label;
+            } else {
+              document.getElementById('sat-semana-label').textContent='Última carga: '+ultima.semana;
+            }
+          }
           checkReinicio(db,collection,getDocs,mes);
         },
         err=>console.warn('sat:',err)
@@ -7909,22 +7932,72 @@ document.getElementById('btn-pend-export-mensual').addEventListener('click', () 
     } catch(e){ console.warn('sat firebase:',e); }
   }
 
-  async function checkReinicio(db,collection,getDocs,mes) {
-    const KEY='sat_mes_'+(window.currentUser?.uid||'x');
-    if(localStorage.getItem(KEY)===mes) return;
-    // Solo mostrar el 1ro del mes
-    const hoy=new Date();
-    if(hoy.getDate()!==1) { localStorage.setItem(KEY,mes); return; }
-    const [y,m]=mes.split('-');
-    const pm=parseInt(m)-1, py=pm===0?parseInt(y)-1:parseInt(y);
-    const pMes=py+'-'+String(pm===0?12:pm).padStart(2,'0');
-    const {query,where}=window._fbModules;
-    const snap=await getDocs(query(collection(db,'satisfaccion'),where('mes','==',pMes)));
-    if(!snap.empty){
-      const rank=calcRankingRaw(snap.docs.map(d=>d.data()));
-      if(rank.length) showCelebracion(rank.slice(0,3), MESES_N[pm===0?11:pm-1]+' '+py, mes);
+  async // ── Lógica de fin de mes: borrado automático + popup ─────────
+  // Se ejecuta al entrar al portal, no por horario fijo.
+  // El borrado lo hace el primer supervisor que entre en el nuevo mes.
+  // El popup lo ve TODOS (asesores y supervisores) el día 1.
+
+  async function checkReinicio(db, collection, getDocs, mes) {
+    const hoy = new Date();
+    const dia  = hoy.getDate();
+    const uid  = window.currentUser?.uid || 'x';
+    const rol  = (window.currentUserRol||'').toLowerCase();
+    const esSup = ['supervisor','bo','formador'].includes(rol);
+
+    // ── Calcular mes anterior ─────────────────────────────────
+    const [y,m] = mes.split('-');
+    const pm = parseInt(m)-1;
+    const py = pm===0 ? parseInt(y)-1 : parseInt(y);
+    const pMes = py+'-'+String(pm===0?12:pm).padStart(2,'0');
+
+    // ── POPUP día 1: todos lo ven una vez por mes ────────────
+    if (dia === 1) {
+      const KEY_POPUP = 'sat_popup_'+uid+'_'+mes;
+      if (!localStorage.getItem(KEY_POPUP)) {
+        localStorage.setItem(KEY_POPUP, '1');
+        // Cargar datos del mes anterior para mostrar podio
+        try {
+          const {query,where} = window._fbModules||{};
+          const snap = await getDocs(query(collection(db,'satisfaccion'),where('mes','==',pMes)));
+          if (!snap.empty) {
+            const rank = calcRankingRaw(snap.docs.map(d=>d.data()));
+            if (rank.length) {
+              setTimeout(()=>showCelebracion(rank.slice(0,3), MESES_N[pm===0?11:pm-1]+' '+py, mes), 1500);
+            }
+          }
+        } catch(e) { console.warn('popup celebración:', e); }
+      }
     }
-    localStorage.setItem(KEY,mes);
+
+    // ── BORRADO: solo supervisores, solo una vez por mes ─────
+    // Se ejecuta cuando un supervisor entra en el nuevo mes
+    // y detecta que el mes anterior aún tiene datos
+    if (!esSup) return;
+
+    const KEY_RESET = 'sat_reset_'+pMes; // clave global en Firebase para evitar doble borrado
+    try {
+      const {getFirestore,doc,getDoc,setDoc,serverTimestamp,query,where,deleteDoc} = window._fbModules||{};
+      if (!getFirestore) return;
+      const db2 = getFirestore();
+
+      // Verificar si ya se borró este mes (flag en Firebase, no localStorage)
+      const flagRef = doc(db2,'satisfaccion_config','reset_'+pMes);
+      const flagSnap = await getDoc(flagRef);
+      if (flagSnap.exists()) return; // ya se borró
+
+      // Verificar que hay datos del mes anterior
+      const {query:q2,where:w2} = window._fbModules;
+      const snapCheck = await getDocs(q2(collection(db,'satisfaccion'),w2('mes','==',pMes)));
+      if (snapCheck.empty) return; // nada que borrar
+
+      // Marcar como borrado PRIMERO para evitar race condition
+      await setDoc(flagRef, {borrado:true, por:uid, fecha:serverTimestamp()});
+
+      // Borrar datos del mes anterior
+      await Promise.all(snapCheck.docs.map(d=>deleteDoc(doc(db2,'satisfaccion',d.id))));
+      console.log(`[SISE] Auto-reset ${pMes}: ${snapCheck.size} registros borrados`);
+      // Logros NO se borran
+    } catch(e) { console.warn('auto-reset error:', e); }
   }
 
   function showCelebracion(top3, mesNombre, mesNuevo) {
@@ -8230,9 +8303,15 @@ document.getElementById('btn-pend-export-mensual').addEventListener('click', () 
     // Daily tab
     const dayMap = {};
     allHist.forEach(r => {
-      const wk = r.semana.replace(/^\d{4}-/,'');
-      const mn = MESES_N[parseInt(r.mes.split('-')[1])-1];
-      dayMap[r.semana] = { label: wk+' '+mn, pct:r.pct, nv:getNivel(r.pct) };
+      // Format: YYYY-MM-DD → "Lun 13/06"
+      const DIAS_HC = ['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'];
+      let label = r.semana;
+      const dp = r.semana.split('-');
+      if (dp.length===3) {
+        const fd = new Date(parseInt(dp[0]),parseInt(dp[1])-1,parseInt(dp[2]));
+        label = DIAS_HC[fd.getDay()]+' '+dp[2]+'/'+dp[1];
+      }
+      dayMap[r.semana] = { label, pct:r.pct, nv:getNivel(r.pct) };
     });
     const dayEl = document.getElementById('sat-hist-daily');
     if (dayEl) {
@@ -8341,7 +8420,8 @@ document.getElementById('btn-pend-export-mensual').addEventListener('click', () 
         if (!regs.length) throw new Error('Sin datos validos. Verifica que el Excel tenga columna ACUM o dias con porcentajes');
 
         const ahora  = new Date();
-        const semana = ahora.getFullYear()+'-W'+String(getISOWeek(ahora)).padStart(2,'0');
+        // Usar fecha exacta del día como semana
+        const semana = ahora.getFullYear()+'-'+String(ahora.getMonth()+1).padStart(2,'0')+'-'+String(ahora.getDate()).padStart(2,'0');
         st.textContent = `Guardando ${regs.length} asesores...`;
         await window._satGuardar(regs, semana);
         st.textContent = `${regs.length} asesores cargados correctamente`;
