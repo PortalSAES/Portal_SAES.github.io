@@ -375,19 +375,29 @@ mark.plt-hl {
     const {getFirestore, collection, onSnapshot} = mods;
     const db = getFirestore();
 
-    // BO Llamadas — tiempo real, solo Pendiente + No contesta
+    // BO Llamadas — todos los meses, solo las NO atendidas (pendiente + no contesta)
     onSnapshot(collection(db, 'bo_llamadas'), snap => {
       const activos = snap.docs.filter(d => {
         const estado = (d.data().estadoLlamada || 'pendiente').toLowerCase();
-        return estado !== 'atendida';
+        return estado === 'pendiente' || estado === 'no_contesta' || estado === 'no contesta';
       }).length;
       const el = document.getElementById('home-stat-bo');
       if (el) el.textContent = activos;
     }, () => {});
 
-    // Casos pendientes — tiempo real, excluir resueltos
+    // Casos pendientes — solo los alertados SIN resuelto (ambos tags = no suma, ningún tag = suma)
     onSnapshot(collection(db, 'casos_pendientes'), snap => {
-      const activos = snap.docs.filter(d => !d.data().resuelto).length;
+      const activos = snap.docs.filter(d => {
+        const data = d.data();
+        const alertado = !!(data.alertado);
+        const resuelto = !!(data.resuelto);
+        // Si tiene ambos tags (alertado+resuelto) → NO suma
+        // Si tiene solo resuelto → NO suma
+        // Si tiene solo alertado → SÍ suma
+        // Si no tiene ninguno  → SÍ suma
+        if (resuelto) return false;
+        return true;
+      }).length;
       const el = document.getElementById('home-stat-pend');
       if (el) el.textContent = activos;
     }, () => {});
@@ -7748,13 +7758,13 @@ document.getElementById('btn-pend-export-mensual').addEventListener('click', () 
   // ── Meta del mes ─────────────────────────────────────────────
   window._satMeta = null;
 
-  async function _loadMeta() {
-    const {getFirestore,doc,getDoc} = window._fbModules||{};
+  function _loadMeta() {
+    const {getFirestore,doc,onSnapshot} = window._fbModules||{};
     if (!getFirestore) return;
-    try {
-      const snap = await getDoc(doc(getFirestore(),'satisfaccion_config','meta'));
-      if (snap.exists()) window._satMeta = snap.data().meta || null;
-    } catch(e) {}
+    onSnapshot(doc(getFirestore(),'satisfaccion_config','meta'), snap => {
+      window._satMeta = snap.exists() ? (snap.data().meta || null) : null;
+      renderStats(window._satLastRanking||[]);
+    }, ()=>{});
   }
 
   window._satEditarMeta = async function() {
@@ -8268,7 +8278,7 @@ document.getElementById('btn-pend-export-mensual').addEventListener('click', () 
     chartEl.innerHTML = allHist.map(r => {
       const nv  = getNivel(r.pct);
       const h   = Math.max((r.pct/100)*90, 4);
-      const wk  = r.semana.replace(/^\d{4}-W/,'W');
+      const wk  = r.semana.includes('W') ? r.semana.replace(/^\d{4}-W/,'W') : r.semana.split('-')[2];
       return `<div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;gap:3px;min-width:28px;max-width:48px">
         <div style="font-size:9px;font-weight:700;color:${nv.color}">${r.pct}%</div>
         <div title="${wk}: ${r.pct}%" style="width:100%;height:${h}px;background:linear-gradient(180deg,${nv.bdr},${nv.color});border-radius:5px 5px 0 0;transition:height .4s;cursor:default"></div>
@@ -8276,7 +8286,7 @@ document.getElementById('btn-pend-export-mensual').addEventListener('click', () 
     }).join('');
 
     labelsEl.innerHTML = allHist.map(r => {
-      const wk = r.semana.replace(/^\d{4}-W/,'S');
+      const wk = r.semana.includes('W') ? r.semana.replace(/^\d{4}-/,'') : r.semana.split('-')[2];
       const mn = r.mes.split('-')[1];
       return `<div style="flex:1;text-align:center;font-size:8.5px;color:rgba(255,255,255,.3);font-weight:600;min-width:28px;max-width:48px">${wk}<br>${mn}</div>`;
     }).join('');
@@ -8285,7 +8295,7 @@ document.getElementById('btn-pend-export-mensual').addEventListener('click', () 
     document.getElementById('sat-hist-table').innerHTML = allHist.length
       ? allHist.map(r => {
           const nv = getNivel(r.pct);
-          const wk = r.semana.replace(/^\d{4}-/,'');
+          const wk = r.semana.includes('W') ? r.semana.replace(/^\d{4}-/,'') : _formatSemana(r.semana);
           const mn = MESES_N[parseInt(r.mes.split('-')[1])-1];
           return `<div style="display:flex;align-items:center;gap:12px;padding:10px 14px;background:rgba(255,255,255,.04);border-radius:10px;margin-bottom:6px">
             <div style="font-size:11px;font-weight:600;color:rgba(255,255,255,.5);width:60px">${mn} ${wk}</div>
@@ -8306,15 +8316,31 @@ document.getElementById('btn-pend-export-mensual').addEventListener('click', () 
     const dayEl = document.getElementById('sat-hist-daily');
     if (dayEl) {
       const dKeys = Object.keys(dayMap).sort();
-      dayEl.innerHTML = dKeys.length ? dKeys.map(k => {
+      dayEl.innerHTML = dKeys.length ? dKeys.map((k,i) => {
         const d=dayMap[k],nv=d.nv;
-        return '<div style="display:flex;align-items:center;gap:12px;padding:10px 14px;background:rgba(255,255,255,.04);border-radius:10px;margin-bottom:6px">'
-          +'<div style="font-size:11px;font-weight:600;color:rgba(255,255,255,.4);width:70px;flex-shrink:0">'+d.label+'</div>'
-          +'<div style="flex:1;background:rgba(255,255,255,.08);border-radius:99px;height:10px;overflow:hidden">'
-          +'<div style="width:'+d.pct+'%;height:100%;background:'+nv.color+';border-radius:99px"></div></div>'
-          +'<div style="font-size:16px;font-weight:900;color:'+nv.color+';width:46px;text-align:right">'+d.pct+'%</div>'
+        const isLast = i === dKeys.length-1;
+        return '<div style="border-radius:14px;margin-bottom:8px;overflow:hidden;border:1px solid rgba(255,255,255,.08)">'
+          // Cabecera con fecha
+          +'<div style="display:flex;align-items:center;gap:10px;padding:10px 14px;background:rgba(255,255,255,.06);border-bottom:1px solid rgba(255,255,255,.06)">'
+          +'<div style="width:32px;height:32px;border-radius:8px;background:rgba(255,255,255,.08);display:flex;align-items:center;justify-content:center;flex-shrink:0">'
+          +'<i class="ti ti-calendar" style="font-size:15px;color:rgba(255,255,255,.5)"></i></div>'
+          +'<div style="flex:1;min-width:0">'
+          +'<div style="font-size:13px;font-weight:800;color:#fff;white-space:nowrap">'+d.label+'</div>'
+          +'<div style="font-size:10px;color:rgba(255,255,255,.35);font-weight:500">Excel del día subido</div>'
+          +'</div>'
+          +(isLast ? '<div style="font-size:9px;font-weight:700;background:rgba(167,139,250,.2);color:#a78bfa;border-radius:6px;padding:2px 8px;white-space:nowrap">Último cargado</div>' : '')
+          +'</div>'
+          // Barra de progreso
+          +'<div style="padding:12px 14px;background:rgba(0,0,0,.2)">'
+          +'<div style="display:flex;align-items:center;gap:10px">'
+          +'<div style="flex:1;background:rgba(255,255,255,.08);border-radius:99px;height:14px;overflow:hidden">'
+          +'<div style="width:'+d.pct+'%;height:100%;background:linear-gradient(90deg,'+nv.color+','+nv.color+'cc);border-radius:99px;transition:width .4s"></div></div>'
+          +'<div style="font-size:22px;font-weight:900;color:'+nv.color+';min-width:54px;text-align:right;flex-shrink:0">'+d.pct+'%</div>'
+          +'</div>'
+          +'<div style="margin-top:6px;font-size:11px;color:rgba(255,255,255,.35);font-weight:600">'+nv.label+'</div>'
+          +'</div>'
           +'</div>';
-      }).join('') : '<div style="color:rgba(255,255,255,.3);text-align:center;padding:20px">Sin datos</div>';
+      }).join('') : '<div style="color:rgba(255,255,255,.3);text-align:center;padding:20px">Sin datos para este mes</div>';
     }
 
         modal.style.display = 'flex';
