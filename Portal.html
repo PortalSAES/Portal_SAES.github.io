@@ -7703,7 +7703,15 @@ document.getElementById('btn-pend-export-mensual').addEventListener('click', () 
       satHistBody.parentElement.appendChild(btnL);
     }
     const btnLogros = document.getElementById('btn-ver-logros');
-    if (btnLogros) btnLogros.onclick = () => window._satAbrirLogros(nombre);
+    if (btnLogros) btnLogros.onclick = () => {
+      // Calculate logros for this user when they open the modal
+      if (window._satCalcularLogros) {
+        const histAsesor = allHist.map(r=>({pct:r.pct, mes:r.mes, semana:r.semana}));
+        const ranking = window._satLastRanking || [];
+        window._satCalcularLogros(nombre, histAsesor, ranking, null);
+      }
+      window._satAbrirLogros(nombre);
+    };
 
     modal.style.display = 'flex';
     modal.addEventListener('click', e => { if(e.target===modal) modal.style.display='none'; }, {once:true});
@@ -9720,13 +9728,18 @@ document.getElementById('btn-pend-export-mensual').addEventListener('click', () 
   };
 
   // ── Exponer función para que el botón del supervisor se muestre solo si corresponde ──
-  window.addEventListener('sise:rolCargado', () => {
+  function _updateAdminBtn() {
     const rol = (window.currentUserRol||'').toLowerCase();
-    const esSup = rol==='supervisor'||rol==='bo'||rol==='formador';
+    const esSup = rol==='supervisor'||rol==='bo'||rol==='formador'||rol==='asesor'===false;
     const btn = document.getElementById('btn-admin-logros');
-    if (btn) btn.style.display = esSup ? 'flex' : 'none';
-  });
-  // También ocultar por defecto hasta que cargue el rol
+    if (!btn) return;
+    // Visible para supervisor, bo y formador
+    const visible = rol==='supervisor'||rol==='bo'||rol==='formador';
+    btn.style.display = visible ? 'flex' : 'none';
+  }
+  window.addEventListener('sise:rolCargado', _updateAdminBtn);
+  if (window.currentUserRol) _updateAdminBtn();
+  // Ocultar por defecto
   const btnAdmin = document.getElementById('btn-admin-logros');
   if (btnAdmin) btnAdmin.style.display = 'none';
 
