@@ -378,18 +378,19 @@ mark.plt-hl {
     getDocs(collection(db, 'bo_llamadas')).then(snap => {
       const activos = snap.docs.filter(d => {
         const estado = (d.data().estado || '').toLowerCase();
-        return estado !== 'atendida' && estado !== 'atendido';
+        // Solo contar pendiente y no contesta
+        return estado === 'pendiente' || estado === 'no contesta' || estado === 'no_contesta' || estado === '';
       }).length;
       const el = document.getElementById('home-stat-bo');
       if (el) el.textContent = activos;
     }).catch(() => {});
 
-    // Casos pendientes — solo No alertados + Alertados (excluye Resueltos)
+    // Casos pendientes — excluir solo los que tienen resuelto=true
     getDocs(collection(db, 'casos_pendientes')).then(snap => {
       const activos = snap.docs.filter(d => {
-        const estado = (d.data().estado || '').toLowerCase();
-        // Excluir resueltos/cerrados
-        return estado !== 'resuelto' && estado !== 'cerrado' && estado !== 'atendido';
+        const data = d.data();
+        // Solo excluir si está marcado como resuelto
+        return !data.resuelto;
       }).length;
       const el = document.getElementById('home-stat-pend');
       if (el) el.textContent = activos;
