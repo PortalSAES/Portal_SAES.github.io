@@ -9457,6 +9457,21 @@ document.getElementById('btn-pend-export-mensual').addEventListener('click', () 
                 <input class="ladmin-input" id="lf-desc" placeholder="Descripción del logro...">
               </div>
             </div>
+
+            <!-- Condiciones automáticas -->
+            <div style="margin-top:16px;margin-bottom:8px">
+              <div style="font-size:11px;font-weight:700;color:rgba(255,255,255,.5);text-transform:uppercase;letter-spacing:.06em;margin-bottom:10px">
+                ⚡ Condiciones de desbloqueo automático
+              </div>
+              <div style="font-size:11px;color:rgba(255,255,255,.35);margin-bottom:12px;line-height:1.6">
+                El logro se otorga cuando se cumplan <strong style="color:rgba(255,255,255,.6)">TODAS</strong> las condiciones activas. Deja en blanco para asignación manual.
+              </div>
+              <div id="lf-condiciones-list" style="display:flex;flex-direction:column;gap:8px;margin-bottom:10px"></div>
+              <button type="button" onclick="_ladminAgregarCondicion()" style="display:flex;align-items:center;gap:6px;background:rgba(167,139,250,.1);border:1.5px dashed rgba(167,139,250,.3);color:#a78bfa;border-radius:10px;padding:8px 16px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;transition:all .15s;width:100%;justify-content:center">
+                ＋ Agregar condición
+              </button>
+            </div>
+
             <div style="display:flex;gap:10px;margin-top:8px;flex-wrap:wrap">
               <button class="ladmin-btn-primary" onclick="_ladminGuardarLogro()">
                 <span id="ladmin-save-txt">✓ Crear logro</span>
@@ -9534,7 +9549,8 @@ document.getElementById('btn-pend-export-mensual').addEventListener('click', () 
     try {
       const snap = await getDocs(collection(getFirestore(), 'logros_config'));
       _logrosCustom = snap.docs.map(d=>({...d.data(), _fbId:d.id}));
-    } catch(e) { _logrosCustom = []; }
+      window._logrosCustomRef = _logrosCustom; // expose for conditions system
+    } catch(e) { _logrosCustom = []; window._logrosCustomRef = []; }
   }
 
   // ── Render lista completa ─────────────────────────────────────
@@ -9653,7 +9669,9 @@ document.getElementById('btn-pend-export-mensual').addEventListener('click', () 
     statusEl.textContent='Guardando...';
 
     try {
-      const data = { icon, nombre, desc, cat, rarity, actualizado:serverTimestamp() };
+      const condiciones = (window._ladminGetCondActuales ? window._ladminGetCondActuales() : [])
+        .filter(c => c.id);
+      const data = { icon, nombre, desc, cat, rarity, condiciones, actualizado:serverTimestamp() };
 
       if (editId && editTipo==='custom') {
         // Editar logro personalizado existente
@@ -9742,6 +9760,389 @@ document.getElementById('btn-pend-export-mensual').addEventListener('click', () 
   // Ocultar por defecto
   const btnAdmin = document.getElementById('btn-admin-logros');
   if (btnAdmin) btnAdmin.style.display = 'none';
+
+})();
+
+
+
+// ══════════════════════════════════════════════════════════════
+// SISTEMA DE CONDICIONES PARA LOGROS PERSONALIZADOS
+// ══════════════════════════════════════════════════════════════
+(function() {
+
+  // ── Catálogo de condiciones disponibles ───────────────────────
+  const CONDICIONES_CATALOG = [
+    // POSICIÓN
+    { id:'top_n',        label:'Estar en el top N del ranking',         tipo:'numero',  placeholder:'ej: 5',  desc:'Se activa si el asesor está en el puesto indicado o mejor' },
+    { id:'pos_exacta',   label:'Posición exacta en el ranking',         tipo:'numero',  placeholder:'ej: 1',  desc:'Solo se activa si está exactamente en ese puesto' },
+    { id:'top_mitad',    label:'Estar en la mitad superior del ranking', tipo:'ninguno', placeholder:'',       desc:'El asesor debe estar en el 50% superior' },
+
+    // PORCENTAJE
+    { id:'pct_gte',      label:'% de satisfacción ≥ X',                 tipo:'numero',  placeholder:'ej: 80', desc:'Porcentaje actual mayor o igual al valor' },
+    { id:'pct_lte',      label:'% de satisfacción ≤ X',                 tipo:'numero',  placeholder:'ej: 50', desc:'Porcentaje actual menor o igual al valor' },
+    { id:'pct_exacto',   label:'% de satisfacción = X (exacto)',        tipo:'numero',  placeholder:'ej: 100',desc:'Solo si el porcentaje es exactamente ese valor' },
+    { id:'pct_rango',    label:'% entre X y Y',                         tipo:'rango',   placeholder:'ej: 70-85', desc:'El porcentaje debe estar dentro del rango' },
+    { id:'pct_sube_n',   label:'Sube N+ puntos respecto a la semana anterior', tipo:'numero', placeholder:'ej: 10', desc:'Mejora de porcentaje entre semanas' },
+    { id:'pct_max_n',    label:'Máximo histórico ≥ X',                  tipo:'numero',  placeholder:'ej: 90', desc:'El mejor % que haya tenido el asesor' },
+
+    // RACHA
+    { id:'racha_gte',    label:'Racha de N+ semanas ≥ 70%',             tipo:'numero',  placeholder:'ej: 3',  desc:'Semanas consecutivas sobre el 70%' },
+    { id:'racha_exacta', label:'Racha exacta de N semanas',             tipo:'numero',  placeholder:'ej: 5',  desc:'Exactamente ese número de semanas en racha' },
+    { id:'racha_pct',    label:'Racha N semanas ≥ X%',                  tipo:'rango',   placeholder:'ej: 4-80', desc:'N semanas seguidas sobre X% (semanas-porcentaje)' },
+
+    // HISTORIAL
+    { id:'sem_total',    label:'Total de semanas registradas ≥ N',      tipo:'numero',  placeholder:'ej: 4',  desc:'Número de semanas que aparece en el sistema' },
+    { id:'sem_mes',      label:'Semanas registradas en el mes actual ≥ N', tipo:'numero', placeholder:'ej: 3', desc:'Presencia este mes' },
+    { id:'nunca_bajo_n', label:'Nunca bajó del X% en el mes',           tipo:'numero',  placeholder:'ej: 60', desc:'Todos los registros del mes sobre ese valor' },
+    { id:'siempre_top',  label:'Siempre en top N en el mes',            tipo:'numero',  placeholder:'ej: 5',  desc:'Todos sus registros del mes lo ubican en top N' },
+    { id:'primer_reg',   label:'Es el primer registro del asesor',      tipo:'ninguno', placeholder:'',       desc:'Solo se activa la primera vez que aparece' },
+
+    // RANKING RELATIVO
+    { id:'supera_avg',   label:'Su % supera el promedio del equipo en N+ puntos', tipo:'numero', placeholder:'ej: 10', desc:'Diferencia respecto al promedio general' },
+    { id:'mejor_tmo',    label:'Tiene el TMO más bajo del equipo',      tipo:'ninguno', placeholder:'',       desc:'Su tiempo medio de operación es el menor' },
+    { id:'top1_mes',     label:'Es #1 al finalizar el mes',             tipo:'ninguno', placeholder:'',       desc:'Posición al cierre del mes (último registro)' },
+    { id:'top3_mes',     label:'Está en top 3 al finalizar el mes',     tipo:'ninguno', placeholder:'',       desc:'Posición al cierre del mes' },
+
+    // MEJORA
+    { id:'subio_n_pos',  label:'Subió N+ posiciones en una semana',     tipo:'numero',  placeholder:'ej: 5',  desc:'Diferencia de posición entre semanas' },
+    { id:'mejor_mes',    label:'Mejor porcentaje de todo el equipo este mes', tipo:'ninguno', placeholder:'', desc:'El % más alto entre todos los asesores del mes' },
+
+    // ESPECIALES
+    { id:'pct_100',      label:'Obtuvo 100% alguna vez',                tipo:'ninguno', placeholder:'',       desc:'Perfección en cualquier registro' },
+    { id:'sin_cero',     label:'Nunca tuvo 0% en ningún registro',      tipo:'ninguno', placeholder:'',       desc:'Todos sus registros son mayores a 0' },
+    { id:'asignacion_manual', label:'Asignación manual por supervisor', tipo:'ninguno', placeholder:'',       desc:'El supervisor lo asigna individualmente' },
+  ];
+
+  // ── CSS adicional ─────────────────────────────────────────────
+  const style = document.createElement('style');
+  style.textContent = `
+    .cond-row {
+      display:flex; align-items:center; gap:8px;
+      background:rgba(255,255,255,.05); border:1px solid rgba(255,255,255,.1);
+      border-radius:10px; padding:10px 12px;
+    }
+    .cond-select {
+      flex:1; background:#1a1035; border:1.5px solid rgba(255,255,255,.12);
+      border-radius:8px; padding:7px 10px; font-size:12px; color:#fff;
+      font-family:inherit; outline:none; min-width:0;
+    }
+    .cond-select:focus { border-color:#a78bfa; }
+    .cond-input {
+      width:90px; flex-shrink:0; background:rgba(255,255,255,.07);
+      border:1.5px solid rgba(255,255,255,.12); border-radius:8px;
+      padding:7px 10px; font-size:12px; color:#fff; font-family:inherit;
+      outline:none;
+    }
+    .cond-input:focus { border-color:#a78bfa; }
+    .cond-input.hidden { display:none; }
+    .cond-del {
+      width:28px; height:28px; border-radius:7px; flex-shrink:0;
+      background:rgba(196,30,58,.12); border:1px solid rgba(196,30,58,.25);
+      color:#f87171; cursor:pointer; font-size:14px; font-family:inherit;
+      display:flex; align-items:center; justify-content:center;
+      transition:all .15s;
+    }
+    .cond-del:hover { background:rgba(196,30,58,.25); }
+    .cond-desc {
+      font-size:10px; color:rgba(255,255,255,.3);
+      margin-top:4px; margin-left:2px; line-height:1.4;
+    }
+
+    /* Modal asignación manual */
+    #cond-manual-modal {
+      display:none; position:fixed; inset:0;
+      background:rgba(0,0,0,.85); backdrop-filter:blur(8px);
+      z-index:1000000; align-items:center; justify-content:center; padding:20px;
+    }
+    #cond-manual-modal.open { display:flex; }
+    #cond-manual-card {
+      background:#1a1035; border:1px solid rgba(255,255,255,.12);
+      border-radius:20px; max-width:500px; width:100%;
+      max-height:80vh; display:flex; flex-direction:column;
+      box-shadow:0 40px 100px rgba(0,0,0,.8); overflow:hidden;
+    }
+  `;
+  document.head.appendChild(style);
+
+  // ── Estado de condiciones del form actual ─────────────────────
+  let _condActuales = []; // array de { id, valor }
+
+  // ── Agregar nueva condición al form ───────────────────────────
+  window._ladminAgregarCondicion = function() {
+    const idx = _condActuales.length;
+    _condActuales.push({ id: CONDICIONES_CATALOG[0].id, valor: '' });
+    _renderCondiciones();
+  };
+
+  function _renderCondiciones() {
+    const list = document.getElementById('lf-condiciones-list');
+    if (!list) return;
+
+    list.innerHTML = _condActuales.map((c, i) => {
+      const cat = CONDICIONES_CATALOG.find(x=>x.id===c.id) || CONDICIONES_CATALOG[0];
+      const needsInput = cat.tipo !== 'ninguno';
+      return `
+        <div>
+          <div class="cond-row">
+            <select class="cond-select" onchange="_ladminCambiarCondTipo(${i},this.value)">
+              ${CONDICIONES_CATALOG.map(op=>`
+                <option value="${op.id}" ${op.id===c.id?'selected':''}>${op.label}</option>
+              `).join('')}
+            </select>
+            <input class="cond-input ${needsInput?'':'hidden'}"
+              id="cond-val-${i}"
+              placeholder="${cat.placeholder}"
+              value="${c.valor||''}"
+              oninput="_ladminCambiarCondVal(${i},this.value)">
+            <button class="cond-del" onclick="_ladminEliminarCond(${i})" title="Eliminar">✕</button>
+          </div>
+          <div class="cond-desc">${cat.desc}</div>
+        </div>`;
+    }).join('');
+  }
+
+  window._ladminCambiarCondTipo = function(idx, newId) {
+    _condActuales[idx].id    = newId;
+    _condActuales[idx].valor = '';
+    _renderCondiciones();
+  };
+
+  window._ladminCambiarCondVal = function(idx, val) {
+    _condActuales[idx].valor = val;
+  };
+
+  window._ladminEliminarCond = function(idx) {
+    _condActuales.splice(idx, 1);
+    _renderCondiciones();
+  };
+
+  // ── Cargar condiciones al editar logro ─────────────────────────
+  const _origEditar = window._ladminEditarLogro;
+  window._ladminEditarLogro = function(id, tipo) {
+    _origEditar(id, tipo);
+    // Cargar condiciones del logro
+    let logro;
+    if (tipo==='base') {
+      logro = (window._LOGROS_DEF_BASE||[]).find(l=>l.id===id);
+    } else {
+      logro = (window._logrosCustomRef||[]).find(l=>l._fbId===id||l.id===id);
+    }
+    _condActuales = (logro && logro.condiciones) ? JSON.parse(JSON.stringify(logro.condiciones)) : [];
+    setTimeout(_renderCondiciones, 100);
+  };
+
+  // Reset condiciones al limpiar form
+  const _origReset = window._ladminCancelarEdicion;
+  window._ladminCancelarEdicion = function() {
+    _condActuales = [];
+    _renderCondiciones();
+    if (_origReset) _origReset();
+  };
+
+  // ── Incluir condiciones al guardar ────────────────────────────
+  const _origGuardar = window._ladminGuardarLogro;
+  window._ladminGuardarLogro = async function() {
+    // Inject condiciones into data before saving
+    window._ladminCondicionesActuales = [..._condActuales];
+    await _origGuardar();
+  };
+
+  // Patch setDoc/addDoc to include conditions
+  const _fbPatchDone = { done: false };
+  window._ladminGetCondiciones = () => window._ladminCondicionesActuales || [];
+
+  // ── Evaluar condiciones de un logro para un asesor ────────────
+  window._satEvaluarCondiciones = function(condiciones, ctx) {
+    // ctx: { pct, racha, pos, total, ranking, historial, prevPos, avgTeam, tmo }
+    if (!condiciones || !condiciones.length) return false; // sin condiciones = manual
+    return condiciones.every(c => _evaluarUnaCondicion(c, ctx));
+  };
+
+  function _evaluarUnaCondicion(c, ctx) {
+    const v = parseFloat(c.valor) || 0;
+    const [v1, v2] = (c.valor||'').split('-').map(Number);
+
+    switch(c.id) {
+      // POSICIÓN
+      case 'top_n':        return ctx.pos >= 1 && ctx.pos <= v;
+      case 'pos_exacta':   return ctx.pos === v;
+      case 'top_mitad':    return ctx.total > 0 && ctx.pos <= Math.ceil(ctx.total/2);
+
+      // PORCENTAJE
+      case 'pct_gte':      return ctx.pct >= v;
+      case 'pct_lte':      return ctx.pct <= v;
+      case 'pct_exacto':   return ctx.pct === v;
+      case 'pct_rango':    return ctx.pct >= v1 && ctx.pct <= v2;
+      case 'pct_sube_n': {
+        if (ctx.historial.length < 2) return false;
+        const diff = ctx.historial[ctx.historial.length-1].pct - ctx.historial[ctx.historial.length-2].pct;
+        return diff >= v;
+      }
+      case 'pct_max_n':    return Math.max(...ctx.historial.map(h=>h.pct)) >= v;
+
+      // RACHA
+      case 'racha_gte':    return ctx.racha >= v;
+      case 'racha_exacta': return ctx.racha === v;
+      case 'racha_pct': {
+        // v1=semanas, v2=porcentaje
+        let racha = 0;
+        for (let i=ctx.historial.length-1; i>=0; i--) {
+          if (ctx.historial[i].pct >= v2) racha++; else break;
+        }
+        return racha >= v1;
+      }
+
+      // HISTORIAL
+      case 'sem_total':    return ctx.historial.length >= v;
+      case 'sem_mes': {
+        const mesAct = ctx.historial.filter(h => h.mes === _mesActual());
+        return mesAct.length >= v;
+      }
+      case 'nunca_bajo_n': {
+        const mesPcts = ctx.historial.filter(h=>h.mes===_mesActual()).map(h=>h.pct);
+        return mesPcts.length > 0 && mesPcts.every(p=>p>=v);
+      }
+      case 'siempre_top': {
+        // Simplificado: si está en top N ahora
+        return ctx.pos >= 1 && ctx.pos <= v;
+      }
+      case 'primer_reg':   return ctx.historial.length === 1;
+
+      // RANKING RELATIVO
+      case 'supera_avg':   return ctx.pct >= (ctx.avgTeam + v);
+      case 'mejor_tmo': {
+        if (!ctx.tmo || !ctx.ranking) return false;
+        const myTmo = ctx.tmo;
+        return ctx.ranking.every(r => !r.tmo || r.asesor === ctx.nombre || r.tmo >= myTmo);
+      }
+      case 'top1_mes': {
+        const lastMes = ctx.historial.filter(h=>h.mes===_mesActual());
+        return lastMes.length > 0 && ctx.pos === 1;
+      }
+      case 'top3_mes':     return ctx.pos >= 1 && ctx.pos <= 3;
+
+      // MEJORA
+      case 'subio_n_pos':  return ctx.prevPos > 0 && (ctx.prevPos - ctx.pos) >= v;
+      case 'mejor_mes': {
+        if (!ctx.ranking || !ctx.ranking.length) return false;
+        const maxPct = Math.max(...ctx.ranking.map(r=>r.pct));
+        return ctx.pct === maxPct;
+      }
+
+      // ESPECIALES
+      case 'pct_100':      return ctx.historial.some(h=>h.pct===100);
+      case 'sin_cero':     return ctx.historial.length > 0 && ctx.historial.every(h=>h.pct>0);
+      case 'asignacion_manual': return false; // nunca automático
+
+      default: return false;
+    }
+  }
+
+  function _mesActual() {
+    const d=new Date(); return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0');
+  }
+
+  // ── Integrar evaluación en _satCalcularLogros ─────────────────
+  // Patch: después de evaluar logros base, evaluar logros custom con condiciones
+  const _origCalcular = window._satCalcularLogros;
+  window._satCalcularLogros = async function(nombre, historial, ranking, prevRanking) {
+    // Primero ejecutar el original
+    await _origCalcular(nombre, historial, ranking, prevRanking);
+
+    // Luego evaluar logros personalizados con condiciones
+    const {getFirestore,collection,getDocs,doc,getDoc,setDoc,serverTimestamp} = window._fbModules||{};
+    if (!getFirestore || !nombre || !historial.length) return;
+    const db = getFirestore();
+
+    // Cargar logros custom
+    let customLogros = [];
+    try {
+      const snap = await getDocs(collection(db,'logros_config'));
+      customLogros = snap.docs.map(d=>({...d.data(),_fbId:d.id})).filter(l=>l.condiciones&&l.condiciones.length);
+    } catch(e) { return; }
+
+    if (!customLogros.length) return;
+
+    // Cargar logros actuales del asesor
+    const docRef = doc(db,'logros_asesores',nombre.replace(/\s+/g,'_').toLowerCase());
+    let existentes = {};
+    try {
+      const snap = await getDoc(docRef);
+      if (snap.exists()) existentes = snap.data().logros||{};
+    } catch(e) {}
+
+    // Construir contexto
+    const pos      = ranking ? ranking.findIndex(r=>r.asesor===nombre)+1 : 0;
+    const prevPos  = prevRanking ? prevRanking.findIndex(r=>r.asesor===nombre)+1 : 0;
+    const pct      = historial.length ? historial[historial.length-1].pct : 0;
+    const racha    = ranking ? (ranking.find(r=>r.asesor===nombre)||{}).racha||0 : 0;
+    const avgTeam  = ranking&&ranking.length ? Math.round(ranking.reduce((s,r)=>s+r.pct,0)/ranking.length) : 0;
+    const tmo      = ranking ? (ranking.find(r=>r.asesor===nombre)||{}).tmo||'' : '';
+    const ctx      = { nombre, pct, racha, pos, total:ranking?ranking.length:0, ranking, historial, prevPos, avgTeam, tmo };
+
+    const nuevos = {};
+    customLogros.forEach(l => {
+      const logId = l.id||l._fbId;
+      if (existentes[logId]) return; // ya tiene este logro
+      if (window._satEvaluarCondiciones(l.condiciones, ctx)) {
+        nuevos[logId] = true;
+      }
+    });
+
+    if (!Object.keys(nuevos).length) return;
+
+    // Guardar y notificar
+    const update = {...existentes};
+    const now = new Date().toLocaleDateString('es-PE');
+    Object.keys(nuevos).forEach(id => { update[id] = {fecha:now,nuevo:true}; });
+    try {
+      await setDoc(docRef, {logros:update, actualizado:serverTimestamp()}, {merge:true});
+    } catch(e) {}
+
+    // Notificación de logro desbloqueado
+    Object.keys(nuevos).forEach((id,i) => {
+      const def = customLogros.find(l=>(l.id||l._fbId)===id);
+      if (!def) return;
+      const RARITY_C = {
+        comun:{color:'#9CA3AF',bg:'rgba(156,163,175,.12)',label:'Común',glow:'rgba(156,163,175,.2)'},
+        raro:{color:'#60A5FA',bg:'rgba(96,165,250,.12)',label:'Raro',glow:'rgba(96,165,250,.25)'},
+        epico:{color:'#A78BFA',bg:'rgba(167,139,250,.15)',label:'Épico',glow:'rgba(167,139,250,.3)'},
+        legendario:{color:'#FFD700',bg:'rgba(255,215,0,.15)',label:'Legendario',glow:'rgba(255,215,0,.35)'},
+      };
+      const rar = RARITY_C[def.rarity||'comun'];
+      if (window._satShowNotif) {
+        setTimeout(()=>{
+          window._satShowNotif({
+            icon:def.icon||'🏆', label:'Logro desbloqueado — '+rar.label,
+            title:def.nombre, sub:def.desc,
+            color:rar.color, duration:7000,
+          });
+        }, i*700);
+      }
+    });
+  };
+
+  // ── Patch guardar para incluir condiciones ────────────────────
+  // Monkey-patch el setDoc/addDoc del formulario
+  const _origGuardarFn = window._ladminGuardarLogro;
+  window._ladminGuardarLogro = async function() {
+    // Guardar condiciones actuales en el objeto antes de enviar
+    window._ladminCondicionesActuales = _condActuales.filter(c=>c.id);
+    await _origGuardarFn();
+    // Reset condiciones tras guardar
+    _condActuales = [];
+    _renderCondiciones();
+  };
+
+  // Patch: incluir condiciones en el dato guardado en Firebase
+  // Override setDoc para incluir condiciones cuando viene del formulario de logros
+  const _fbOrigSetDoc = window._fbModules && window._fbModules.setDoc;
+  // En su lugar, override _ladminGuardarLogro directamente
+  const _realGuardar = _origGuardarFn;
+
+  // Store condiciones reference for admin form
+  window._ladminGetCondActuales = () => _condActuales;
+  window._ladminSetCondActuales = (c) => { _condActuales = c||[]; _renderCondiciones(); };
 
 })();
 
