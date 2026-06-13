@@ -98,7 +98,7 @@ mark.plt-hl {
 <div>
 <div class="nav-label">Menú</div>
 <div class="nav-item active" data-view="inicio" data-label="Inicio"><i class="ti ti-layout-dashboard"></i><span>Inicio</span></div>
-<div class="nav-item" data-view="satisfaccion" data-label="Satisfacción" id="nav-satisfaccion" style="display:none"><i class="ti ti-trophy"></i><span>Satisfacción</span></div>
+<div class="nav-item" data-view="satisfaccion" data-label="Satisfacción" id="nav-satisfaccion"><i class="ti ti-trophy"></i><span>Satisfacción</span></div>
 </div>
 <div>
 <div class="nav-label">Recursos</div>
@@ -6755,7 +6755,8 @@ document.getElementById('btn-pend-export-mensual').addEventListener('click', () 
   }
 
   document.getElementById('tip-btn-close').addEventListener('click', hideTip);
-  document.getElementById('tip-btn-next').addEventListener('click', nextTip);
+  const tipBtnNext = document.getElementById('tip-btn-next');
+  if (tipBtnNext) tipBtnNext.addEventListener('click', nextTip);
   overlay.addEventListener('click', e => { if (e.target === overlay) hideTip(); });
 
   function iniciarTimer() {
