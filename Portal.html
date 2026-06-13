@@ -351,15 +351,20 @@ mark.plt-hl {
     const elR = document.getElementById('home-rol-badge');
     if (el && nombre)  el.textContent  = nombre.split(' ')[0];
     if (elR && rol)    elR.textContent = '· ' + rol;
+    _updateRankingPos();
+  }
 
-    // Posición en ranking
+  function _updateRankingPos() {
+    const nombre  = window.currentUserNombre || '';
     const ranking = window._satLastRanking || [];
-    if (ranking.length && nombre) {
-      const primerNombre = nombre.split(' ')[0].toLowerCase();
-      const pos = ranking.findIndex(r => r.asesor.toLowerCase().includes(primerNombre)) + 1;
-      const el2 = document.getElementById('home-stat-rank');
-      if (el2) el2.textContent = pos > 0 ? '#' + pos : '—';
-    }
+    const el2 = document.getElementById('home-stat-rank');
+    if (!el2) return;
+    if (!ranking.length || !nombre) { el2.textContent = '—'; return; }
+    const primerNombre = nombre.split(' ')[0].toLowerCase();
+    const pos = ranking.findIndex(r => r.asesor.toLowerCase().includes(primerNombre)) + 1;
+    el2.textContent = pos > 0 ? '#' + pos : '—';
+    // Color según posición
+    el2.style.color = pos === 1 ? '#B8860B' : pos <= 3 ? '#1A7A45' : 'var(--text)';
   }
 
   function _loadHomeStats() {
@@ -369,21 +374,25 @@ mark.plt-hl {
     const db = getFirestore();
     const hoy = new Date().toISOString().split('T')[0];
 
-    // BO Llamadas hoy
+    // BO Llamadas — solo Pendiente + No contesta (excluye Atendida)
     getDocs(collection(db, 'bo_llamadas')).then(snap => {
-      const hoyStr = new Date().toLocaleDateString('es-PE');
-      const hoyCount = snap.docs.filter(d => {
-        const f = d.data().fecha || '';
-        return f.includes(new Date().getDate());
+      const activos = snap.docs.filter(d => {
+        const estado = (d.data().estado || '').toLowerCase();
+        return estado !== 'atendida' && estado !== 'atendido';
       }).length;
       const el = document.getElementById('home-stat-bo');
-      if (el) el.textContent = snap.size;
+      if (el) el.textContent = activos;
     }).catch(() => {});
 
-    // Casos pendientes
+    // Casos pendientes — solo No alertados + Alertados (excluye Resueltos)
     getDocs(collection(db, 'casos_pendientes')).then(snap => {
+      const activos = snap.docs.filter(d => {
+        const estado = (d.data().estado || '').toLowerCase();
+        // Excluir resueltos/cerrados
+        return estado !== 'resuelto' && estado !== 'cerrado' && estado !== 'atendido';
+      }).length;
       const el = document.getElementById('home-stat-pend');
-      if (el) el.textContent = snap.size;
+      if (el) el.textContent = activos;
     }).catch(() => {});
   }
 
@@ -394,13 +403,21 @@ mark.plt-hl {
     setTimeout(_initHomeStats, 500);
   }
 
-  // Actualizar ranking stat cuando cambie
+  // Actualizar posición en ranking cuando cargue el sat
   const _origNotifHome = window._satNotifComparar;
   if (_origNotifHome) {
     window._satNotifComparar = function(ranking) {
       _origNotifHome(ranking);
-      _updateHomeHeader();
+      setTimeout(_updateRankingPos, 200);
     };
+  } else {
+    // Polling fallback: verificar cada 2s hasta que haya ranking
+    const _rankTimer = setInterval(() => {
+      if ((window._satLastRanking||[]).length) {
+        _updateRankingPos();
+        clearInterval(_rankTimer);
+      }
+    }, 2000);
   }
 })();
 </script>
