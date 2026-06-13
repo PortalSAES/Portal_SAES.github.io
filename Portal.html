@@ -53,67 +53,6 @@ mark.plt-hl {
 .tipi-table-wrap { scrollbar-width: thin; scrollbar-color: var(--orange) var(--border); }
 </style>
 
-<style id="sise-section-styles">
-/* ── Cabecera de sección estilo SISE ── */
-.sise-section-header {
-  position:relative; overflow:hidden;
-  background:linear-gradient(135deg,#0D0D0D 0%,#1a0800 50%,#0D0D0D 100%);
-  padding:28px 32px 24px;
-  border-bottom:3px solid var(--orange);
-  display:flex; align-items:center; justify-content:space-between;
-  gap:16px; flex-wrap:wrap;
-}
-.sise-section-header::before {
-  content:''; position:absolute; inset:0;
-  background:repeating-linear-gradient(90deg,transparent,transparent 39px,rgba(242,101,34,.05) 39px,rgba(242,101,34,.05) 40px);
-  pointer-events:none;
-}
-.sise-section-header::after {
-  content:''; position:absolute; top:-60px; right:-60px;
-  width:220px; height:220px; border-radius:50%;
-  background:radial-gradient(circle,rgba(242,101,34,.15) 0%,transparent 70%);
-  pointer-events:none;
-}
-.sise-section-icon {
-  width:46px; height:46px; border-radius:14px; flex-shrink:0;
-  display:flex; align-items:center; justify-content:center;
-  font-size:22px; box-shadow:0 4px 16px rgba(242,101,34,.35);
-  background:var(--orange); position:relative; z-index:1;
-}
-.sise-section-title {
-  font-size:20px; font-weight:900; color:#fff;
-  letter-spacing:-.3px; margin:0 0 3px; line-height:1.2;
-}
-.sise-section-sub {
-  font-size:11.5px; color:rgba(255,255,255,.4);
-  font-weight:500; margin:0; line-height:1.5;
-}
-.sise-section-left { display:flex; align-items:center; gap:14px; position:relative; z-index:1; }
-.sise-section-actions { display:flex; gap:8px; align-items:center; flex-wrap:wrap; position:relative; z-index:1; }
-
-/* ── Footer negro SISE ── */
-.sise-footer {
-  background:#0D0D0D; border-top:1px solid rgba(255,255,255,.07);
-  padding:20px 32px;
-  display:flex; align-items:center; justify-content:space-between;
-  gap:12px; flex-wrap:wrap; margin-top:auto;
-}
-.sise-footer-logo {
-  display:flex; align-items:center; gap:10px;
-}
-.sise-footer-logo-box {
-  width:30px; height:30px; border-radius:8px; background:#fff;
-  display:flex; align-items:center; justify-content:center;
-  font-size:11px; font-weight:900; color:#0D0D0D; letter-spacing:-.5px;
-}
-.sise-footer-brand {
-  font-size:12px; font-weight:800; color:rgba(255,255,255,.5);
-  text-transform:uppercase; letter-spacing:.08em;
-}
-.sise-footer-meta {
-  font-size:11px; color:rgba(255,255,255,.25); font-weight:500;
-}
-</style>
 
 </head>
 <body>
@@ -484,21 +423,17 @@ mark.plt-hl {
 
 
 <div class="view" id="view-bo-llamadas">
-<div class="sise-section-header">
-  <div class="sise-section-left">
-    <div class="sise-section-icon">📞</div>
-    <div>
-      <h2 class="sise-section-title">Registro de Llamadas BO</h2>
-      <p class="sise-section-sub">Prioridad: más antiguos primero · BO, Supervisor y Formador pueden gestionar estados y comentar</p>
-    </div>
-  </div>
-  <div class="sise-section-actions" id="view-bo-llamadas-actions">
-
-    <button class="btn-export excel" id="btn-bo-export-excel"><i class="ti ti-table-export"></i>Excel</button>
+<div class="bo-header">
+<div class="bo-title-wrap">
+<h2>Registro de Llamadas — BackOffice</h2>
+<p>Prioridad: más antiguos primero · BO, Supervisor y Formador pueden gestionar estados y comentar</p>
+</div>
+<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+<button class="btn-export excel" id="btn-bo-export-excel"><i class="ti ti-table-export"></i>Excel</button>
 <button class="btn-export pdf"   id="btn-bo-export-pdf"><i class="ti ti-file-type-pdf"></i>PDF</button>
 <button class="btn-export" id="btn-bo-export-mensual" style="background:var(--danger,#C41E3A);color:#fff;border-color:var(--danger,#C41E3A)"><i class="ti ti-chart-bar"></i>Reporte Mensual</button>
 <button class="btn-nuevo" id="btn-nuevo-registro"><i class="ti ti-plus"></i>Registrar caso</button>
-  </div>
+</div>
 </div>
 <div class="pend-filters" style="margin-bottom:14px">
 <button class="month-nav" id="bo-prev"><i class="ti ti-chevron-left"></i></button>
@@ -527,33 +462,21 @@ mark.plt-hl {
 </div>
 <div id="llamados-hoy-container"></div>
 </div>
-
-<div class="sise-footer">
-  <div class="sise-footer-logo">
-    <div class="sise-footer-logo-box">S</div>
-    <span class="sise-footer-brand">SISE · Portal SAES</span>
   </div>
-  <div class="sise-footer-meta">Canal WhatsApp — Atención al Alumno</div>
-</div>
-</div>
 
 <div class="view" id="view-pendientes">
-<div class="sise-section-header">
-  <div class="sise-section-left">
-    <div class="sise-section-icon">⚠️</div>
-    <div>
-      <h2 class="sise-section-title">Casos Pendientes Fuera de Plazo</h2>
-      <p class="sise-section-sub">Registro diario para supervisores del Contact Center · Ordenado por fecha</p>
-    </div>
-  </div>
-  <div class="sise-section-actions" id="view-pendientes-actions">
-
-    <button class="btn-mis-alertados" id="btn-mis-alertados"><i class="ti ti-bell-check"></i>Mis alertados</button>
+<div class="pend-header">
+<div class="pend-title-wrap">
+<h2>Casos pendientes fuera de plazo</h2>
+<p>Registro diario para supervisores del Contact Center · Ordenado por fecha</p>
+</div>
+<div class="pend-actions">
+<button class="btn-mis-alertados" id="btn-mis-alertados"><i class="ti ti-bell-check"></i>Mis alertados</button>
 <button class="btn-export excel" id="btn-export-excel"><i class="ti ti-table-export"></i>Excel</button>
 <button class="btn-export pdf"   id="btn-export-pdf"><i class="ti ti-file-type-pdf"></i>PDF</button>
 <button class="btn-export" id="btn-pend-export-mensual" style="background:var(--danger,#C41E3A);color:#fff;border-color:var(--danger,#C41E3A)"><i class="ti ti-chart-bar"></i>Reporte Mensual</button>
 <button class="btn-nuevo" id="btn-nuevo-pendiente"><i class="ti ti-plus"></i>Nuevo caso</button>
-  </div>
+</div>
 </div>
 <div class="pend-filters" style="flex-wrap:wrap;gap:10px">
 <button class="month-nav" id="pend-prev"><i class="ti ti-chevron-left"></i></button>
@@ -580,30 +503,17 @@ mark.plt-hl {
 </div>
 <div id="pend-atendidos-container"></div>
 </div>
-
-<div class="sise-footer">
-  <div class="sise-footer-logo">
-    <div class="sise-footer-logo-box">S</div>
-    <span class="sise-footer-brand">SISE · Portal SAES</span>
   </div>
-  <div class="sise-footer-meta">Canal WhatsApp — Atención al Alumno</div>
-</div>
-</div>
 
 <div class="view" id="view-herramientas">
-<div class="sise-section-header">
-  <div class="sise-section-left">
-    <div class="sise-section-icon">🔧</div>
-    <div>
-      <h2 class="sise-section-title">Herramientas de Trabajo</h2>
-      <p class="sise-section-sub">Acceso rápido a todos los sistemas y aplicativos del Contact Center</p>
-    </div>
-  </div>
-  <div class="sise-section-actions" id="view-herramientas-actions">
-    <button class="btn-nuevo" id="btn-herr-docx" onclick="descargarHerramientasDocx()">
-      <i class="ti ti-download"></i>Descargar lista (.docx)
-    </button>
-  </div>
+<div class="bo-header">
+<div class="bo-title-wrap">
+<h2>Herramientas de Trabajo</h2>
+<p>Acceso rápido a todos los sistemas y aplicativos del Contact Center</p>
+</div>
+<button class="btn-nuevo" id="btn-herr-docx" onclick="descargarHerramientasDocx()">
+<i class="ti ti-download"></i>Descargar lista (.docx)
+</button>
 </div>
 
 <div class="herr-grid" id="herr-grid"></div>
@@ -800,35 +710,23 @@ mark.plt-hl {
 <div class="herr-section-line"></div>
 <div class="herr-section-line"></div>
 </div>
-
-
-<div class="sise-footer">
-  <div class="sise-footer-logo">
-    <div class="sise-footer-logo-box">S</div>
-    <span class="sise-footer-brand">SISE · Portal SAES</span>
-  </div>
-  <div class="sise-footer-meta">Canal WhatsApp — Atención al Alumno</div>
-</div>
 </div><!-- ── Cierre view-herramientas ── -->
 
 <div class="view" id="view-tipificaciones">
-<div class="sise-section-header">
-  <div class="sise-section-left">
-    <div class="sise-section-icon">🏷️</div>
-    <div>
-      <h2 class="sise-section-title">Tipificaciones</h2>
-      <p class="sise-section-sub">Clasificación de motivos de contacto para una correcta gestión de casos</p>
-    </div>
-  </div>
-  <div class="sise-section-actions" id="view-tipificaciones-actions">
+<div class="tipi-header">
+<div class="tipi-title-wrap">
+<h2>Tipificaciones</h2>
+<p>Clasificación de motivos de contacto para una correcta gestión de casos</p>
+</div>
+</div>
 
-    <i class="ti ti-shield-check"></i>
+<div class="tipi-formador-bar" id="tipi-formador-bar">
+<i class="ti ti-shield-check"></i>
 <span><strong>Modo Formador activo</strong> — Puedes editar celdas, añadir o eliminar tipificaciones y categorías.</span>
 <div class="fb-actions">
 <button class="btn-tipi-add-cat" id="btn-tipi-add-cat"><i class="ti ti-folder-plus"></i>Nueva categoría</button>
 <button class="btn-tipi-add-row" id="btn-tipi-add-row"><i class="ti ti-plus"></i>Nueva tipificación</button>
 </div>
-  </div>
 </div>
 <div class="tipi-chips-container" id="tipi-chips-bar"></div>
 
@@ -841,26 +739,14 @@ mark.plt-hl {
 </div>
 
 <div id="tipi-acordeones-container"></div>
-
-<div class="sise-footer">
-  <div class="sise-footer-logo">
-    <div class="sise-footer-logo-box">S</div>
-    <span class="sise-footer-brand">SISE · Portal SAES</span>
   </div>
-  <div class="sise-footer-meta">Canal WhatsApp — Atención al Alumno</div>
-</div>
-</div>
 
 <div class="view" id="view-plantillas">
-<div class="sise-section-header">
-  <div class="sise-section-left">
-    <div class="sise-section-icon">📋</div>
-    <div>
-      <h2 class="sise-section-title">Plantillas de Derivación</h2>
-      <p class="sise-section-sub">Copia la plantilla correspondiente y úsala en WhatsApp para solicitar información al alumno</p>
-    </div>
-  </div>
-  <div class="sise-section-actions" id="view-plantillas-actions">
+<div class="plantillas-topbar">
+<div>
+<h2 id="plt-view-title">Plantillas de derivación</h2>
+<p id="plt-view-subtitle">Copia la plantilla correspondiente y úsala en WhatsApp para solicitar información al alumno</p>
+</div>
 <div class="plantillas-search" id="search-plt-wrap" style="position:relative;display:flex;align-items:center">
 <i class="ti ti-search" style="position:absolute;left:12px;pointer-events:none;color:var(--muted);z-index:1"></i>
 <input type="text" id="search-plantillas" placeholder="Buscar por nombre, descripción o contenido…" style="padding-left:36px;padding-right:72px;width:100%"/>
@@ -1420,34 +1306,24 @@ mark.plt-hl {
 </button>
 </div>
 </div>
-</div>
-
-<
-</div>
-
-<div class="sise-footer">
-  <div class="sise-footer-logo">
-    <div class="sise-footer-logo-box">S</div>
-    <span class="sise-footer-brand">SISE · Portal SAES</span>
-  </div>
-  <div class="sise-footer-meta">Canal WhatsApp — Atención al Alumno</div>
-</div>
 
 
 <div class="view" id="view-capacitate">
 
-<div class="sise-section-header">
-  <div class="sise-section-left">
-    <div class="sise-section-icon">▶️</div>
-    <div>
-      <h2 class="sise-section-title">Capacítate</h2>
-      <p class="sise-section-sub">Videos de formación y recursos para asesores · Formador, Supervisor y BO pueden añadir contenido</p>
-    </div>
-  </div>
-  <div class="sise-section-actions" id="view-capacitate-actions">
-    <button class="btn-cap-add" id="btn-cap-nueva"><i class="ti ti-brand-youtube"></i>Agregar video</button>
-    <button class="btn-cap-add" id="btn-cap-nueva-doc" style="background:var(--warning);"><i class="ti ti-upload"></i>Subir PPT / PDF</button>
-  </div>
+<div class="cap-header">
+<div class="cap-title-wrap">
+<h2><i class="ti ti-player-play-filled"></i>Capacítate</h2>
+<p>Videos de formación y recursos para asesores · Formador, Supervisor y BO pueden añadir contenido</p>
+</div>
+</div>
+
+<div class="cap-formador-bar" id="cap-formador-bar">
+<i class="ti ti-shield-check"></i>
+<span><strong style="color:var(--orange)">Modo gestor activo</strong> — Puedes añadir, editar o eliminar videos y recursos.</span>
+<div style="display:flex;gap:8px;flex-wrap:wrap">
+<button class="btn-cap-add" id="btn-cap-nueva"><i class="ti ti-brand-youtube"></i>Agregar video</button>
+<button class="btn-cap-add" id="btn-cap-nueva-doc" style="background:var(--warning);"><i class="ti ti-upload"></i>Subir PPT / PDF</button>
+</div>
 </div>
 <div class="cap-search-bar">
 <div class="filter-search" style="flex:1;max-width:420px">
@@ -1606,17 +1482,6 @@ mark.plt-hl {
 <i class="ti ti-download"></i>Descargar
 </a>
 </div>
-</div>
-</div>
-
-</div>
-
-<div class="sise-footer">
-  <div class="sise-footer-logo">
-    <div class="sise-footer-logo-box">S</div>
-    <span class="sise-footer-brand">SISE · Portal SAES</span>
-  </div>
-  <div class="sise-footer-meta">Canal WhatsApp — Atención al Alumno</div>
 </div>
 
 <div class="view" id="view-config">
@@ -7541,8 +7406,7 @@ document.getElementById('btn-pend-export-mensual').addEventListener('click', () 
   // ── CSS ───────────────────────────────────────────────────────
   const style = document.createElement('style');
   style.textContent = `
-    #view-satisfaccion { background:var(--surface); }
-
+    
     /* Podio */
     #sat-podio {
       display:flex; align-items:flex-end; justify-content:center;
