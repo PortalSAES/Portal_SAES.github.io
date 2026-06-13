@@ -7835,11 +7835,12 @@ document.getElementById('btn-pend-export-mensual').addEventListener('click', () 
       if (!getFirestore) return;
       const db  = getFirestore();
       const mes = mesActual();
+      // Borrar TODOS los registros del mes actual de satisfaccion
       const q   = query(collection(db,'satisfaccion'), where('mes','==',mes));
       const snap= await getDocs(q);
-      const dels= snap.docs.map(d => deleteDoc(doc(db,'satisfaccion',d.id)));
-      await Promise.all(dels);
-      showToast('Tabla del mes reiniciada ✓');
+      await Promise.all(snap.docs.map(d => deleteDoc(doc(db,'satisfaccion',d.id))));
+      // También borrar logros_asesores del mes si se desea limpiar todo
+      showToast('Ranking del mes borrado completamente ✓');
     } catch(e) {
       showToast('Error al reiniciar: '+e.message,'error');
     }
@@ -8959,11 +8960,13 @@ document.getElementById('btn-pend-export-mensual').addEventListener('click', () 
     document.getElementById('lg-head-name').textContent = nombre;
     document.getElementById('lg-head-sub').textContent  = 'Calculando logros...';
 
-    // Tab editar solo para supervisores
+    // Tab gestionar para supervisor, bo y formador
     const rol = (window.currentUserRol||'').toLowerCase();
     const esSup = rol==='supervisor'||rol==='bo'||rol==='formador';
     const tabEdit = document.getElementById('lg-tab-editar');
     if (tabEdit) tabEdit.style.display = esSup ? 'flex' : 'none';
+    // Si es supervisor/formador, ir directo a gestionar si viene del panel
+    // Si no, abrir en ver
 
     modal.classList.add('open');
     _lgSetTab('ver');
@@ -9273,12 +9276,11 @@ document.getElementById('btn-pend-export-mensual').addEventListener('click', () 
     _lgRenderAsesores(ranking);
   };
 
-  // Init
+  // Init — cargar defs para todos (cualquiera puede ver logros)
   window.addEventListener('sise:rolCargado', async () => {
-    const rol=(window.currentUserRol||'').toLowerCase();
-    const esSup=rol==='supervisor'||rol==='bo'||rol==='formador';
-    if (esSup) await _lgCargarDefs();
+    await _lgCargarDefs();
   });
+  if (window.currentUserRol) _lgCargarDefs();
 
 })();
 
