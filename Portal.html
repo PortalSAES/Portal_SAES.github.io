@@ -9054,6 +9054,7 @@ document.getElementById('btn-pend-export-mensual').addEventListener('click', () 
             <div class="lg-name">${def.nombre||'Sin nombre'}</div>
             <div class="lg-desc">${data?(def.desc||''):'???'}</div>
             <div class="lg-badge" style="color:${r.color};border-color:${r.color};background:${r.bg}">${r.label}</div>
+            ${!data&&esSup?`<button onclick="event.stopPropagation();_lgAsignarLogro('${safeKey}')" title="Asignar este logro" style="margin-top:10px;width:100%;padding:6px;background:rgba(74,222,128,.1);border:1px solid rgba(74,222,128,.25);color:#4ade80;border-radius:8px;cursor:pointer;font-size:11px;font-weight:700;font-family:inherit;transition:all .15s" onmouseover="this.style.background='rgba(74,222,128,.2)'" onmouseout="this.style.background='rgba(74,222,128,.1)'">✓ Asignar</button>`:''}
           </div>`;
         }).join('') : '<div style="color:rgba(255,255,255,.3);text-align:center;padding:32px;grid-column:1/-1;font-size:13px">No hay logros definidos.<br><span style="font-size:11px;opacity:.7">Ve a ⚙️ Gestionar para crear logros.</span></div>'}
       </div>`;
@@ -9213,6 +9214,33 @@ document.getElementById('btn-pend-export-mensual').addEventListener('click', () 
       await Promise.all(snap.docs.map(d=>deleteDoc(doc(getFirestore(),'logros_asesores',d.id))));
       showToast('Logros reiniciados ✓');
     }catch(e){showToast('Error: '+e.message,'error');}
+  };
+
+  // ── Asignar logro individual a un asesor ────────────────────
+  window._lgAsignarLogro = async function(logroKey) {
+    if (!_lgAsesor) return;
+    const def = _lgDefs.find(l=>(l.id||l._fid)===logroKey);
+    const nombre_logro = def ? def.nombre : logroKey;
+    if (!confirm(`¿Asignar el logro "${nombre_logro}" a ${_lgAsesor}?`)) return;
+
+    const {getFirestore,doc,getDoc,setDoc,serverTimestamp} = window._fbModules||{};
+    if (!getFirestore) return;
+    const db  = getFirestore();
+    const key = _lgAsesor.trim().replace(/\s+/g,'_').toLowerCase();
+    const ref = doc(db,'logros_asesores',key);
+
+    try {
+      const snap = await getDoc(ref);
+      const logros = snap.exists() ? (snap.data().logros||{}) : {};
+      const hoy = new Date().toLocaleDateString('es-PE');
+      logros[logroKey] = { fecha: hoy, nuevo: true, manual: true };
+      await setDoc(ref, {logros, actualizado:serverTimestamp()}, {merge:true});
+      _lgLogros = logros;
+      _lgRenderVer();
+      showToast(`Logro "${nombre_logro}" asignado a ${_lgAsesor.split(' ')[0]} ✓`);
+    } catch(e) {
+      showToast('Error: '+e.message,'error');
+    }
   };
 
   // ── Quitar logro individual a un asesor ──────────────────────
