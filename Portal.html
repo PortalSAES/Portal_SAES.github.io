@@ -9243,7 +9243,7 @@ document.getElementById('btn-pend-export-mensual').addEventListener('click', () 
       const v=parseFloat(c.valor)||0;
       const[v1,v2]=(c.valor||'').split('-').map(Number);
       switch(c.id){
-        case 'primer_registro':   return hist.length===1;
+        case 'primer_registro':   return hist.length>=1 && Object.keys(exist).length===0;
         case 'nunca_cero':        return hist.every(h=>h.pct>0);
         case 'primer_reg_100':    return hist.length===1&&pct===100;
         case 'mejor_equipo_mes':  return myPos===1;
