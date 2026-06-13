@@ -9214,11 +9214,14 @@ document.getElementById('btn-pend-export-mensual').addEventListener('click', () 
   // ── Calcular logros automáticos ───────────────────────────────
   async function _lgCalcular(nombre){
     const {getFirestore,doc,getDoc,setDoc,serverTimestamp}=window._fbModules||{};
-    if(!getFirestore||!_lgDefs.length) return;
+    if(!getFirestore) { console.warn('lg: no getFirestore'); return; }
+    if(!_lgDefs.length) { console.warn('lg: defs vacíos'); return; }
     const db=getFirestore();
     const data=window._satData||[];
+    console.log('lg calc', nombre, 'satData:', data.length, 'defs:', _lgDefs.length);
     const hist=data.filter(r=>r.asesor===nombre||r.asesor.toLowerCase()===nombre.toLowerCase()).sort((a,b)=>(a.mes+a.semana).localeCompare(b.mes+b.semana));
-    if(!hist.length) return;
+    if(!hist.length) { console.warn('lg: sin historial para', nombre); return; }
+    console.log('lg hist:', hist.length, 'pct:', hist[hist.length-1]?.pct);
     const ranking=window._satLastRanking||[];
     const myIdx=ranking.findIndex(r=>r.asesor===nombre);
     const myPos=myIdx+1;
@@ -9237,7 +9240,8 @@ document.getElementById('btn-pend-export-mensual').addEventListener('click', () 
     const key=nombre.trim().replace(/\s+/g,'_').toLowerCase();
     const ref=doc(db,'logros_asesores',key);
     let exist={};
-    try{const s=await getDoc(ref);if(s.exists())exist=s.data().logros||{};}catch(e){}
+    try{const s=await getDoc(ref);if(s.exists()) exist=s.data().logros||{};}catch(e){console.warn('lg getDoc err:',e);}
+    console.log('lg exist keys:', Object.keys(exist).length, 'nuevos check en', _lgDefs.length, 'defs');
     const nuevos={};
     function evalC(c){
       const v=parseFloat(c.valor)||0;
@@ -9274,7 +9278,8 @@ document.getElementById('btn-pend-export-mensual').addEventListener('click', () 
       if(exist[id]) return;     // ya tiene este logro, no re-asignar
       if(conds.every(c=>evalC(c))) nuevos[id]=true;
     });
-    if(!Object.keys(nuevos).length) return;
+    console.log('lg nuevos:', Object.keys(nuevos));
+    if(!Object.keys(nuevos).length) { console.log('lg: nada nuevo para', nombre); return; }
 
     // Verificar sesión activa antes de escribir
     if (!window.currentUser) {
