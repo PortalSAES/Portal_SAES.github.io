@@ -7750,9 +7750,63 @@ document.getElementById('btn-pend-export-mensual').addEventListener('click', () 
   }
 
   // ── Stats ─────────────────────────────────────────────────────
+  // ── Meta del mes ─────────────────────────────────────────────
+  window._satMeta = null;
+
+  async function _loadMeta() {
+    const {getFirestore,doc,getDoc} = window._fbModules||{};
+    if (!getFirestore) return;
+    try {
+      const snap = await getDoc(doc(getFirestore(),'satisfaccion_config','meta'));
+      if (snap.exists()) window._satMeta = snap.data().meta || null;
+    } catch(e) {}
+  }
+
+  window._satEditarMeta = async function() {
+    const actual = window._satMeta || '';
+    const val = prompt('Meta de satisfacción del mes (%):
+Ejemplo: 80', actual);
+    if (val === null) return;
+    const num = parseInt(val);
+    if (isNaN(num) || num < 1 || num > 100) { showToast('Valor inválido. Ingresa un número entre 1 y 100','error'); return; }
+    const {getFirestore,doc,setDoc,serverTimestamp} = window._fbModules||{};
+    if (!getFirestore) return;
+    try {
+      await setDoc(doc(getFirestore(),'satisfaccion_config','meta'), {meta:num, actualizado:serverTimestamp()}, {merge:true});
+      window._satMeta = num;
+      renderStats(window._satLastRanking||[]);
+      showToast('Meta actualizada a ' + num + '% ✓');
+    } catch(e) { showToast('Error: '+e.message,'error'); }
+  };
+
+  function _satDiaActual() {
+    const data = window._satData || [];
+    if (!data.length) return '—';
+    // Get the most recent semana (format 2026-W24)
+    const semanas = [...new Set(data.map(r=>r.semana||''))].filter(Boolean).sort();
+    const ultima = semanas[semanas.length-1] || '';
+    if (!ultima) return '—';
+    // Show the actual upload date from Firebase (creadoEn is not available here)
+    // Show the week in a friendly format
+    const match = ultima.match(/(\d{4})-W(\d+)/);
+    if (match) {
+      const [,year,week] = match;
+      // Calculate the Monday of that ISO week
+      const jan4 = new Date(parseInt(year),0,4);
+      const mon = new Date(jan4);
+      mon.setDate(jan4.getDate() - ((jan4.getDay()||7)-1) + (parseInt(week)-1)*7);
+      const sun = new Date(mon); sun.setDate(mon.getDate()+6);
+      const fmt = d => d.getDate()+'/'+(d.getMonth()+1);
+      return fmt(mon)+' – '+fmt(sun);
+    }
+    return ultima;
+  }
+
   function renderStats(ranking) {
     const el=document.getElementById('sat-global-stats');
     if(!el||!ranking.length) return;
+    const rolSup=(window.currentUserRol||'').toLowerCase();
+    const esSup=['supervisor','bo','formador'].includes(rolSup);
     const avg=Math.round(ranking.reduce((s,r)=>s+r.pct,0)/ranking.length);
     const niv=getNivel(avg);
     const best=ranking[0], bestNiv=getNivel(best.pct);
@@ -7772,6 +7826,20 @@ document.getElementById('btn-pend-export-mensual').addEventListener('click', () 
         <div style="font-size:14px;font-weight:800;color:#0D2A5E;line-height:1.3;margin-bottom:4px">${best.asesor.split(' ')[0]}</div>
         <div style="font-size:24px;font-weight:900;color:#1a6fbf">${best.pct}%</div>
         <div class="sat-badge" style="color:${bestNiv.color};border-color:${bestNiv.bdr};background:${bestNiv.bg};margin-top:4px;font-size:9px">${bestNiv.icon} ${bestNiv.label}</div>
+      </div>
+      <div class="sat-stat" style="position:relative">
+        <div style="font-size:9.5px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin-bottom:5px">Meta del mes</div>
+        <div style="display:flex;align-items:baseline;gap:4px">
+          <div id="sat-meta-val" style="font-size:28px;font-weight:900;color:#F26522;line-height:1">${window._satMeta||'—'}</div>
+          <div style="font-size:14px;color:#F26522;font-weight:700">${window._satMeta?'%':''}</div>
+        </div>
+        <div style="font-size:11px;color:var(--muted);margin-top:6px;font-weight:600">objetivo mensual</div>
+        ${esSup ? \`<button onclick="window._satEditarMeta()" style="position:absolute;top:8px;right:8px;background:rgba(242,101,34,.1);border:1px solid rgba(242,101,34,.2);color:#F26522;border-radius:7px;width:24px;height:24px;cursor:pointer;font-size:11px;display:flex;align-items:center;justify-content:center;font-family:inherit" title="Editar meta">✏️</button>\` : ''}
+      </div>
+      <div class="sat-stat">
+        <div style="font-size:9.5px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin-bottom:5px">Datos del día</div>
+        <div style="font-size:22px;font-weight:900;color:var(--text);line-height:1">${_satDiaActual()}</div>
+        <div style="font-size:11px;color:var(--muted);margin-top:6px;font-weight:600">última carga</div>
       </div>`;
   }
 
@@ -8934,180 +9002,101 @@ document.getElementById('btn-pend-export-mensual').addEventListener('click', () 
     const miNombre = (window.currentUserNombre || '').toLowerCase();
     const miPrimNombre = miNombre.split(' ')[0];
 
-    // Primera carga — solo mostrar posición del usuario sin comparar
+    // Primera carga — solo mostrar UNA notificación de posición del usuario
     if (!_prevRanking) {
       _prevRanking = newRanking;
-
       if (!miPrimNombre) return;
-      const miPos = newRanking.findIndex(r =>
-        r.asesor.toLowerCase().includes(miPrimNombre)
-      );
+      const miPos = newRanking.findIndex(r => r.asesor.toLowerCase().includes(miPrimNombre));
       if (miPos < 0) return;
-
       const pos = miPos + 1;
       const r   = newRanking[miPos];
       const niv = _satGetNivelNotif(r.pct);
-
       if (pos === 1) {
-        showNotif({
-          icon: '👑', label: 'Tu posición actual', type: 'top1',
-          title: '¡Estás en el #1!',
-          sub: r.pct + '% — ' + niv.label + '. ¡Mantén el ritmo!',
-          color: '#FFD700', duration: 7000,
-        });
+        showNotif({ icon:'👑', label:'Tu posición actual', type:'top1',
+          title:'¡Estás en el #1!', sub: r.pct + '% — ' + niv.label + '. ¡Mantén el ritmo!',
+          color:'#FFD700', duration:7000 });
         playNotifSound('top1');
       } else if (pos <= 3) {
-        showNotif({
-          icon: ['','🥇','🥈','🥉'][pos], label: 'Tu posición actual',
-          title: '¡Estás en el top ' + pos + '!',
-          sub: r.pct + '% — ' + niv.label + '. ¡Sigue así!',
-          color: pos === 2 ? '#C0C0C0' : '#CD7F32', duration: 6000,
-        });
+        showNotif({ icon:['','🥇','🥈','🥉'][pos], label:'Tu posición actual',
+          title:'¡Estás en el top ' + pos + '!', sub: r.pct + '% — ' + niv.label + '. ¡Sigue así!',
+          color: pos===2 ? '#C0C0C0' : '#CD7F32', duration:6000 });
         playNotifSound('subida');
       }
       return;
     }
 
-    // Comparar con ranking anterior
+    // Comparar con ranking anterior — SOLO notificar cambios reales
     const prev = _prevRanking;
     _prevRanking = newRanking;
 
+    // Si el ranking no cambió nada, no notificar
+    const rankStr = r => r.asesor + r.pct;
+    if (newRanking.map(rankStr).join('|') === prev.map(rankStr).join('|')) return;
+
+    let notifCount = 0; // máximo 3 notificaciones por actualización
+    const MAX_NOTIFS = 3;
+
+    // Solo notificar cambios RELEVANTES (no "se mantiene")
     newRanking.forEach((r, newIdx) => {
+      if (notifCount >= MAX_NOTIFS) return;
       const newPos = newIdx + 1;
       const prevIdx = prev.findIndex(p => p.asesor === r.asesor);
       const prevPos = prevIdx >= 0 ? prevIdx + 1 : null;
       const niv = _satGetNivelNotif(r.pct);
+      const esYo = miPrimNombre && r.asesor.toLowerCase().includes(miPrimNombre);
 
-      // ¿Es el usuario actual?
-      const esYo = miPrimNombre &&
-        r.asesor.toLowerCase().includes(miPrimNombre);
-
-      // ── Notificaciones para TODOS sobre el top 1 ──────────────
-      if (newPos === 1 && prevPos !== 1) {
-        // Alguien subió al top 1
-        showNotif({
-          icon: '👑', label: 'Nuevo líder del ranking', type: 'top1',
+      // Nuevo líder (cambio real)
+      if (newPos === 1 && prevPos !== 1 && prevPos !== null) {
+        showNotif({ icon:'👑', label:'Nuevo líder del ranking', type:'top1',
           title: r.asesor.split(' ')[0] + ' tomó el #1',
           sub: r.pct + '% — ' + niv.label + '. ¡Un nuevo campeón!',
-          color: '#FFD700', duration: 8000,
-        });
+          color:'#FFD700', duration:8000 });
         playNotifSound('top1');
-      } else if (newPos === 1 && prevPos === 1 && r.pct !== prev[0].pct) {
-        // Se mantiene en top 1 pero con nuevo porcentaje
-        showNotif({
-          icon: '👑', label: 'Sigue en la cima', type: 'top1',
-          title: r.asesor.split(' ')[0] + ' sigue imparable',
-          sub: r.pct + '% — ' + niv.label + '. ¡Sin rival!',
-          color: '#FFD700', duration: 6000,
-        });
-        playNotifSound('top1');
+        notifCount++;
+        return;
       }
 
-      // ── Notificaciones para TODOS sobre top 2 y 3 ─────────────
-      if ((newPos === 2 || newPos === 3) && prevPos !== newPos && prevPos !== null) {
-        const medal = newPos === 2 ? '🥈' : '🥉';
-        if (prevPos > newPos) {
-          showNotif({
-            icon: medal, label: 'Movimiento en el podio',
-            title: r.asesor.split(' ')[0] + ' subió al #' + newPos,
-            sub: r.pct + '% — ' + niv.label,
-            color: newPos === 2 ? '#C0C0C0' : '#CD7F32', duration: 5000,
-          });
-        }
-      }
-
-      // ── Notificaciones PERSONALES (solo para el usuario) ──────
+      // Solo notificaciones personales (para el usuario actual)
       if (!esYo || prevPos === null) return;
 
       if (newPos < prevPos) {
-        // Subiste de posición
+        // Subiste
         if (newPos === 1) {
-          showNotif({
-            icon: '👑', label: '¡Logro desbloqueado!', type: 'top1',
-            title: '¡Alcanzaste el #1!',
-            sub: '¡Eres el mejor del equipo este mes! ' + r.pct + '%',
-            color: '#FFD700', duration: 10000,
-          });
+          showNotif({ icon:'👑', label:'¡Logro desbloqueado!', type:'top1',
+            title:'¡Alcanzaste el #1!', sub:'¡Eres el mejor del equipo! ' + r.pct + '%',
+            color:'#FFD700', duration:10000 });
           playNotifSound('top1');
         } else if (newPos <= 3) {
-          showNotif({
-            icon: ['','🥇','🥈','🥉'][newPos], label: '¡Subiste en el ranking!',
-            title: '¡Ahora eres #' + newPos + '!',
-            sub: 'Subiste ' + (prevPos - newPos) + ' puesto(s). ¡Sigue así! 🔥',
-            color: '#4ADE80', duration: 7000,
-          });
+          showNotif({ icon:['','🥇','🥈','🥉'][newPos], label:'¡Subiste en el ranking!',
+            title:'¡Ahora eres #' + newPos + '!',
+            sub:'Subiste ' + (prevPos-newPos) + ' puesto(s). ¡Sigue así! 🔥',
+            color:'#4ADE80', duration:7000 });
           playNotifSound('subida');
         } else {
-          showNotif({
-            icon: '⬆️', label: 'Subiste en el ranking',
-            title: 'Ahora estás en el puesto #' + newPos,
-            sub: 'Subiste ' + (prevPos - newPos) + ' lugar(es). ¡Buen trabajo!',
-            color: '#4ADE80', duration: 6000,
-          });
+          showNotif({ icon:'⬆️', label:'Subiste en el ranking',
+            title:'Ahora estás en el puesto #' + newPos,
+            sub:'Subiste ' + (prevPos-newPos) + ' lugar(es). ¡Buen trabajo!',
+            color:'#4ADE80', duration:6000 });
           playNotifSound('subida');
         }
+        notifCount++;
       } else if (newPos > prevPos) {
-        // Bajaste de posición
+        // Bajaste
         if (prevPos <= 3) {
-          showNotif({
-            icon: '⚡', label: 'Te han superado',
-            title: 'Bajaste del #' + prevPos + ' al #' + newPos,
-            sub: '¡Hora de dar más! Puedes recuperar tu posición 💪',
-            color: '#F26522', duration: 7000,
-          });
-          playNotifSound('bajada');
+          showNotif({ icon:'⚡', label:'Te han superado',
+            title:'Bajaste del #' + prevPos + ' al #' + newPos,
+            sub:'¡Hora de dar más! Puedes recuperar tu posición 💪',
+            color:'#F26522', duration:7000 });
         } else {
-          showNotif({
-            icon: '📉', label: 'Cambio en tu posición',
-            title: 'Bajaste al puesto #' + newPos,
-            sub: 'Estabas en #' + prevPos + '. ¡Aún puedes subir!',
-            color: '#F26522', duration: 6000,
-          });
-          playNotifSound('bajada');
+          showNotif({ icon:'📉', label:'Cambio en tu posición',
+            title:'Bajaste al puesto #' + newPos,
+            sub:'Estabas en #' + prevPos + '. ¡Aún puedes subir!',
+            color:'#F26522', duration:6000 });
         }
-      } else if (newPos === prevPos) {
-        // Se mantiene en la misma posición — notificar siempre
-        const posColor = newPos === 1 ? '#FFD700'
-                       : newPos === 2 ? '#C0C0C0'
-                       : newPos === 3 ? '#CD7F32'
-                       : '#a78bfa';
-        const posIcon  = newPos === 1 ? '👑'
-                       : newPos === 2 ? '🥈'
-                       : newPos === 3 ? '🥉'
-                       : '📍';
-        const posLabel = newPos <= 3 ? 'Sigues en el podio' : 'Tu posición se mantiene';
-        const posSub   = newPos === 1 ? r.pct + '% — ¡Nadie te mueve de la cima!'
-                       : newPos === 2 ? r.pct + '% — ¡Muy cerca del top!'
-                       : newPos === 3 ? r.pct + '% — ¡Estás en el podio!'
-                       : r.pct + '% — ¡Sigue empujando para subir!';
-        showNotif({
-          icon: posIcon,
-          label: posLabel,
-          title: '¡Mantienes el puesto #' + newPos + '!',
-          sub: posSub,
-          color: posColor,
-          type: newPos === 1 ? 'top1' : '',
-          duration: 5000,
-        });
-        if (newPos === 1) playNotifSound('top1');
+        playNotifSound('bajada');
+        notifCount++;
       }
-    });
-
-    // Notificaciones para asesores que no están en el nuevo ranking
-    // (si estaban antes y ya no aparecen)
-    prev.forEach(p => {
-      const esYo = miPrimNombre &&
-        p.asesor.toLowerCase().includes(miPrimNombre);
-      if (!esYo) return;
-      const sigueEn = newRanking.find(r => r.asesor === p.asesor);
-      if (!sigueEn) {
-        showNotif({
-          icon: '❓', label: 'Tu posición',
-          title: 'No apareces en el ranking',
-          sub: 'El supervisor aún no ha cargado tus datos de esta semana.',
-          color: '#A78BFA', duration: 6000,
-        });
-      }
+      // Si se mantiene en la misma posición → SIN notificación
     });
   };
 
