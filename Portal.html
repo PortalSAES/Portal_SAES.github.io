@@ -6721,8 +6721,7 @@ document.getElementById('btn-pend-export-mensual').addEventListener('click', () 
       </div>
       <div id="tip-body"></div>
       <div id="tip-footer">
-        <button id="tip-btn-next"><i class="ti ti-arrow-right" style="font-size:14px"></i> Siguiente</button>
-        <button id="tip-btn-close"><i class="ti ti-check" style="font-size:14px"></i> Entendido</button>
+        <button id="tip-btn-close" style="flex:1"><i class="ti ti-check" style="font-size:14px"></i> Entendido</button>
       </div>
     </div>
   `;
@@ -6763,25 +6762,25 @@ document.getElementById('btn-pend-export-mensual').addEventListener('click', () 
     const rol = (window.currentUserRol || '').toLowerCase();
     if (rol && rol !== 'asesor' && rol !== 'asesor wsp') return;
 
-    // Tips a las 8:00, 11:00, 14:00, 17:00, 20:00 — ultimo a las 20:30
-    const HORAS_TIP  = [8, 11, 14, 17, 20];
-    const MIN_LIMITE = 20 * 60 + 30; // 20:30
+    // Tips a las 9:00, 11:00, 17:00, 19:30 — solo 4 al día
+    const HORAS_TIP  = [[9,0],[11,0],[17,0],[19,30]];
+    const MIN_LIMITE = 19 * 60 + 30; // 19:30
 
     function msHastaProximo() {
       const ahora = new Date();
       const minAhora = ahora.getHours() * 60 + ahora.getMinutes();
-      for (const h of HORAS_TIP) {
-        const minTip = h * 60;
+      for (const [h,m] of HORAS_TIP) {
+        const minTip = h * 60 + m;
         if (minTip > minAhora && minTip <= MIN_LIMITE) {
           const target = new Date();
-          target.setHours(h, 0, 0, 0);
+          target.setHours(h, m, 0, 0);
           return target - ahora;
         }
       }
-      // Todos pasaron hoy -> mañana a las 8:00
+      // Todos pasaron hoy -> mañana a las 9:00
       const manana = new Date();
       manana.setDate(manana.getDate() + 1);
-      manana.setHours(8, 0, 0, 0);
+      manana.setHours(9, 0, 0, 0);
       return manana - ahora;
     }
 
@@ -6808,229 +6807,281 @@ document.getElementById('btn-pend-export-mensual').addEventListener('click', () 
 
 
 // ══════════════════════════════════════════════════════
-// ALARMAS DE FIN DE TURNO — 17:30 y 21:00 (solo Asesores)
+// ALARMAS DE FIN DE TURNO + BUENOS DÍAS — estilo SISE
 // ══════════════════════════════════════════════════════
 (function() {
 
   const FRASES_MANANA = [
-    "Diste lo mejor de ti hoy. Ahora es tu turno de descansar.",
-    "Cada alumno que ayudaste hoy marcó una diferencia. Bien hecho.",
-    "El trabajo de hoy ya está hecho. Desconéctate y recarga energías.",
-    "Fuiste la voz amable que alguien necesitaba hoy. Gracias.",
-    "Hoy cumpliste. Mañana será otro gran día. Descansa.",
+    "Cada alumno que ayudes hoy es una historia que cambia. ¡Tú puedes!",
+    "Un nuevo día, una nueva oportunidad de hacer la diferencia.",
+    "El mejor canal del equipo empieza con tu energía de hoy. ¡Vamos!",
+    "Hoy es un buen día para ser la voz amable que alguien necesita.",
+    "Tu actitud de hoy construye la experiencia del alumno. ¡A darlo todo!",
+    "Arranca con fuerza. El equipo cuenta contigo. ¡Buenos días!",
   ];
-
   const FRASES_TARDE = [
     "Terminaste el día con energía y dedicación. Ahora ve a casa y descansa bien.",
-    "El turno tarde exige mucho. Tú lo diste todo. Es hora de soltar y descansar.",
-    "Gracias por quedarte hasta el final. Tu esfuerzo no pasa desapercibido.",
-    "La jornada terminó. Lo que no se resolvió hoy, mañana tendrá solución. Descansa.",
-    "Eres parte de algo importante. Y hoy lo demostraste. ¡A casa!",
+    "Cada llamada de hoy fue un alumno ayudado. Misión cumplida.",
+    "El equipo está orgulloso de tu trabajo. ¡Hasta mañana, campeón!",
+    "Diste lo mejor de ti. Ahora es tu turno de descansar y recargar.",
+    "Fuiste la voz amable que alguien necesitaba hoy. Gracias por eso.",
+    "Hoy cumpliste. Mañana vuelves más fuerte. ¡Descansa bien!",
+  ];
+  const FRASES_NOCHE = [
+    "Noche productiva completada. ¡Ve a descansar, lo mereces!",
+    "El turno noche ya terminó. Gracias por estar hasta el final.",
+    "Eres de los que no se rinden ni en la noche. ¡Hasta mañana!",
+    "Misión nocturna cumplida. Descansa y recarga energías.",
   ];
 
-  // Estilos del popup de alarma
+  const FRASES_BIENVENIDA_TARDE = [
+    "El turno PM acaba de empezar. Trae tu mejor energía y hagámoslo increíble.",
+    "Bienvenido al turno tarde. Los mejores momentos del día todavía están por llegar.",
+    "Arrancas el PM con todo. El equipo sabe que puedes con esto.",
+    "Segundo turno, misma energía. Cada alumno que llegue hoy está en buenas manos.",
+    "El turno tarde es tuyo. ¡Demuéstrale al equipo de qué estás hecho!",
+    "Ya estás aquí y eso es lo más importante. ¡Vamos con todo el PM!",
+  ];
+
+  // ── CSS del modal ─────────────────────────────────────────────
   const style = document.createElement('style');
   style.textContent = `
-    #alarm-overlay {
-      position:fixed; inset:0; background:rgba(0,0,0,0.7);
-      display:flex; align-items:center; justify-content:center;
-      z-index:999999; opacity:0; transition:opacity 0.4s;
+    #turno-modal-overlay {
+      display:none; position:fixed; inset:0;
+      background:rgba(0,0,0,.75); backdrop-filter:blur(8px);
+      z-index:999995; align-items:center; justify-content:center; padding:20px;
+    }
+    #turno-modal-overlay.open { display:flex; }
+    #turno-modal-card {
+      background:#0D0D0D;
+      border-radius:24px; overflow:hidden;
+      max-width:420px; width:100%;
+      box-shadow:0 32px 80px rgba(0,0,0,.9);
+      animation:turno-pop .4s cubic-bezier(.22,.68,0,1.2);
+    }
+    @keyframes turno-pop {
+      from { transform:scale(.85) translateY(20px); opacity:0; }
+      to   { transform:scale(1)   translateY(0);    opacity:1; }
+    }
+    .turno-header {
+      padding:28px 28px 20px;
+      position:relative; overflow:hidden;
+      display:flex; flex-direction:column; align-items:center; text-align:center;
+    }
+    .turno-header::before {
+      content:''; position:absolute; inset:0;
+      background:radial-gradient(circle at 50% 0%,var(--th-glow,.4) 0%,transparent 70%);
       pointer-events:none;
     }
-    #alarm-overlay.visible { opacity:1; pointer-events:all; }
-    #alarm-card {
-      background:var(--surface,#1A1714);
-      border-radius:24px; padding:0;
-      max-width:440px; width:calc(100% - 40px);
-      box-shadow:0 32px 80px rgba(0,0,0,0.6);
-      overflow:hidden;
-      transform:translateY(30px) scale(0.96);
-      transition:transform 0.4s cubic-bezier(.22,.68,0,1.2);
-    }
-    #alarm-overlay.visible #alarm-card { transform:translateY(0) scale(1); }
-    #alarm-banner {
-      padding:28px 28px 22px;
-      display:flex; flex-direction:column; align-items:center; gap:10px;
-      text-align:center;
-    }
-    #alarm-clock-wrap {
-      width:64px; height:64px; border-radius:50%;
+    .turno-logo-wrap {
+      width:64px; height:64px; border-radius:18px;
+      background:var(--th-icon-bg,#1a0a00);
       display:flex; align-items:center; justify-content:center;
-      font-size:30px; margin-bottom:4px;
+      font-size:30px; margin-bottom:14px; position:relative; z-index:1;
+      box-shadow:0 4px 20px var(--th-glow,.3);
     }
-    #alarm-turno-label {
-      font-size:11px; font-weight:800; letter-spacing:0.1em;
-      text-transform:uppercase; padding:4px 14px;
-      border-radius:99px; margin-bottom:2px;
+    .turno-tag {
+      display:inline-flex; align-items:center; gap:6px;
+      border-radius:99px; padding:4px 14px;
+      font-size:10px; font-weight:800; text-transform:uppercase; letter-spacing:.1em;
+      background:var(--th-tag-bg); color:var(--th-color);
+      margin-bottom:12px; position:relative; z-index:1;
     }
-    #alarm-title {
-      font-size:22px; font-weight:800;
-      color:var(--text,#F5F0E8); line-height:1.25;
+    .turno-title {
+      font-size:22px; font-weight:900; color:#fff;
+      line-height:1.25; margin-bottom:6px;
+      position:relative; z-index:1;
     }
-    #alarm-time-display {
-      font-size:13px; font-weight:600;
-      color:var(--text-muted,#9B8F88); margin-top:2px;
+    .turno-time {
+      font-size:12px; color:rgba(255,255,255,.35);
+      font-weight:600; position:relative; z-index:1;
     }
-    #alarm-body {
-      margin:0 24px 24px;
-      padding:18px 20px;
-      background:rgba(255,255,255,0.04);
-      border-radius:14px;
-      font-size:14px; line-height:1.75;
-      color:var(--text-muted,#C8C0B8);
-      font-style:italic; text-align:center;
+    .turno-body {
+      background:rgba(255,255,255,.03);
+      border-top:1px solid rgba(255,255,255,.06);
+      padding:20px 28px 24px;
     }
-    #alarm-body::before { content:'"'; font-size:24px; line-height:0; vertical-align:-8px; margin-right:4px; opacity:0.4; }
-    #alarm-body::after  { content:'"'; font-size:24px; line-height:0; vertical-align:-8px; margin-left:4px;  opacity:0.4; }
-    #alarm-footer {
-      padding:0 24px 24px;
-      display:flex; gap:10px; justify-content:center;
+    .turno-frase {
+      font-size:14px; color:rgba(255,255,255,.55);
+      line-height:1.7; text-align:center;
+      font-style:italic; margin-bottom:20px;
     }
-    #alarm-btn-close {
-      padding:11px 32px; border-radius:12px;
-      font-size:14px; font-weight:700;
-      cursor:pointer; border:none;
-      transition:all 0.2s; width:100%;
+    .turno-frase::before { content:'" '; color:var(--th-color); }
+    .turno-frase::after  { content:' "'; color:var(--th-color); }
+    .turno-btn {
+      display:block; width:100%; padding:14px;
+      background:var(--th-btn-bg);
+      color:#fff; border:none; border-radius:12px;
+      font-size:15px; font-weight:800; cursor:pointer;
+      font-family:inherit; letter-spacing:.01em;
+      box-shadow:0 4px 20px var(--th-glow,.3);
+      transition:opacity .15s, transform .1s;
     }
-    #alarm-wave {
-      width:100%; height:6px;
+    .turno-btn:hover  { opacity:.88; }
+    .turno-btn:active { transform:scale(.98); }
+    .turno-sise-strip {
+      display:flex; align-items:center; justify-content:center; gap:8px;
+      padding:10px 0 0; margin-top:12px;
+      border-top:1px solid rgba(255,255,255,.05);
+      font-size:10px; font-weight:700; color:rgba(255,255,255,.2);
+      text-transform:uppercase; letter-spacing:.1em;
+    }
+    .turno-sise-logo {
+      width:20px; height:20px; border-radius:5px;
+      background:#fff; display:flex; align-items:center; justify-content:center;
+      font-size:7px; font-weight:900; color:#0D0D0D; letter-spacing:-.5px;
     }
   `;
   document.head.appendChild(style);
 
-  // Markup
+  // ── HTML del modal ────────────────────────────────────────────
   const overlay = document.createElement('div');
-  overlay.id = 'alarm-overlay';
+  overlay.id = 'turno-modal-overlay';
   overlay.innerHTML = `
-    <div id="alarm-card">
-      <canvas id="alarm-wave"></canvas>
-      <div id="alarm-banner">
-        <div id="alarm-clock-wrap">⏰</div>
-        <span id="alarm-turno-label">Turno mañana</span>
-        <div id="alarm-title">Es hora de desconectarte</div>
-        <div id="alarm-time-display">17:30 · Fin de turno</div>
+    <div id="turno-modal-card">
+      <div class="turno-header" id="turno-header">
+        <div class="turno-logo-wrap" id="turno-icon">⏰</div>
+        <div class="turno-tag" id="turno-tag">Turno</div>
+        <div class="turno-title" id="turno-title">Título</div>
+        <div class="turno-time"  id="turno-time-label">00:00</div>
       </div>
-      <div id="alarm-body">Frase aquí</div>
-      <div id="alarm-footer">
-        <button id="alarm-btn-close">¡Hasta mañana! 👋</button>
+      <div class="turno-body">
+        <div class="turno-frase" id="turno-frase">Frase motivacional aquí.</div>
+        <button class="turno-btn" id="turno-btn" onclick="document.getElementById('turno-modal-overlay').classList.remove('open')">
+          ¡Entendido!
+        </button>
+        <div class="turno-sise-strip">
+          <div class="turno-sise-logo">S</div>
+          SISE · Portal SAES
+        </div>
       </div>
-    </div>
-  `;
+    </div>`;
   document.body.appendChild(overlay);
+  overlay.addEventListener('click', e => { if(e.target===overlay) overlay.classList.remove('open'); });
 
-  // Animar la barra superior (onda de color)
-  function paintWave(color1, color2) {
-    const canvas = document.getElementById('alarm-wave');
-    if (!canvas) return;
-    canvas.width = canvas.offsetWidth || 440;
-    canvas.height = 6;
-    const ctx = canvas.getContext('2d');
-    const grad = ctx.createLinearGradient(0, 0, canvas.width, 0);
-    grad.addColorStop(0, color1);
-    grad.addColorStop(1, color2);
-    ctx.fillStyle = grad;
-    ctx.fillRect(0, 0, canvas.width, 6);
-  }
+  // ── Mostrar modal ─────────────────────────────────────────────
+  function mostrarTurno(cfg) {
+    const card   = document.getElementById('turno-modal-card');
+    const header = document.getElementById('turno-header');
+    card.style.setProperty('--th-color',       cfg.color);
+    card.style.setProperty('--th-glow',        cfg.glow);
+    card.style.setProperty('--th-icon-bg',     cfg.iconBg);
+    card.style.setProperty('--th-tag-bg',      cfg.tagBg);
+    card.style.setProperty('--th-btn-bg',      cfg.btnBg);
 
-  function showAlarm(turno) {
-    // Solo asesores
-    const rol = (window.currentUserRol || '').toLowerCase();
-    const esAsesor = !rol || rol === 'asesor' || rol === 'asesor wsp';
-    if (!esAsesor) return;
+    document.getElementById('turno-icon').textContent       = cfg.icon;
+    document.getElementById('turno-tag').textContent        = cfg.tag;
+    document.getElementById('turno-title').textContent      = cfg.title;
+    document.getElementById('turno-time-label').textContent = cfg.timeLabel;
+    document.getElementById('turno-frase').textContent      = cfg.frase;
+    document.getElementById('turno-btn').textContent        = cfg.btnText;
 
-    const esTarde = turno === 'tarde';
-    const frases  = esTarde ? FRASES_TARDE : FRASES_MANANA;
-    const frase   = frases[Math.floor(Math.random() * frases.length)];
+    overlay.classList.add('open');
 
-    document.getElementById('alarm-turno-label').textContent = esTarde ? 'Turno tarde' : 'Turno mañana';
-    document.getElementById('alarm-turno-label').style.cssText = esTarde
-      ? 'background:rgba(91,33,182,0.18);color:#a78bfa;font-size:11px;font-weight:800;letter-spacing:0.1em;text-transform:uppercase;padding:4px 14px;border-radius:99px;margin-bottom:2px;'
-      : 'background:rgba(234,140,0,0.18);color:#fbbf24;font-size:11px;font-weight:800;letter-spacing:0.1em;text-transform:uppercase;padding:4px 14px;border-radius:99px;margin-bottom:2px;';
-
-    document.getElementById('alarm-title').textContent = esTarde
-      ? '¡Fue un gran día! Es hora de ir a casa'
-      : '¡Es hora de desconectarte!';
-
-    document.getElementById('alarm-time-display').textContent = esTarde
-      ? '21:00 · Fin de turno tarde'
-      : '17:30 · Fin de turno mañana';
-
-    document.getElementById('alarm-body').textContent = frase;
-
-    document.getElementById('alarm-btn-close').textContent = esTarde
-      ? '¡A casa a descansar! 🏠'
-      : '¡Hasta mañana! 👋';
-    document.getElementById('alarm-btn-close').style.cssText = esTarde
-      ? 'background:linear-gradient(135deg,#5b21b6,#7c3aed);color:#fff;padding:11px 32px;border-radius:12px;font-size:14px;font-weight:700;cursor:pointer;border:none;transition:all 0.2s;width:100%;'
-      : 'background:linear-gradient(135deg,#C41E3A,#8B0000);color:#fff;padding:11px 32px;border-radius:12px;font-size:14px;font-weight:700;cursor:pointer;border:none;transition:all 0.2s;width:100%;';
-
-    document.getElementById('alarm-clock-wrap').style.background = esTarde
-      ? 'linear-gradient(135deg,#5b21b6,#7c3aed)'
-      : 'linear-gradient(135deg,#C41E3A,#8B0000)';
-
-    paintWave(
-      esTarde ? '#5b21b6' : '#C41E3A',
-      esTarde ? '#7c3aed' : '#ff6b6b'
-    );
-
-    overlay.classList.add('visible');
-
-    // Sonido suave (beep del sistema si está disponible)
+    // Sonido suave
     try {
-      const ctx = new (window.AudioContext || window.webkitAudioContext)();
-      [0, 200, 400].forEach(delay => {
-        const osc = ctx.createOscillator();
-        const gain = ctx.createGain();
-        osc.connect(gain); gain.connect(ctx.destination);
-        osc.frequency.value = esTarde ? 523 : 659; // Do / Mi
-        osc.type = 'sine';
-        gain.gain.setValueAtTime(0, ctx.currentTime + delay/1000);
-        gain.gain.linearRampToValueAtTime(0.18, ctx.currentTime + delay/1000 + 0.05);
-        gain.gain.linearRampToValueAtTime(0, ctx.currentTime + delay/1000 + 0.4);
-        osc.start(ctx.currentTime + delay/1000);
-        osc.stop(ctx.currentTime + delay/1000 + 0.5);
+      const ctx  = new (window.AudioContext||window.webkitAudioContext)();
+      cfg.notes.forEach((f,i) => {
+        const osc=ctx.createOscillator(), g=ctx.createGain();
+        osc.connect(g); g.connect(ctx.destination);
+        osc.frequency.value=f; osc.type='sine';
+        const t=ctx.currentTime+i*.18;
+        g.gain.setValueAtTime(0,t);
+        g.gain.linearRampToValueAtTime(.15,t+.06);
+        g.gain.linearRampToValueAtTime(0,t+.45);
+        osc.start(t); osc.stop(t+.5);
       });
-    } catch(e) {}
+    } catch(e){}
   }
 
-  function hideAlarm() { overlay.classList.remove('visible'); }
-
-  document.getElementById('alarm-btn-close').addEventListener('click', hideAlarm);
-  overlay.addEventListener('click', e => { if (e.target === overlay) hideAlarm(); });
-
-  // Programar alarmas
-  function msHasta(hh, mm) {
-    const ahora = new Date();
-    const target = new Date();
-    target.setHours(hh, mm, 0, 0);
-    let diff = target - ahora;
-    if (diff <= 0) diff += 24 * 60 * 60 * 1000; // si ya pasó, programar para mañana
-    return diff;
+  // ── Configs de cada alarma ────────────────────────────────────
+  function cfgBuenosDias() {
+    const nombre = (window.currentUserNombre||'').split(' ')[0] || 'asesor';
+    return {
+      icon:'☀️', tag:'¡Buenos días!',
+      title:`¡Arranca con todo, ${nombre}!`,
+      timeLabel:'08:00 · Inicio de turno mañana',
+      frase: FRASES_MANANA[Math.floor(Math.random()*FRASES_MANANA.length)],
+      btnText:'¡Listo para empezar! 💪',
+      color:'#F59E0B', glow:'rgba(245,158,11,.35)',
+      iconBg:'rgba(245,158,11,.15)', tagBg:'rgba(245,158,11,.12)',
+      btnBg:'linear-gradient(135deg,#F59E0B,#D97706)',
+      notes:[523,659,784,1047],
+    };
+  }
+  function cfgFinManana() {
+    return {
+      icon:'🌅', tag:'Turno Mañana',
+      title:'¡Buen trabajo! Es hora de descansar',
+      timeLabel:'17:30 · Fin de turno mañana',
+      frase: FRASES_TARDE[Math.floor(Math.random()*FRASES_TARDE.length)],
+      btnText:'¡Hasta mañana! 🏠',
+      color:'#F26522', glow:'rgba(242,101,34,.35)',
+      iconBg:'rgba(242,101,34,.15)', tagBg:'rgba(242,101,34,.12)',
+      btnBg:'linear-gradient(135deg,#F26522,#C94E0A)',
+      notes:[659,523,440],
+    };
+  }
+  function cfgBienvenidaTarde() {
+    const nombre = (window.currentUserNombre||'').split(' ')[0] || 'asesor';
+    return {
+      icon:'🌤️', tag:'¡Bienvenido al turno PM!',
+      title:`¡${nombre}, el turno tarde es tuyo!`,
+      timeLabel:'11:30 · Inicio de turno tarde',
+      frase: FRASES_BIENVENIDA_TARDE[Math.floor(Math.random()*FRASES_BIENVENIDA_TARDE.length)],
+      btnText:'¡A darle con todo! 🚀',
+      color:'#0EA5E9', glow:'rgba(14,165,233,.35)',
+      iconBg:'rgba(14,165,233,.15)', tagBg:'rgba(14,165,233,.12)',
+      btnBg:'linear-gradient(135deg,#0EA5E9,#0284C7)',
+      notes:[440,523,659,784],
+    };
   }
 
-  function programarAlarmas() {
-    const rol = (window.currentUserRol || '').toLowerCase();
-    const esAsesor = !rol || rol === 'asesor' || rol === 'asesor wsp';
-    if (!esAsesor) return;
-
-    // 17:30 — turno mañana
-    setTimeout(() => {
-      showAlarm('manana');
-      setInterval(() => showAlarm('manana'), 24 * 60 * 60 * 1000);
-    }, msHasta(17, 30));
-
-    // 21:00 — turno tarde
-    setTimeout(() => {
-      showAlarm('tarde');
-      setInterval(() => showAlarm('tarde'), 24 * 60 * 60 * 1000);
-    }, msHasta(21, 0));
+  function cfgFinTarde() {
+    return {
+      icon:'🌙', tag:'Turno Tarde',
+      title:'¡Fue un gran día! Es hora de ir a casa',
+      timeLabel:'21:00 · Fin de turno tarde',
+      frase: FRASES_NOCHE[Math.floor(Math.random()*FRASES_NOCHE.length)],
+      btnText:'¡A casa a descansar! 🏠',
+      color:'#7C3AED', glow:'rgba(124,58,237,.35)',
+      iconBg:'rgba(124,58,237,.15)', tagBg:'rgba(124,58,237,.12)',
+      btnBg:'linear-gradient(135deg,#7C3AED,#5B21B6)',
+      notes:[440,392,349],
+    };
   }
 
-  if (window.currentUserRol !== undefined && window.currentUserRol !== '') {
-    programarAlarmas();
-  } else {
-    window.addEventListener('sise:rolCargado', programarAlarmas, { once: true });
+  // ── Verificación cada minuto ──────────────────────────────────
+  const _shown = {};
+  function checkAlarmas() {
+    const rol = (window.currentUserRol||'').toLowerCase();
+    if (rol === 'supervisor' || rol === 'formador') return;
+
+    const now  = new Date();
+    const hhmm = String(now.getHours()).padStart(2,'0') + ':' + String(now.getMinutes()).padStart(2,'0');
+    const key  = hhmm.replace(':','') + '_' + now.toDateString();
+
+    if (hhmm === '08:00' && !_shown['buenos_'+key]) {
+      _shown['buenos_'+key] = true;
+      mostrarTurno(cfgBuenosDias());
+    }
+    if (hhmm === '11:30' && !_shown['bientarde_'+key]) {
+      _shown['bientarde_'+key] = true;
+      mostrarTurno(cfgBienvenidaTarde());
+    }
+    if (hhmm === '17:30' && !_shown['manana_'+key]) {
+      _shown['manana_'+key] = true;
+      mostrarTurno(cfgFinManana());
+    }
+    if (hhmm === '21:00' && !_shown['tarde_'+key]) {
+      _shown['tarde_'+key] = true;
+      mostrarTurno(cfgFinTarde());
+    }
   }
+
+  setInterval(checkAlarmas, 30000);
+  checkAlarmas();
+
 })();
 
 
