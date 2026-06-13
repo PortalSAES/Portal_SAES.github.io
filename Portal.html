@@ -370,30 +370,25 @@ mark.plt-hl {
   function _loadHomeStats() {
     const mods = window._fbModules;
     if (!mods || !mods.getFirestore) { setTimeout(_loadHomeStats, 1000); return; }
-    const {getFirestore, collection, getDocs, query, where} = mods;
+    const {getFirestore, collection, onSnapshot} = mods;
     const db = getFirestore();
-    const hoy = new Date().toISOString().split('T')[0];
 
-    // BO Llamadas — solo Pendiente + No contesta (excluye Atendida)
-    getDocs(collection(db, 'bo_llamadas')).then(snap => {
+    // BO Llamadas — tiempo real, solo Pendiente + No contesta
+    onSnapshot(collection(db, 'bo_llamadas'), snap => {
       const activos = snap.docs.filter(d => {
         const estado = (d.data().estadoLlamada || 'pendiente').toLowerCase();
         return estado !== 'atendida';
       }).length;
       const el = document.getElementById('home-stat-bo');
       if (el) el.textContent = activos;
-    }).catch(() => {});
+    }, () => {});
 
-    // Casos pendientes — excluir solo los que tienen resuelto=true
-    getDocs(collection(db, 'casos_pendientes')).then(snap => {
-      const activos = snap.docs.filter(d => {
-        const data = d.data();
-        // Solo excluir si está marcado como resuelto
-        return !data.resuelto;
-      }).length;
+    // Casos pendientes — tiempo real, excluir resueltos
+    onSnapshot(collection(db, 'casos_pendientes'), snap => {
+      const activos = snap.docs.filter(d => !d.data().resuelto).length;
       const el = document.getElementById('home-stat-pend');
       if (el) el.textContent = activos;
-    }).catch(() => {});
+    }, () => {});
   }
 
   // Esperar a que el DOM esté listo
