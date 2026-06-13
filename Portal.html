@@ -128,118 +128,285 @@ mark.plt-hl {
 
 <div class="view active" id="view-inicio">
 
-<div class="home-hero">
-<div class="home-hero-left">
-<div class="home-hero-tag"><span class="dot" style="background:#3DBD72"></span>Portal activo · Canal WhatsApp</div>
-<h1 class="home-hero-title">Portal SAES <span>·</span> Instituto SISE</h1>
-<p class="home-hero-sub">Plataforma interna para asesores y supervisores del Contact Center. Gestiona casos, registra llamadas y centraliza el seguimiento de alumnos.</p>
-<div class="home-hero-chips">
-<span class="home-chip orange" onclick="document.querySelector('[data-view=bo-llamadas]').click()"><i class="ti ti-phone-call"></i>BO Llamadas</span>
-<span class="home-chip purple" onclick="document.querySelector('[data-view=pendientes]').click()"><i class="ti ti-alert-circle"></i>Casos pendientes</span>
-<span class="home-chip green" onclick="document.querySelector('[data-view=plantillas]').click()"><i class="ti ti-file-text"></i>Plantillas</span>
-</div>
-</div>
-<div class="home-hero-right">
-<div class="home-clock-wrap">
-<div class="home-clock-label"><i class="ti ti-map-pin" style="font-size:10px;color:var(--orange);margin-right:3px"></i>Lima, Perú</div>
-<div>
-<span class="home-clock-time" id="clock-time">--:--</span>
-<span class="home-clock-ampm" id="clock-ampm"></span>
-</div>
-<div class="home-clock-date" id="clock-date">—</div>
-<div class="home-clock-lima">
-<i class="ti ti-clock"></i>
-<span>UTC-5 · Hora Lima</span>
-</div>
-</div>
-</div>
+<!-- ── Hero rediseñado ── -->
+<div class="home-hero" style="position:relative;overflow:hidden;background:linear-gradient(135deg,#0D0D0D 0%,#1a0800 40%,#0D0D0D 100%);padding:40px 36px 36px;display:flex;align-items:center;justify-content:space-between;gap:24px">
+
+  <!-- Partículas decorativas -->
+  <div style="position:absolute;top:0;left:0;right:0;bottom:0;pointer-events:none;overflow:hidden">
+    <div style="position:absolute;top:-80px;right:-80px;width:360px;height:360px;border-radius:50%;background:radial-gradient(circle,rgba(242,101,34,.22) 0%,transparent 70%)"></div>
+    <div style="position:absolute;bottom:-60px;left:20%;width:240px;height:240px;border-radius:50%;background:radial-gradient(circle,rgba(242,101,34,.08) 0%,transparent 70%)"></div>
+    <div style="position:absolute;top:50%;left:45%;transform:translate(-50%,-50%);width:500px;height:2px;background:linear-gradient(90deg,transparent,rgba(242,101,34,.15),transparent)"></div>
+    <!-- Grid lines sutiles -->
+    <svg style="position:absolute;inset:0;width:100%;height:100%;opacity:.04" xmlns="http://www.w3.org/2000/svg">
+      <defs><pattern id="hgrid" width="40" height="40" patternUnits="userSpaceOnUse"><path d="M 40 0 L 0 0 0 40" fill="none" stroke="#F26522" stroke-width="0.5"/></pattern></defs>
+      <rect width="100%" height="100%" fill="url(#hgrid)"/>
+    </svg>
+  </div>
+
+  <div class="home-hero-left" style="flex:1;position:relative;z-index:1">
+    <!-- Tag de estado -->
+    <div style="display:inline-flex;align-items:center;gap:8px;background:rgba(61,189,114,.1);border:1px solid rgba(61,189,114,.25);border-radius:99px;padding:5px 14px;font-size:11px;color:#3DBD72;font-weight:700;margin-bottom:18px;letter-spacing:.04em">
+      <span style="width:6px;height:6px;border-radius:50%;background:#3DBD72;box-shadow:0 0 8px #3DBD72;animation:sat-blink 1.5s ease-in-out infinite;flex-shrink:0"></span>
+      Portal activo · Canal WhatsApp
+    </div>
+
+    <!-- Saludo dinámico -->
+    <h1 class="home-hero-title" style="font-size:30px;font-weight:900;color:#fff;margin-bottom:10px;line-height:1.2;letter-spacing:-.5px">
+      ¡Bienvenido, <span id="home-nombre-display" style="color:var(--orange)">asesor</span>!
+      <span id="home-rol-badge" style="font-size:14px;font-weight:600;color:#555;letter-spacing:0;vertical-align:middle;margin-left:6px">· Cargando...</span>
+    </h1>
+    <p class="home-hero-sub" style="font-size:13px;color:#666;line-height:1.75;max-width:500px;margin-bottom:22px">
+      Plataforma interna para asesores y supervisores del Contact Center. Gestiona casos, registra llamadas y centraliza el seguimiento de alumnos.
+    </p>
+
+    <!-- Chips de acceso rápido -->
+    <div style="display:flex;gap:8px;flex-wrap:wrap">
+      <span class="home-chip orange" onclick="document.querySelector('[data-view=bo-llamadas]').click()" style="display:flex;align-items:center;gap:6px;border-radius:10px;padding:8px 16px;font-size:12px;font-weight:700;cursor:pointer;background:rgba(242,101,34,.12);color:#F26522;border:1px solid rgba(242,101,34,.25);transition:all .2s" onmouseover="this.style.background='rgba(242,101,34,.22)'" onmouseout="this.style.background='rgba(242,101,34,.12)'">
+        <i class="ti ti-phone-call"></i> BO Llamadas
+      </span>
+      <span class="home-chip purple" onclick="document.querySelector('[data-view=pendientes]').click()" style="display:flex;align-items:center;gap:6px;border-radius:10px;padding:8px 16px;font-size:12px;font-weight:700;cursor:pointer;background:rgba(91,33,182,.12);color:#9B6FF5;border:1px solid rgba(91,33,182,.25);transition:all .2s" onmouseover="this.style.background='rgba(91,33,182,.22)'" onmouseout="this.style.background='rgba(91,33,182,.12)'">
+        <i class="ti ti-alert-circle"></i> Casos pendientes
+      </span>
+      <span class="home-chip green" onclick="document.querySelector('[data-view=plantillas]').click()" style="display:flex;align-items:center;gap:6px;border-radius:10px;padding:8px 16px;font-size:12px;font-weight:700;cursor:pointer;background:rgba(26,122,69,.12);color:#3DD68C;border:1px solid rgba(26,122,69,.25);transition:all .2s" onmouseover="this.style.background='rgba(26,122,69,.22)'" onmouseout="this.style.background='rgba(26,122,69,.12)'">
+        <i class="ti ti-file-text"></i> Plantillas
+      </span>
+      <span onclick="document.querySelector('[data-view=satisfaccion]').click()" style="display:flex;align-items:center;gap:6px;border-radius:10px;padding:8px 16px;font-size:12px;font-weight:700;cursor:pointer;background:rgba(240,192,64,.12);color:#F0C040;border:1px solid rgba(240,192,64,.25);transition:all .2s" onmouseover="this.style.background='rgba(240,192,64,.22)'" onmouseout="this.style.background='rgba(240,192,64,.12)'">
+        🏆 Ranking
+      </span>
+    </div>
+  </div>
+
+  <!-- Reloj -->
+  <div style="flex-shrink:0;position:relative;z-index:1">
+    <div style="display:flex;flex-direction:column;align-items:center;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:20px;padding:20px 24px;gap:4px;backdrop-filter:blur(8px)">
+      <div style="font-size:9px;font-weight:700;color:#444;text-transform:uppercase;letter-spacing:.12em;margin-bottom:2px;display:flex;align-items:center;gap:4px">
+        <i class="ti ti-map-pin" style="font-size:10px;color:var(--orange)"></i> Lima, Perú
+      </div>
+      <div>
+        <span class="home-clock-time" id="clock-time" style="font-size:38px;font-weight:800;color:#fff;letter-spacing:-1px;line-height:1;font-variant-numeric:tabular-nums">--:--</span>
+        <span class="home-clock-ampm" id="clock-ampm" style="font-size:13px;font-weight:600;color:var(--orange);margin-left:4px"></span>
+      </div>
+      <div id="clock-date" class="home-clock-date" style="font-size:11px;color:#444;text-align:center;margin-top:2px;text-transform:capitalize">—</div>
+      <div style="display:flex;align-items:center;gap:5px;font-size:10px;color:#333;margin-top:4px">
+        <i class="ti ti-clock" style="font-size:11px"></i>
+        <span>UTC-5 · Hora Lima</span>
+      </div>
+    </div>
+  </div>
 </div>
 
-<div class="home-content">
-
-<div class="home-section-label">Accesos directos</div>
-<div class="home-cards-grid">
-<div class="home-info-card" style="--card-accent:var(--orange)" onclick="document.querySelector('[data-view=bo-llamadas]').click()">
-<div class="home-card-icon" style="background:#FFF0E8;color:var(--orange-dark)"><i class="ti ti-phone-call"></i></div>
-<div class="home-card-body">
-<div class="home-card-title">Registro de Llamadas BO</div>
-<div class="home-card-desc">Deriva casos al equipo BackOffice y gestiona estados de llamadas.</div>
-</div>
-<i class="ti ti-arrow-right home-card-arrow"></i>
-</div>
-<div class="home-info-card" style="--card-accent:var(--danger)" onclick="document.querySelector('[data-view=pendientes]').click()">
-<div class="home-card-icon" style="background:#FFF0F0;color:var(--danger)"><i class="ti ti-alert-circle"></i></div>
-<div class="home-card-body">
-<div class="home-card-title">Casos Pendientes Fuera de Plazo</div>
-<div class="home-card-desc">Vista de calendario para supervisores del Contact Center.</div>
-</div>
-<i class="ti ti-arrow-right home-card-arrow"></i>
-</div>
-<div class="home-info-card" style="--card-accent:var(--info)" onclick="document.querySelector('[data-view=plantillas]').click()">
-<div class="home-card-icon" style="background:#EBF2FF;color:var(--info)"><i class="ti ti-file-text"></i></div>
-<div class="home-card-body">
-<div class="home-card-title">Plantillas de Derivación</div>
-<div class="home-card-desc">Plantillas listas para copiar y pegar en WhatsApp según el caso.</div>
-</div>
-<i class="ti ti-arrow-right home-card-arrow"></i>
-</div>
-<div class="home-info-card" style="--card-accent:var(--success)" onclick="document.querySelector('[data-view=preguntas]').click()">
-<div class="home-card-icon" style="background:#E8FAF0;color:var(--success)"><i class="ti ti-award"></i></div>
-<div class="home-card-body">
-<div class="home-card-title">Preguntas Frecuentes</div>
-<div class="home-card-desc">Respuestas rápidas para consultas comunes de alumnos en WhatsApp.</div>
-</div>
-<i class="ti ti-arrow-right home-card-arrow"></i>
-</div>
-<div class="home-info-card" style="--card-accent:var(--orange)" onclick="document.querySelector('[data-view=capacitate]').click()">
-<div class="home-card-icon" style="background:#1a0a00;color:var(--orange)"><i class="ti ti-player-play-filled"></i></div>
-<div class="home-card-body">
-<div class="home-card-title">Capacítate</div>
-<div class="home-card-desc">Videos y recursos de formación para asesores del canal.</div>
-</div>
-<i class="ti ti-arrow-right home-card-arrow"></i>
-</div>
+<!-- ── Mini stats bar ── -->
+<div id="home-stats-bar" style="background:var(--white);border-bottom:1px solid var(--border);padding:0 28px;display:flex;align-items:stretch;gap:0;overflow-x:auto">
+  <div class="home-stat-item" onclick="document.querySelector('[data-view=bo-llamadas]').click()" style="display:flex;align-items:center;gap:10px;padding:14px 24px;cursor:pointer;border-right:1px solid var(--border);transition:background .15s;white-space:nowrap;min-width:0" onmouseover="this.style.background='#FFF5F0'" onmouseout="this.style.background='transparent'">
+    <div style="width:36px;height:36px;border-radius:10px;background:#FFF0E8;color:var(--orange-dark);display:flex;align-items:center;justify-content:center;font-size:17px;flex-shrink:0"><i class="ti ti-phone-call"></i></div>
+    <div>
+      <div id="home-stat-bo" style="font-size:18px;font-weight:900;color:var(--text)">—</div>
+      <div style="font-size:10px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.06em">BO Llamadas hoy</div>
+    </div>
+  </div>
+  <div class="home-stat-item" onclick="document.querySelector('[data-view=pendientes]').click()" style="display:flex;align-items:center;gap:10px;padding:14px 24px;cursor:pointer;border-right:1px solid var(--border);transition:background .15s;white-space:nowrap" onmouseover="this.style.background='#FFF5F5'" onmouseout="this.style.background='transparent'">
+    <div style="width:36px;height:36px;border-radius:10px;background:#FFF0F0;color:var(--danger);display:flex;align-items:center;justify-content:center;font-size:17px;flex-shrink:0"><i class="ti ti-alert-circle"></i></div>
+    <div>
+      <div id="home-stat-pend" style="font-size:18px;font-weight:900;color:var(--text)">—</div>
+      <div style="font-size:10px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.06em">Casos pendientes</div>
+    </div>
+  </div>
+  <div class="home-stat-item" onclick="document.querySelector('[data-view=satisfaccion]').click()" style="display:flex;align-items:center;gap:10px;padding:14px 24px;cursor:pointer;border-right:1px solid var(--border);transition:background .15s;white-space:nowrap" onmouseover="this.style.background='#FEFDF5'" onmouseout="this.style.background='transparent'">
+    <div style="width:36px;height:36px;border-radius:10px;background:rgba(240,192,64,.12);color:#B8860B;display:flex;align-items:center;justify-content:center;font-size:17px;flex-shrink:0">🏆</div>
+    <div>
+      <div id="home-stat-rank" style="font-size:18px;font-weight:900;color:var(--text)">—</div>
+      <div style="font-size:10px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.06em">Tu posición</div>
+    </div>
+  </div>
+  <div style="display:flex;align-items:center;gap:10px;padding:14px 24px;white-space:nowrap;margin-left:auto">
+    <div style="width:36px;height:36px;border-radius:10px;background:#E8FAF0;color:var(--success);display:flex;align-items:center;justify-content:center;font-size:17px;flex-shrink:0"><i class="ti ti-clock"></i></div>
+    <div>
+      <div id="home-stat-sesion" style="font-size:18px;font-weight:900;color:var(--text)">0 min</div>
+      <div style="font-size:10px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.06em">Tiempo en sesión</div>
+    </div>
+  </div>
 </div>
 
-<div class="home-section-label">Permisos por rol</div>
-<div class="home-roles-banner">
-<div class="home-roles-title"><i class="ti ti-users-group"></i> ¿Quién puede hacer qué?</div>
-<div class="home-roles-grid">
-<div class="home-role-card">
-<div class="home-role-badge" style="background:#FFF0E8;color:var(--orange-dark)"><i class="ti ti-brand-whatsapp"></i>Asesor WSP</div>
-<ul class="home-role-list">
-<li><i class="ti ti-check"></i>Registrar casos para BO Llamadas</li>
-<li><i class="ti ti-check"></i>Usar y copiar plantillas</li>
-<li><i class="ti ti-check"></i>Consultar casos pendientes</li>
-<li><i class="ti ti-x" style="color:var(--danger)"></i>No puede gestionar estados BO</li>
-<li><i class="ti ti-x" style="color:var(--danger)"></i>No puede borrar casos pendientes</li>
-</ul>
-</div>
-<div class="home-role-card">
-<div class="home-role-badge" style="background:#F5F0FF;color:var(--pending)"><i class="ti ti-headset"></i>Rol BO</div>
-<ul class="home-role-list">
-<li><i class="ti ti-check"></i>Cambiar estado de llamadas</li>
-<li><i class="ti ti-check"></i>Comentar gestión de casos</li>
-<li><i class="ti ti-check"></i>Eliminar casos de llamadas</li>
-<li><i class="ti ti-check"></i>Puede eliminar casos pendientes</li>
-</ul>
-</div>
-<div class="home-role-card">
-<div class="home-role-badge" style="background:#FFF0F0;color:var(--danger)"><i class="ti ti-shield-check"></i>Supervisor</div>
-<ul class="home-role-list">
-<li><i class="ti ti-check"></i>Eliminar casos pendientes</li>
-</ul>
-</div>
-</div>
+<!-- ── Contenido principal ── -->
+<div class="home-content" style="padding:24px 28px 40px">
+
+  <!-- Accesos directos -->
+  <div class="home-section-label">Accesos directos</div>
+  <div class="home-cards-grid" style="margin-bottom:28px">
+
+    <div class="home-info-card" style="--card-accent:var(--orange)" onclick="document.querySelector('[data-view=bo-llamadas]').click()">
+      <div class="home-card-icon" style="background:#FFF0E8;color:var(--orange-dark)"><i class="ti ti-phone-call"></i></div>
+      <div class="home-card-body">
+        <div class="home-card-title">Registro de Llamadas BO</div>
+        <div class="home-card-desc">Deriva casos al equipo BackOffice y gestiona estados de llamadas.</div>
+      </div>
+      <i class="ti ti-arrow-right home-card-arrow"></i>
+    </div>
+
+    <div class="home-info-card" style="--card-accent:var(--danger)" onclick="document.querySelector('[data-view=pendientes]').click()">
+      <div class="home-card-icon" style="background:#FFF0F0;color:var(--danger)"><i class="ti ti-alert-circle"></i></div>
+      <div class="home-card-body">
+        <div class="home-card-title">Casos Pendientes Fuera de Plazo</div>
+        <div class="home-card-desc">Vista de calendario para supervisores del Contact Center.</div>
+      </div>
+      <i class="ti ti-arrow-right home-card-arrow"></i>
+    </div>
+
+    <div class="home-info-card" style="--card-accent:var(--info)" onclick="document.querySelector('[data-view=plantillas]').click()">
+      <div class="home-card-icon" style="background:#EBF2FF;color:var(--info)"><i class="ti ti-file-text"></i></div>
+      <div class="home-card-body">
+        <div class="home-card-title">Plantillas de Derivación</div>
+        <div class="home-card-desc">Plantillas listas para copiar y pegar en WhatsApp según el caso.</div>
+      </div>
+      <i class="ti ti-arrow-right home-card-arrow"></i>
+    </div>
+
+    <div class="home-info-card" style="--card-accent:var(--success)" onclick="document.querySelector('[data-view=preguntas]').click()">
+      <div class="home-card-icon" style="background:#E8FAF0;color:var(--success)"><i class="ti ti-award"></i></div>
+      <div class="home-card-body">
+        <div class="home-card-title">Preguntas Frecuentes</div>
+        <div class="home-card-desc">Respuestas rápidas para consultas comunes de alumnos en WhatsApp.</div>
+      </div>
+      <i class="ti ti-arrow-right home-card-arrow"></i>
+    </div>
+
+    <div class="home-info-card" style="--card-accent:var(--orange);background:linear-gradient(135deg,#1a0a00,#2d1200)" onclick="document.querySelector('[data-view=capacitate]').click()">
+      <div class="home-card-icon" style="background:rgba(242,101,34,.2);color:var(--orange)"><i class="ti ti-player-play-filled"></i></div>
+      <div class="home-card-body">
+        <div class="home-card-title" style="color:#fff">Capacítate</div>
+        <div class="home-card-desc" style="color:#666">Videos y recursos de formación para asesores del canal.</div>
+      </div>
+      <i class="ti ti-arrow-right" style="color:#333;font-size:15px;flex-shrink:0;margin-top:2px"></i>
+    </div>
+
+  </div>
+
+  <!-- Permisos por rol — más compacto y visual -->
+  <div class="home-section-label">Permisos por rol</div>
+  <div style="background:var(--white);border:1px solid var(--border);border-radius:16px;padding:20px 24px;margin-bottom:20px">
+    <div style="font-size:13px;font-weight:700;color:var(--text);margin-bottom:16px;display:flex;align-items:center;gap:7px">
+      <i class="ti ti-users-group" style="font-size:16px;color:var(--orange)"></i> ¿Quién puede hacer qué?
+    </div>
+    <div class="home-roles-grid">
+      <div class="home-role-card">
+        <div class="home-role-badge" style="background:#FFF0E8;color:var(--orange-dark)"><i class="ti ti-brand-whatsapp"></i>Asesor WSP</div>
+        <ul class="home-role-list">
+          <li><i class="ti ti-check"></i>Registrar casos para BO Llamadas</li>
+          <li><i class="ti ti-check"></i>Usar y copiar plantillas</li>
+          <li><i class="ti ti-check"></i>Consultar casos pendientes</li>
+          <li><i class="ti ti-x" style="color:var(--danger)"></i>No puede gestionar estados BO</li>
+        </ul>
+      </div>
+      <div class="home-role-card">
+        <div class="home-role-badge" style="background:#F5F0FF;color:var(--pending)"><i class="ti ti-headset"></i>Rol BO</div>
+        <ul class="home-role-list">
+          <li><i class="ti ti-check"></i>Cambiar estado de llamadas</li>
+          <li><i class="ti ti-check"></i>Comentar gestión de casos</li>
+          <li><i class="ti ti-check"></i>Eliminar casos de llamadas</li>
+          <li><i class="ti ti-check"></i>Puede eliminar casos pendientes</li>
+        </ul>
+      </div>
+      <div class="home-role-card">
+        <div class="home-role-badge" style="background:#FFF0F0;color:var(--danger)"><i class="ti ti-shield-check"></i>Supervisor</div>
+        <ul class="home-role-list">
+          <li><i class="ti ti-check"></i>Subir datos de satisfacción</li>
+          <li><i class="ti ti-check"></i>Gestionar logros del equipo</li>
+          <li><i class="ti ti-check"></i>Eliminar casos pendientes</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <div class="home-footer-note">
+    <i class="ti ti-info-circle"></i>
+    Para obtener acceso o reportar inconvenientes, contacta al formador <strong>Gerardo Chacón</strong> o al asesor <strong>Jhon Ruiz</strong> a través de <strong>Microsoft Teams</strong>.
+  </div>
+
 </div>
 
-<div class="home-footer-note">
-<i class="ti ti-info-circle"></i>
-Para obtener acceso o reportar inconvenientes, contacta al formador <strong>Gerardo Chacón</strong> o al asesor <strong>Jhon Ruiz</strong> a través de <strong>Microsoft Teams</strong>.
-</div>
+<!-- Script para stats en tiempo real del home -->
+<script>
+(function() {
+  function _initHomeStats() {
+    // Nombre y rol
+    window.addEventListener('sise:rolCargado', _updateHomeHeader);
+    if (window.currentUserRol) _updateHomeHeader();
+
+    // Sesión timer
+    const sesionInicio = new Date();
+    setInterval(() => {
+      const mins = Math.round((new Date() - sesionInicio) / 60000);
+      const el = document.getElementById('home-stat-sesion');
+      if (el) el.textContent = mins < 60 ? mins + ' min' : Math.floor(mins/60) + 'h ' + (mins%60) + 'min';
+    }, 30000);
+
+    // Stats de Firebase
+    _loadHomeStats();
+  }
+
+  function _updateHomeHeader() {
+    const nombre = window.currentUserNombre || '';
+    const rol    = window.currentUserRol || '';
+    const el  = document.getElementById('home-nombre-display');
+    const elR = document.getElementById('home-rol-badge');
+    if (el && nombre)  el.textContent  = nombre.split(' ')[0];
+    if (elR && rol)    elR.textContent = '· ' + rol;
+
+    // Posición en ranking
+    const ranking = window._satLastRanking || [];
+    if (ranking.length && nombre) {
+      const primerNombre = nombre.split(' ')[0].toLowerCase();
+      const pos = ranking.findIndex(r => r.asesor.toLowerCase().includes(primerNombre)) + 1;
+      const el2 = document.getElementById('home-stat-rank');
+      if (el2) el2.textContent = pos > 0 ? '#' + pos : '—';
+    }
+  }
+
+  function _loadHomeStats() {
+    const mods = window._fbModules;
+    if (!mods || !mods.getFirestore) { setTimeout(_loadHomeStats, 1000); return; }
+    const {getFirestore, collection, getDocs, query, where} = mods;
+    const db = getFirestore();
+    const hoy = new Date().toISOString().split('T')[0];
+
+    // BO Llamadas hoy
+    getDocs(collection(db, 'bo_llamadas')).then(snap => {
+      const hoyStr = new Date().toLocaleDateString('es-PE');
+      const hoyCount = snap.docs.filter(d => {
+        const f = d.data().fecha || '';
+        return f.includes(new Date().getDate());
+      }).length;
+      const el = document.getElementById('home-stat-bo');
+      if (el) el.textContent = snap.size;
+    }).catch(() => {});
+
+    // Casos pendientes
+    getDocs(collection(db, 'casos_pendientes')).then(snap => {
+      const el = document.getElementById('home-stat-pend');
+      if (el) el.textContent = snap.size;
+    }).catch(() => {});
+  }
+
+  // Esperar a que el DOM esté listo
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', _initHomeStats);
+  } else {
+    setTimeout(_initHomeStats, 500);
+  }
+
+  // Actualizar ranking stat cuando cambie
+  const _origNotifHome = window._satNotifComparar;
+  if (_origNotifHome) {
+    window._satNotifComparar = function(ranking) {
+      _origNotifHome(ranking);
+      _updateHomeHeader();
+    };
+  }
+})();
+</script>
 
 </div>
-</div>
+
 
 <div class="view" id="view-bo-llamadas">
 <div class="bo-header">
