@@ -8958,46 +8958,61 @@ document.getElementById('btn-pend-export-mensual').addEventListener('click', () 
 
   // ── Abrir logros de un asesor ─────────────────────────────────
   window._lgAbrirAsesor = async function(nombre) {
+    // Limpiar INMEDIATAMENTE al cambiar de asesor — evita parpadeo
     _lgAsesor = nombre;
+    _lgLogros = {};
     _lgCat    = 'Todos';
 
-    await _lgCargarDefs();
-
-    // Header
+    // Header inmediato sin esperar Firebase
     const initials = nombre.split(' ').slice(0,2).map(w=>w[0]||'').join('').toUpperCase();
     const av = document.getElementById('lg-head-av');
     av.textContent = initials;
     av.style.background = 'rgba(167,139,250,.2)';
     av.style.color = '#a78bfa';
     av.style.border = '2px solid #a78bfa';
-
     document.getElementById('lg-head-name').textContent = nombre;
-    document.getElementById('lg-head-sub').textContent  = 'Calculando logros...';
+    document.getElementById('lg-head-sub').textContent  = 'Cargando...';
 
-    // Tab gestionar para supervisor, bo y formador
+    // Mostrar tab gestionar
     const rol = (window.currentUserRol||'').toLowerCase();
-    const esSup = rol==='supervisor'||rol==='bo'||rol==='formador';
+    const esSup = ['supervisor','bo','formador'].includes(rol);
     const tabEdit = document.getElementById('lg-tab-editar');
     if (tabEdit) tabEdit.style.display = esSup ? 'flex' : 'none';
-    // Si es supervisor/formador, ir directo a gestionar si viene del panel
-    // Si no, abrir en ver
 
     modal.classList.add('open');
     _lgSetTab('ver');
 
-    // Calcular logros
-    await _lgCalcular(nombre);
+    // Cargar defs y logros actuales EN PARALELO
+    const {getFirestore, doc, getDoc} = window._fbModules||{};
+    const key = nombre.trim().replace(/\s+/g,'_').toLowerCase();
 
-    // Cargar de Firebase
-    const {getFirestore,doc,getDoc} = window._fbModules||{};
+    await _lgCargarDefs();
+
+    // Cargar logros existentes de Firebase PRIMERO (sin calcular)
     if (getFirestore) {
       try {
-        const key  = nombre.trim().replace(/\s+/g,'_').toLowerCase();
         const snap = await getDoc(doc(getFirestore(),'logros_asesores',key));
-        _lgLogros  = snap.exists() ? (snap.data().logros||{}) : {};
-      } catch(e) { _lgLogros={}; }
+        _lgLogros = snap.exists() ? (snap.data().logros||{}) : {};
+      } catch(e) { _lgLogros = {}; }
     }
+
+    // Renderizar con datos actuales de Firebase (sin parpadeo)
     _lgRenderVer();
+
+    // Calcular nuevos logros en background
+    const nombreCaptura = nombre;
+    _lgCalcular(nombreCaptura).then(async () => {
+      if (_lgAsesor !== nombreCaptura) return; // usuario cambió de asesor
+      if (!getFirestore) return;
+      try {
+        const snap2 = await getDoc(doc(getFirestore(),'logros_asesores',key));
+        const fresh = snap2.exists() ? (snap2.data().logros||{}) : {};
+        if (JSON.stringify(fresh) !== JSON.stringify(_lgLogros)) {
+          _lgLogros = fresh;
+          _lgRenderVer();
+        }
+      } catch(e) {}
+    });
   };
 
   // ── Tabs ──────────────────────────────────────────────────────
