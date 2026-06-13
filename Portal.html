@@ -9217,7 +9217,7 @@ document.getElementById('btn-pend-export-mensual').addEventListener('click', () 
     if(!getFirestore||!_lgDefs.length) return;
     const db=getFirestore();
     const data=window._satData||[];
-    const hist=data.filter(r=>r.asesor===nombre).sort((a,b)=>(a.mes+a.semana).localeCompare(b.mes+b.semana));
+    const hist=data.filter(r=>r.asesor===nombre||r.asesor.toLowerCase()===nombre.toLowerCase()).sort((a,b)=>(a.mes+a.semana).localeCompare(b.mes+b.semana));
     if(!hist.length) return;
     const ranking=window._satLastRanking||[];
     const myIdx=ranking.findIndex(r=>r.asesor===nombre);
@@ -9289,6 +9289,13 @@ document.getElementById('btn-pend-export-mensual').addEventListener('click', () 
     if (_origNotif) _origNotif(ranking);
     _lgInyectarListaAsesores();
     _lgRenderAsesores(ranking);
+
+    // Auto-calcular logros para todos cuando se actualiza el ranking
+    if (_lgDefs.length && window._satData?.length) {
+      ranking.forEach(r => {
+        setTimeout(() => _lgCalcular(r.asesor), 0);
+      });
+    }
   };
 
   // Abrir modal directo en tab gestionar
