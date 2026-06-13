@@ -7764,8 +7764,7 @@ document.getElementById('btn-pend-export-mensual').addEventListener('click', () 
 
   window._satEditarMeta = async function() {
     const actual = window._satMeta || '';
-    const val = prompt('Meta de satisfacción del mes (%):
-Ejemplo: 80', actual);
+    const val = prompt('Meta de satisfacción del mes (%). Ejemplo: 80', actual);
     if (val === null) return;
     const num = parseInt(val);
     if (isNaN(num) || num < 1 || num > 100) { showToast('Valor inválido. Ingresa un número entre 1 y 100','error'); return; }
@@ -7834,7 +7833,7 @@ Ejemplo: 80', actual);
           <div style="font-size:14px;color:#F26522;font-weight:700">${window._satMeta?'%':''}</div>
         </div>
         <div style="font-size:11px;color:var(--muted);margin-top:6px;font-weight:600">objetivo mensual</div>
-        ${esSup ? \`<button onclick="window._satEditarMeta()" style="position:absolute;top:8px;right:8px;background:rgba(242,101,34,.1);border:1px solid rgba(242,101,34,.2);color:#F26522;border-radius:7px;width:24px;height:24px;cursor:pointer;font-size:11px;display:flex;align-items:center;justify-content:center;font-family:inherit" title="Editar meta">✏️</button>\` : ''}
+        ${esSup ? '<button onclick="window._satEditarMeta()" style="position:absolute;top:8px;right:8px;background:rgba(242,101,34,.1);border:1px solid rgba(242,101,34,.2);color:#F26522;border-radius:7px;width:24px;height:24px;cursor:pointer;font-size:11px;display:flex;align-items:center;justify-content:center;font-family:inherit" title="Editar meta">✏️</button>' : ''}
       </div>
       <div class="sat-stat">
         <div style="font-size:9.5px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin-bottom:5px">Datos del día</div>
@@ -9416,7 +9415,7 @@ Ejemplo: 80', actual);
       const posHtml = medal
         ? `<span style="font-size:13px;width:22px;flex-shrink:0;text-align:center">${medal}</span>`
         : `<span style="font-size:10px;color:rgba(255,255,255,.25);font-weight:700;width:22px;flex-shrink:0;text-align:center">${i+1}</span>`;
-      return `<div class="lg-asesor-row" onclick="_lgAbrirAsesor('${r.asesor.replace(/'/g,"\'")}')">
+      return `<div class="lg-asesor-row" data-asesor="${escH ? escH(r.asesor) : r.asesor.replace(/"/g,'&quot;')}" onclick="_lgAbrirAsesor(this.dataset.asesor)">
         ${posHtml}
         <div class="lg-asesor-av" style="background:${niv.bg};color:${niv.color};border:1.5px solid ${niv.color}">${initials}</div>
         <div class="lg-asesor-name">${r.asesor}</div>
