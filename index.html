@@ -22,6 +22,9 @@
       width: 100vw; height: 100vh;
       object-fit: cover; object-position: top; z-index: -2;
     }
+    body {
+      background: linear-gradient(135deg, #0D0D0D 0%, #1a0800 50%, #0D0D0D 100%);
+    }
     .bg-overlay {
       position: fixed; inset: 0;
       background: rgba(13,13,13,0.55); z-index: -1;
@@ -183,7 +186,7 @@
 </div>
 <style>@keyframes splash-spin { to { transform:rotate(360deg); } }</style>
 
-<video class="bg-video" autoplay muted loop playsinline>
+<video class="bg-video" autoplay muted loop playsinline onerror="this.style.display='none'">
   <source src="fondo_sise.mp4" type="video/mp4">
 </video>
 <div class="bg-overlay"></div>
