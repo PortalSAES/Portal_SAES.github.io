@@ -1460,7 +1460,9 @@ Amplio
     <i class="ti ti-table-export"></i> Subir Excel
     <input type="file" id="sat-file-input" accept=".xlsx,.xls,.csv" style="display:none">
   </label>
-
+  <button id="btn-gestionar-logros" onclick="_lgAbrirGestionar()" style="display:none;align-items:center;gap:7px;background:rgba(255,215,0,.1);border:1.5px solid rgba(255,215,0,.3);color:#FFD700;border-radius:12px;padding:10px 16px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;white-space:nowrap">
+    🏆 Gestionar Logros
+  </button>
   <div id="sat-upload-status" style="font-size:12px;color:rgba(255,255,255,.5)"></div>
 </div>
 
@@ -1502,7 +1504,11 @@ Amplio
   <div style="background:#1a1035;border:1px solid rgba(196,30,58,.4);border-radius:20px;max-width:400px;width:calc(100% - 40px);padding:32px 28px;text-align:center;box-shadow:0 32px 80px rgba(0,0,0,.8)">
     <div style="font-size:44px;margin-bottom:12px">⚠️</div>
     <div style="font-size:18px;font-weight:900;color:#fff;margin-bottom:8px">¿Reiniciar tabla del mes?</div>
-    <div style="font-size:13px;color:rgba(255,255,255,.5);margin-bottom:24px;line-height:1.6">Se eliminarán todos los datos del mes actual. Esta acción no se puede deshacer.</div>
+    <div style="font-size:13px;color:rgba(255,255,255,.5);margin-bottom:24px;line-height:1.6">Se eliminarán todos los datos del mes actual del ranking. Esta acción no se puede deshacer.</div>
+      <label style="display:flex;align-items:center;gap:8px;margin-bottom:16px;cursor:pointer">
+        <input type="checkbox" id="sat-reset-logros-cb" style="accent-color:#C41E3A;width:15px;height:15px">
+        <span style="font-size:12px;color:rgba(255,255,255,.5)">También borrar logros obtenidos por todos los asesores</span>
+      </label>
     <div style="display:flex;gap:12px">
       <button onclick="document.getElementById('sat-confirm-modal').style.display='none'" style="flex:1;padding:12px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.15);color:#fff;border-radius:12px;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit">Cancelar</button>
       <button onclick="_satEjecutarReinicio()" style="flex:1;padding:12px;background:#C41E3A;border:none;color:#fff;border-radius:12px;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit">Sí, reiniciar</button>
@@ -7829,18 +7835,24 @@ document.getElementById('btn-pend-export-mensual').addEventListener('click', () 
   };
 
   window._satEjecutarReinicio = async function() {
+    const borrarLogros = document.getElementById('sat-reset-logros-cb')?.checked;
     document.getElementById('sat-confirm-modal').style.display = 'none';
     try {
       const {getFirestore,collection,getDocs,query,where,deleteDoc,doc} = window._fbModules||{};
       if (!getFirestore) return;
       const db  = getFirestore();
       const mes = mesActual();
-      // Borrar TODOS los registros del mes actual de satisfaccion
-      const q   = query(collection(db,'satisfaccion'), where('mes','==',mes));
-      const snap= await getDocs(q);
+      // Borrar ranking del mes
+      const snap= await getDocs(query(collection(db,'satisfaccion'), where('mes','==',mes)));
       await Promise.all(snap.docs.map(d => deleteDoc(doc(db,'satisfaccion',d.id))));
-      // También borrar logros_asesores del mes si se desea limpiar todo
-      showToast('Ranking del mes borrado completamente ✓');
+      // Borrar logros si se marcó la casilla
+      if (borrarLogros) {
+        const snapL = await getDocs(collection(db,'logros_asesores'));
+        await Promise.all(snapL.docs.map(d => deleteDoc(doc(db,'logros_asesores',d.id))));
+        showToast('Ranking y logros borrados completamente ✓');
+      } else {
+        showToast('Ranking del mes borrado completamente ✓');
+      }
     } catch(e) {
       showToast('Error al reiniciar: '+e.message,'error');
     }
@@ -7903,6 +7915,8 @@ document.getElementById('btn-pend-export-mensual').addEventListener('click', () 
     const esSup=rol==='supervisor'||rol==='bo'||rol==='formador';
     const bar=document.getElementById('sat-supervisor-bar');
     if(bar) bar.style.display=esSup?'flex':'none';
+    const btnGL=document.getElementById('btn-gestionar-logros');
+    if(btnGL) btnGL.style.display=esSup?'flex':'none';
 
 
     const fi=document.getElementById('sat-file-input');
@@ -9254,9 +9268,10 @@ document.getElementById('btn-pend-export-mensual').addEventListener('click', () 
     }
     _lgDefs.forEach(def=>{
       const id=def.id||def._fid;
-      if(exist[id]||nuevos[id]) return;
+      if(nuevos[id]) return; // ya marcado en esta sesión
       const conds=def.condiciones||[];
-      if(!conds.length) return;
+      if(!conds.length) return; // manual
+      if(exist[id]) return;     // ya tiene este logro, no re-asignar
       if(conds.every(c=>evalC(c))) nuevos[id]=true;
     });
     if(!Object.keys(nuevos).length) return;
@@ -9274,6 +9289,19 @@ document.getElementById('btn-pend-export-mensual').addEventListener('click', () 
     if (_origNotif) _origNotif(ranking);
     _lgInyectarListaAsesores();
     _lgRenderAsesores(ranking);
+  };
+
+  // Abrir modal directo en tab gestionar
+  window._lgAbrirGestionar = async function() {
+    await _lgCargarDefs();
+    _lgAsesor = '';
+    const tabEdit = document.getElementById('lg-tab-editar');
+    if (tabEdit) tabEdit.style.display = 'flex';
+    modal.classList.add('open');
+    document.getElementById('lg-head-name').textContent = 'Gestión de Logros';
+    document.getElementById('lg-head-sub').textContent  = _lgDefs.length + ' logros definidos';
+    document.getElementById('lg-head-av').textContent   = '⚙️';
+    _lgSetTab('editar');
   };
 
   // Init — cargar defs para todos (cualquiera puede ver logros)
