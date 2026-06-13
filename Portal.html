@@ -1461,7 +1461,7 @@ Amplio
     <input type="file" id="sat-file-input" accept=".xlsx,.xls,.csv" style="display:none">
   </label>
   <button id="btn-gestionar-logros" onclick="window._satAbrirLogros()" style="display:none;align-items:center;gap:8px;background:rgba(255,215,0,.12);border:1.5px solid rgba(255,215,0,.35);color:#FFD700;border-radius:12px;padding:11px 18px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;white-space:nowrap">
-    <i class="ti ti-trophy"></i> Ver Logros
+    🏆 Logros
   </button>
   <div id="sat-upload-status" style="font-size:12px;color:rgba(255,255,255,.5)"></div>
 </div>
@@ -7320,7 +7320,7 @@ document.getElementById('btn-pend-export-mensual').addEventListener('click', () 
       satUnsub=onSnapshot(
         query(collection(db,'satisfaccion'),orderBy('creadoEn','asc')),
         snap=>{
-          satData=snap.docs.map(d=>({id:d.id,...d.data()})); window._satData=satData;
+          satData=snap.docs.map(d=>({id:d.id,...d.data()})); window._satData=satData; window._satData=satData;
           const ranking=calcRanking(satData);
           renderPodio(ranking); renderRanking(ranking); renderStats(ranking); renderFilterBar(ranking);
           if(window._satNotifComparar) {
@@ -7698,15 +7698,6 @@ document.getElementById('btn-pend-export-mensual').addEventListener('click', () 
     }
 
 
-    // Botón ver logros
-    let btnL = modal.querySelector('#btn-ver-logros');
-    if (!btnL) {
-      btnL = document.createElement('div');
-      btnL.id = 'btn-ver-logros';
-      modal.querySelector('#sat-hist-daily').parentElement.appendChild(btnL);
-    }
-    btnL.innerHTML = window._satGetBtnLogrosHtml ? window._satGetBtnLogrosHtml(nombre) : '';
-
     modal.style.display = 'flex';
     modal.addEventListener('click', e => { if(e.target===modal) modal.style.display='none'; }, {once:true});
     if(window._satTabSwitch) window._satTabSwitch('sem');
@@ -7925,6 +7916,7 @@ document.getElementById('btn-pend-export-mensual').addEventListener('click', () 
     if(bar) bar.style.display=esSup?'flex':'none';
     const btnGL=document.getElementById('btn-gestionar-logros');
     if(btnGL) btnGL.style.display=esSup?'flex':'none';
+
     const fi=document.getElementById('sat-file-input');
     if(fi&&!fi._bound){ fi._bound=true; fi.addEventListener('change',e=>{if(e.target.files[0])leerExcelGenesys(e.target.files[0]);e.target.value='';}); }
 
@@ -8647,476 +8639,827 @@ document.getElementById('btn-pend-export-mensual').addEventListener('click', () 
 
 
 
+
+
+
 // ══════════════════════════════════════════════════════════════
-// LOGROS — Sistema simple con buscador
+// SISTEMA DE LOGROS v2 — Firebase, editor y buscador
 // ══════════════════════════════════════════════════════════════
 (function() {
 
-  const LOGROS_DEF = [
-    // INICIO
-    { id:'primera_estrella', icon:'🌟', nombre:'Primera Estrella',      desc:'Apareciste por primera vez en el ranking.',           cat:'Inicio',       rarity:'comun'     },
-    { id:'top10_primero',    icon:'🎯', nombre:'En el Mapa',            desc:'Entraste al top 10 por primera vez.',                 cat:'Inicio',       rarity:'comun'     },
-    { id:'top3_primero',     icon:'🏅', nombre:'Primer Podio',          desc:'Llegaste al top 3 por primera vez.',                  cat:'Inicio',       rarity:'raro'      },
-    { id:'top1_primero',     icon:'👑', nombre:'Primera Corona',        desc:'Alcanzaste el #1 por primera vez.',                   cat:'Inicio',       rarity:'epico'     },
-    // PORCENTAJE
-    { id:'pct_60',  icon:'📊', nombre:'Buen Camino',      desc:'Superaste el 60%.',                               cat:'Porcentaje',   rarity:'comun'     },
-    { id:'pct_70',  icon:'💪', nombre:'Veterano',         desc:'Superaste el 70%.',                               cat:'Porcentaje',   rarity:'comun'     },
-    { id:'pct_80',  icon:'⭐', nombre:'All Star',         desc:'Superaste el 80% — nivel Esmeralda.',             cat:'Porcentaje',   rarity:'raro'      },
-    { id:'pct_90',  icon:'🚀', nombre:'A Toda Marcha',    desc:'Superaste el 90%.',                               cat:'Porcentaje',   rarity:'raro'      },
-    { id:'pct_95',  icon:'💎', nombre:'Diamante Puro',    desc:'Llegaste al 95%.',                                cat:'Porcentaje',   rarity:'epico'     },
-    { id:'pct_100', icon:'🏆', nombre:'Perfección',       desc:'¡100%! Resultado impecable.',                     cat:'Porcentaje',   rarity:'legendario'},
-    // RACHA
-    { id:'racha_2',  icon:'🔥',   nombre:'En Llamas',       desc:'2 semanas seguidas sobre el 70%.',               cat:'Racha',        rarity:'comun'     },
-    { id:'racha_3',  icon:'🔥🔥', nombre:'Racha de Fuego',  desc:'3 semanas seguidas sobre el 70%.',               cat:'Racha',        rarity:'comun'     },
-    { id:'racha_4',  icon:'⚡',   nombre:'Imparable',       desc:'4 semanas seguidas sobre el 70%.',               cat:'Racha',        rarity:'raro'      },
-    { id:'racha_6',  icon:'💫',   nombre:'Fuerza Constante',desc:'6 semanas seguidas sobre el 70%.',               cat:'Racha',        rarity:'epico'     },
-    { id:'racha_8',  icon:'🌟',   nombre:'Leyenda Viva',    desc:'8 semanas seguidas sobre el 70%.',               cat:'Racha',        rarity:'legendario'},
-    // MEJORA
-    { id:'mejora_5',    icon:'📈', nombre:'Escalando',     desc:'Subiste 5+ puestos en una semana.',               cat:'Mejora',       rarity:'comun'     },
-    { id:'mejora_10',   icon:'🚀', nombre:'El Comeback',   desc:'Subiste 10+ puestos en una semana.',              cat:'Mejora',       rarity:'raro'      },
-    { id:'pct_sube_10', icon:'⬆️', nombre:'Gran Salto',    desc:'Mejoraste 10+ puntos respecto a la semana anterior.', cat:'Mejora',  rarity:'raro'      },
-    { id:'pct_sube_20', icon:'🎆', nombre:'Transformación',desc:'Mejoraste 20+ puntos respecto a la semana anterior.', cat:'Mejora',  rarity:'epico'     },
-    // CONSISTENCIA
-    { id:'mes_completo', icon:'🛡️', nombre:'El Consistente',  desc:'Nunca bajaste del 70% en todo un mes.',        cat:'Consistencia', rarity:'epico'     },
-    { id:'sem_4_mes',    icon:'🎖️', nombre:'Veterano del Mes',desc:'Registraste 4 semanas en el mismo mes.',       cat:'Consistencia', rarity:'comun'     },
-    { id:'sin_bajar',    icon:'➡️', nombre:'Línea Recta',     desc:'3 semanas seguidas sin bajar de posición.',    cat:'Consistencia', rarity:'comun'     },
-    // POSICIÓN
-    { id:'top2',      icon:'🥈', nombre:'El Escudero',      desc:'Llegaste al puesto #2.',                         cat:'Posición',     rarity:'raro'      },
-    { id:'top1_mes',  icon:'👑', nombre:'Leyenda del Mes',  desc:'Terminaste el mes como #1.',                     cat:'Posición',     rarity:'legendario'},
-    { id:'top3_3sem', icon:'🏅', nombre:'Habitante del Podio',desc:'Estuviste en top 3 durante 3 semanas.',       cat:'Posición',     rarity:'epico'     },
-    // ESPECIALES
-    { id:'pct_100_1a',   icon:'🎇', nombre:'Debut Perfecto',   desc:'Tu primer registro fue 100%.',                cat:'Especial',     rarity:'legendario'},
-    { id:'nunca_cero',   icon:'🔰', nombre:'Sin Rendirse',     desc:'Nunca tuviste 0% en ningún registro.',        cat:'Especial',     rarity:'comun'     },
-    { id:'por_enc_avg',  icon:'📊', nombre:'Por Encima',       desc:'Tu % supera el promedio del equipo en 10+ puntos.', cat:'Especial', rarity:'comun'   },
-    { id:'debajo_sube',  icon:'🦅', nombre:'Ave Fénix',        desc:'Estabas en los últimos 3 y subiste al top 5.',cat:'Especial',     rarity:'epico'     },
-    // RANGOS
-    { id:'rango_oro',      icon:'🥇', nombre:'Oro',          desc:'Alcanzaste el rango Oro (60%+).',               cat:'Rangos',       rarity:'raro'      },
-    { id:'rango_esmeralda',icon:'💚', nombre:'Esmeralda',    desc:'Alcanzaste el rango Esmeralda (80%+).',         cat:'Rangos',       rarity:'raro'      },
-    { id:'rango_diamante', icon:'💎', nombre:'Diamante',     desc:'Alcanzaste el rango Diamante (95%+).',          cat:'Rangos',       rarity:'epico'     },
-  ];
-  window._LOGROS_DEF_BASE = LOGROS_DEF;
-
-  const RARITY = {
-    comun:      { color:'#9CA3AF', bg:'rgba(156,163,175,.15)', label:'Común',      glow:'rgba(156,163,175,.2)' },
-    raro:       { color:'#60A5FA', bg:'rgba(96,165,250,.15)',  label:'Raro',       glow:'rgba(96,165,250,.25)' },
-    epico:      { color:'#A78BFA', bg:'rgba(167,139,250,.18)', label:'Épico',      glow:'rgba(167,139,250,.3)' },
-    legendario: { color:'#FFD700', bg:'rgba(255,215,0,.15)',   label:'Legendario', glow:'rgba(255,215,0,.35)'  },
-  };
-
-  // ── CSS ───────────────────────────────────────────────────────
-  const style = document.createElement('style');
-  style.textContent = `
-    #logros-modal {
-      display:none; position:fixed; inset:0;
-      background:rgba(0,0,0,.88); backdrop-filter:blur(10px);
-      z-index:999995; align-items:flex-start; justify-content:center; padding:16px;
-      overflow-y:auto;
-    }
-    #logros-modal.open { display:flex; }
-    #logros-card {
-      background:#1a1035; border:1px solid rgba(255,255,255,.1);
-      border-radius:24px; width:100%; max-width:700px;
-      box-shadow:0 40px 100px rgba(0,0,0,.8); margin:auto;
-      overflow:hidden;
-    }
-    #logros-head {
-      background:linear-gradient(135deg,#2d1b69,#1a0a3d);
-      padding:20px 24px; display:flex; align-items:center;
-      gap:14px; border-bottom:1px solid rgba(255,255,255,.06);
-    }
-    #logros-body { padding:20px 24px; }
-    #logros-body::-webkit-scrollbar { width:4px; }
-
-    /* Buscador */
-    #logros-search-wrap {
-      display:flex; align-items:center; gap:10px; margin-bottom:20px;
-    }
-    #logros-search {
-      flex:1; background:rgba(255,255,255,.07);
-      border:1.5px solid rgba(255,255,255,.12); border-radius:12px;
-      padding:11px 16px; font-size:13px; color:#fff; font-family:inherit;
-      outline:none; transition:border-color .2s;
-    }
-    #logros-search:focus { border-color:#a78bfa; }
-    #logros-search::placeholder { color:rgba(255,255,255,.3); }
-
-    /* Tabs */
-    .logros-tabs {
-      display:flex; gap:6px; flex-wrap:wrap; margin-bottom:18px;
-    }
-    .logros-tab {
-      padding:5px 13px; border-radius:99px; font-size:11px; font-weight:700;
-      cursor:pointer; border:1.5px solid rgba(255,255,255,.15);
-      background:transparent; color:rgba(255,255,255,.5); font-family:inherit; transition:all .15s;
-    }
-    .logros-tab.active { background:#a78bfa; color:#fff; border-color:#a78bfa; }
-
-    /* Stats */
-    .logros-stats {
-      display:flex; gap:8px; margin-bottom:18px; flex-wrap:wrap;
-    }
-    .logros-stat {
-      background:rgba(255,255,255,.05); border:1px solid rgba(255,255,255,.08);
-      border-radius:10px; padding:10px 14px; text-align:center; flex:1; min-width:70px;
-    }
-    .logros-stat-val { font-size:20px; font-weight:900; color:#fff; }
-    .logros-stat-lbl { font-size:9px; font-weight:700; color:rgba(255,255,255,.4); text-transform:uppercase; letter-spacing:.06em; margin-top:2px; }
-
-    /* Grid */
-    .logros-grid {
-      display:grid; grid-template-columns:repeat(auto-fill, minmax(180px,1fr)); gap:10px;
-    }
-    .logro-card {
-      background:rgba(255,255,255,.04); border:1.5px solid rgba(255,255,255,.08);
-      border-radius:14px; padding:14px; position:relative; transition:transform .2s;
-    }
-    .logro-card:hover { transform:translateY(-2px); }
-    .logro-card.desbloqueado {
-      border-color:var(--lc); box-shadow:0 0 16px var(--lg);
-    }
-    .logro-card.bloqueado { opacity:.4; filter:grayscale(.7); }
-    .logro-icon { font-size:26px; margin-bottom:8px; display:block; }
-    .logro-nombre { font-size:12px; font-weight:800; color:#fff; margin-bottom:3px; line-height:1.3; }
-    .logro-desc   { font-size:10.5px; color:rgba(255,255,255,.4); line-height:1.45; margin-bottom:8px; }
-    .logro-rarity {
-      display:inline-flex; align-items:center; gap:4px; border-radius:99px;
-      padding:2px 8px; font-size:9px; font-weight:800; letter-spacing:.06em;
-      border:1px solid; text-transform:uppercase;
-    }
-    .logro-fecha {
-      position:absolute; top:10px; right:10px;
-      font-size:9px; color:rgba(255,255,255,.3); font-weight:600;
-    }
-    .logro-nuevo {
-      position:absolute; top:-5px; right:-5px;
-      background:#C41E3A; color:#fff; font-size:8px; font-weight:800;
-      border-radius:99px; padding:2px 7px; text-transform:uppercase;
-    }
-    #logros-empty {
-      text-align:center; padding:48px 24px;
-      color:rgba(255,255,255,.3); font-size:13px;
-    }
-  `;
-  document.head.appendChild(style);
-
-  // ── Modal HTML ────────────────────────────────────────────────
-  const modal = document.createElement('div');
-  modal.id = 'logros-modal';
-  modal.innerHTML = `
-    <div id="logros-card">
-      <div id="logros-head">
-        <div id="logros-av" style="width:48px;height:48px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:900;flex-shrink:0;background:rgba(167,139,250,.2);color:#a78bfa;border:2px solid #a78bfa"></div>
-        <div style="flex:1;min-width:0">
-          <div style="font-size:11px;font-weight:800;color:#a78bfa;text-transform:uppercase;letter-spacing:.1em;margin-bottom:3px">🏆 Logros</div>
-          <div id="logros-nombre" style="font-size:17px;font-weight:900;color:#fff"></div>
-          <div id="logros-prog"   style="font-size:11px;color:rgba(255,255,255,.4);margin-top:2px"></div>
-        </div>
-        <button onclick="document.getElementById('logros-modal').classList.remove('open')"
-          style="background:rgba(255,255,255,.08);border:none;border-radius:10px;width:36px;height:36px;cursor:pointer;color:#fff;font-size:18px;display:flex;align-items:center;justify-content:center;font-family:inherit">✕</button>
-      </div>
-      <div id="logros-body">
-        <!-- Buscador por nombre -->
-        <div id="logros-search-wrap">
-          <input id="logros-search" placeholder="Buscar asesor... (ej: Jhon, Judit)" oninput="_logrosSetAsesor(this.value)">
-          <div style="font-size:11px;color:rgba(255,255,255,.35);white-space:nowrap">o haz clic en un nombre del ranking</div>
-        </div>
-        <!-- Stats -->
-        <div class="logros-stats" id="logros-stats"></div>
-        <!-- Tabs categoría -->
-        <div class="logros-tabs" id="logros-tabs"></div>
-        <!-- Grid -->
-        <div class="logros-grid" id="logros-grid"></div>
-        <div id="logros-empty" style="display:none">
-          <div style="font-size:32px;margin-bottom:12px">🔍</div>
-          No se encontraron logros para este asesor
-        </div>
-      </div>
-    </div>`;
-  document.body.appendChild(modal);
-  modal.addEventListener('click', e => { if(e.target===modal) modal.classList.remove('open'); });
-
-  // ── Estado ────────────────────────────────────────────────────
-  let _catActiva   = 'Todos';
-  let _asesorActual = '';
-  let _logrosData   = {};
-  let _searchTimer  = null;
-
-  // ── Buscar asesor con delay ───────────────────────────────────
-  window._logrosSetAsesor = function(q) {
-    clearTimeout(_searchTimer);
-    _searchTimer = setTimeout(async () => {
-      const val = q.trim();
-      if (!val) return;
-
-      // Buscar en satData
-      const matches = (window._satData||satData) ? [...new Set((window._satData||satData)
-        .filter(r => r.asesor.toLowerCase().includes(val.toLowerCase()))
-        .map(r => r.asesor))] : [];
-
-      if (matches.length === 1) {
-        await _cargarYMostrar(matches[0]);
-      } else if (matches.length > 1) {
-        // Mostrar lista de matches
-        _mostrarOpciones(matches, val);
-      } else {
-        document.getElementById('logros-empty').style.display = 'block';
-        document.getElementById('logros-grid').innerHTML = '';
-      }
-    }, 400);
-  };
-
-  function _mostrarOpciones(opciones, busqueda) {
-    const grid = document.getElementById('logros-grid');
-    const empty = document.getElementById('logros-empty');
-    empty.style.display = 'none';
-    grid.innerHTML = `
-      <div style="grid-column:1/-1;display:flex;flex-direction:column;gap:8px">
-        <div style="font-size:11px;color:rgba(255,255,255,.4);margin-bottom:4px">Se encontraron ${opciones.length} asesores — elige uno:</div>
-        ${opciones.map(n => `
-          <button onclick="_cargarYMostrar('${n.replace(/'/g,"\\'")}');document.getElementById('logros-search').value='${n.replace(/'/g,"\\'")}'"
-            style="text-align:left;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:10px;padding:12px 16px;color:#fff;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;transition:background .15s"
-            onmouseover="this.style.background='rgba(167,139,250,.15)'" onmouseout="this.style.background='rgba(255,255,255,.06)'">
-            ${n}
-          </button>`).join('')}
-      </div>`;
+// ── CSS ────────────────────────────────────────────────────────
+const style = document.createElement('style');
+style.textContent = `
+  /* ── Modal principal ── */
+  #lg-modal {
+    display:none; position:fixed; inset:0;
+    background:rgba(0,0,0,.88); backdrop-filter:blur(10px);
+    z-index:999990; align-items:flex-start; justify-content:center;
+    padding:16px; overflow-y:auto;
+  }
+  #lg-modal.open { display:flex; }
+  #lg-wrap {
+    background:#1a1035; border:1px solid rgba(255,255,255,.1);
+    border-radius:22px; width:100%; max-width:720px; margin:auto;
+    box-shadow:0 32px 80px rgba(0,0,0,.8); overflow:hidden;
   }
 
-  // ── Cargar logros de Firebase y renderizar ────────────────────
-  window._cargarYMostrar = async function(nombre) {
-    _asesorActual = nombre;
-    _catActiva    = 'Todos';
+  /* ── Header ── */
+  #lg-head {
+    background:linear-gradient(135deg,#2d1b69,#1a0a3d);
+    padding:18px 22px; display:flex; align-items:center;
+    gap:14px; border-bottom:1px solid rgba(255,255,255,.06);
+  }
+  #lg-head-av {
+    width:44px; height:44px; border-radius:50%; flex-shrink:0;
+    display:flex; align-items:center; justify-content:center;
+    font-size:16px; font-weight:900;
+    background:rgba(167,139,250,.2); color:#a78bfa;
+    border:2px solid #a78bfa;
+  }
 
-    // Update header
-    const initials = nombre.split(' ').slice(0,2).map(w=>w[0]||'').join('').toUpperCase();
-    document.getElementById('logros-av').textContent    = initials;
-    document.getElementById('logros-nombre').textContent = nombre;
-    document.getElementById('logros-prog').textContent   = 'Cargando...';
-    document.getElementById('logros-grid').innerHTML     = '';
-    document.getElementById('logros-empty').style.display = 'none';
+  /* ── Tabs ── */
+  .lg-tabs { display:flex; border-bottom:1px solid rgba(255,255,255,.07); }
+  .lg-tab {
+    flex:1; padding:12px 8px; font-size:12px; font-weight:700;
+    color:rgba(255,255,255,.4); background:none; border:none;
+    cursor:pointer; font-family:inherit; border-bottom:2px solid transparent;
+    transition:all .15s; display:flex; align-items:center;
+    justify-content:center; gap:6px;
+  }
+  .lg-tab.active { color:#a78bfa; border-bottom-color:#a78bfa; }
+  .lg-tab:hover:not(.active) { color:rgba(255,255,255,.7); }
 
-    // Calculate logros first
-    await _calcularLogros(nombre);
+  /* ── Body ── */
+  #lg-body { padding:20px 22px; min-height:200px; }
 
-    // Load from Firebase
-    const {getFirestore, doc, getDoc} = window._fbModules||{};
-    if (!getFirestore) return;
+  /* ── Buscador ── */
+  .lg-search {
+    width:100%; background:rgba(255,255,255,.07);
+    border:1.5px solid rgba(255,255,255,.12); border-radius:12px;
+    padding:11px 16px; font-size:13px; color:#fff;
+    font-family:inherit; outline:none; margin-bottom:16px;
+    transition:border-color .2s;
+  }
+  .lg-search:focus { border-color:#a78bfa; }
+  .lg-search::placeholder { color:rgba(255,255,255,.3); }
+
+  /* ── Stats bar ── */
+  .lg-stats { display:flex; gap:8px; margin-bottom:16px; }
+  .lg-stat {
+    flex:1; background:rgba(255,255,255,.05);
+    border:1px solid rgba(255,255,255,.08);
+    border-radius:10px; padding:9px 12px; text-align:center;
+  }
+  .lg-stat-val { font-size:18px; font-weight:900; color:#fff; }
+  .lg-stat-lbl { font-size:9px; font-weight:700; color:rgba(255,255,255,.4); text-transform:uppercase; letter-spacing:.05em; margin-top:1px; }
+
+  /* ── Cat tabs ── */
+  .lg-cats { display:flex; gap:5px; flex-wrap:wrap; margin-bottom:14px; }
+  .lg-cat {
+    padding:4px 12px; border-radius:99px; font-size:11px; font-weight:700;
+    cursor:pointer; border:1.5px solid rgba(255,255,255,.12);
+    background:transparent; color:rgba(255,255,255,.45); font-family:inherit;
+    transition:all .15s;
+  }
+  .lg-cat.active { background:#a78bfa; color:#fff; border-color:#a78bfa; }
+
+  /* ── Grid ── */
+  .lg-grid {
+    display:grid; grid-template-columns:repeat(auto-fill,minmax(175px,1fr)); gap:10px;
+  }
+  .lg-card {
+    background:rgba(255,255,255,.04); border:1.5px solid rgba(255,255,255,.08);
+    border-radius:14px; padding:14px; position:relative; transition:transform .18s;
+  }
+  .lg-card.desbloq {
+    border-color:var(--c,#a78bfa);
+    box-shadow:0 0 14px var(--g,rgba(167,139,250,.25));
+  }
+  .lg-card.bloq { opacity:.38; filter:grayscale(.7); }
+  .lg-card:hover { transform:translateY(-2px); }
+  .lg-icon  { font-size:26px; display:block; margin-bottom:8px; }
+  .lg-name  { font-size:12px; font-weight:800; color:#fff; margin-bottom:3px; line-height:1.3; }
+  .lg-desc  { font-size:10.5px; color:rgba(255,255,255,.4); line-height:1.45; margin-bottom:8px; }
+  .lg-badge {
+    display:inline-flex; align-items:center; gap:3px; border-radius:99px;
+    padding:2px 8px; font-size:9px; font-weight:800; letter-spacing:.05em;
+    border:1px solid; text-transform:uppercase;
+  }
+  .lg-date {
+    position:absolute; top:9px; right:10px;
+    font-size:9px; color:rgba(255,255,255,.3); font-weight:600;
+  }
+  .lg-nuevo {
+    position:absolute; top:-5px; right:-5px;
+    background:#C41E3A; color:#fff; font-size:8px; font-weight:800;
+    border-radius:99px; padding:2px 7px; text-transform:uppercase;
+  }
+  /* Sugerencias de búsqueda */
+  .lg-suggestion {
+    padding:11px 16px; background:rgba(255,255,255,.05);
+    border:1px solid rgba(255,255,255,.09); border-radius:10px;
+    margin-bottom:6px; cursor:pointer; font-size:13px; font-weight:700;
+    color:#fff; transition:background .15s;
+  }
+  .lg-suggestion:hover { background:rgba(167,139,250,.18); }
+
+  /* ── Editor de logro ── */
+  .lg-field { margin-bottom:12px; }
+  .lg-field label {
+    display:block; font-size:11px; font-weight:700; color:rgba(255,255,255,.5);
+    text-transform:uppercase; letter-spacing:.05em; margin-bottom:6px;
+  }
+  .lg-input {
+    width:100%; background:rgba(255,255,255,.07); border:1.5px solid rgba(255,255,255,.12);
+    border-radius:10px; padding:10px 14px; font-size:13px; color:#fff;
+    font-family:inherit; outline:none; transition:border-color .2s;
+  }
+  .lg-input:focus { border-color:#a78bfa; }
+  .lg-select {
+    width:100%; background:#1a1035; border:1.5px solid rgba(255,255,255,.12);
+    border-radius:10px; padding:10px 14px; font-size:13px; color:#fff;
+    font-family:inherit; outline:none; cursor:pointer;
+  }
+  .lg-select:focus { border-color:#a78bfa; }
+  .lg-row2 { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+
+  /* Condiciones */
+  .lg-cond-list { display:flex; flex-direction:column; gap:7px; margin-bottom:10px; }
+  .lg-cond-row {
+    display:flex; align-items:center; gap:7px;
+    background:rgba(255,255,255,.04); border:1px solid rgba(255,255,255,.09);
+    border-radius:10px; padding:9px 12px;
+  }
+  .lg-cond-sel {
+    flex:1; background:#1a1035; border:1.5px solid rgba(255,255,255,.1);
+    border-radius:8px; padding:7px 10px; font-size:12px; color:#fff;
+    font-family:inherit; outline:none; min-width:0;
+  }
+  .lg-cond-val {
+    width:86px; flex-shrink:0; background:rgba(255,255,255,.07);
+    border:1.5px solid rgba(255,255,255,.12); border-radius:8px;
+    padding:7px 10px; font-size:12px; color:#fff; font-family:inherit; outline:none;
+  }
+  .lg-cond-del {
+    width:28px; height:28px; border-radius:7px; flex-shrink:0;
+    background:rgba(196,30,58,.1); border:1px solid rgba(196,30,58,.25);
+    color:#f87171; cursor:pointer; font-size:13px; display:flex;
+    align-items:center; justify-content:center; font-family:inherit;
+  }
+  .lg-cond-hint { font-size:10px; color:rgba(255,255,255,.28); margin-top:3px; padding-left:2px; }
+  .lg-add-cond {
+    width:100%; padding:8px; background:rgba(167,139,250,.08);
+    border:1.5px dashed rgba(167,139,250,.28); border-radius:9px;
+    color:#a78bfa; font-size:12px; font-weight:700; cursor:pointer;
+    font-family:inherit; transition:all .15s;
+  }
+  .lg-add-cond:hover { background:rgba(167,139,250,.18); }
+
+  /* Botones */
+  .lg-btn-primary {
+    padding:11px 22px; background:linear-gradient(135deg,#7c3aed,#5b21b6);
+    color:#fff; border:none; border-radius:10px; font-size:13px; font-weight:700;
+    cursor:pointer; font-family:inherit; display:inline-flex; align-items:center; gap:7px;
+    transition:opacity .15s;
+  }
+  .lg-btn-primary:hover { opacity:.85; }
+  .lg-btn-ghost {
+    padding:11px 22px; background:rgba(255,255,255,.06);
+    color:rgba(255,255,255,.6); border:1px solid rgba(255,255,255,.14);
+    border-radius:10px; font-size:13px; font-weight:700;
+    cursor:pointer; font-family:inherit; transition:all .15s;
+  }
+  .lg-btn-ghost:hover { background:rgba(255,255,255,.12); }
+  .lg-btn-danger {
+    padding:11px 22px; background:rgba(196,30,58,.15);
+    color:#f87171; border:1.5px solid rgba(196,30,58,.35);
+    border-radius:10px; font-size:13px; font-weight:700;
+    cursor:pointer; font-family:inherit; transition:all .15s;
+  }
+  .lg-btn-danger:hover { background:rgba(196,30,58,.28); }
+
+  /* Zona peligrosa */
+  .lg-danger-zone {
+    background:rgba(196,30,58,.07); border:1.5px solid rgba(196,30,58,.22);
+    border-radius:14px; padding:18px 20px; margin-top:16px;
+  }
+  .lg-danger-title { font-size:13px; font-weight:800; color:#f87171; margin-bottom:6px; }
+  .lg-danger-desc  { font-size:12px; color:rgba(255,255,255,.4); margin-bottom:14px; line-height:1.6; }
+
+  /* Lista editor */
+  .lg-edit-row {
+    display:flex; align-items:center; gap:10px;
+    padding:11px 14px; background:rgba(255,255,255,.04);
+    border:1px solid rgba(255,255,255,.07); border-radius:11px; margin-bottom:7px;
+    transition:background .15s;
+  }
+  .lg-edit-row:hover { background:rgba(255,255,255,.07); }
+  .lg-edit-icon { font-size:22px; flex-shrink:0; width:32px; text-align:center; }
+  .lg-edit-info { flex:1; min-width:0; }
+  .lg-edit-name { font-size:12.5px; font-weight:800; color:#fff; }
+  .lg-edit-meta  { font-size:10.5px; color:rgba(255,255,255,.35); margin-top:2px; }
+  .lg-edit-btns  { display:flex; gap:6px; flex-shrink:0; }
+  .lg-edit-btn {
+    padding:5px 12px; border-radius:8px; font-size:11px; font-weight:700;
+    cursor:pointer; font-family:inherit; transition:all .15s; border:1px solid;
+  }
+  .lg-status { margin-top:12px; font-size:12px; display:none; }
+`;
+document.head.appendChild(style);
+
+// ── Rareza colores ─────────────────────────────────────────────
+const RAR = {
+  comun:      {color:'#9CA3AF', bg:'rgba(156,163,175,.15)', glow:'rgba(156,163,175,.2)',  label:'Común'},
+  raro:       {color:'#60A5FA', bg:'rgba(96,165,250,.15)',  glow:'rgba(96,165,250,.25)',  label:'Raro'},
+  epico:      {color:'#A78BFA', bg:'rgba(167,139,250,.18)', glow:'rgba(167,139,250,.3)',  label:'Épico'},
+  legendario: {color:'#FFD700', bg:'rgba(255,215,0,.15)',   glow:'rgba(255,215,0,.35)',   label:'Legendario'},
+};
+
+// ── Condiciones disponibles ────────────────────────────────────
+const CONDS = [
+  // --- SIN VALOR ---
+  {id:'primer_registro',   label:'Es el primer registro del asesor en el sistema',  tipo:'ninguno'},
+  {id:'nunca_cero',        label:'Nunca tuvo 0% en ningún registro',                tipo:'ninguno'},
+  {id:'primer_reg_100',    label:'Su primer registro fue 100%',                     tipo:'ninguno'},
+  {id:'mejor_equipo_mes',  label:'Tiene el % más alto de todo el equipo este mes',  tipo:'ninguno'},
+  {id:'tmo_mas_bajo',      label:'Tiene el TMO (tiempo) más bajo del equipo',       tipo:'ninguno'},
+  // --- POSICIÓN ---
+  {id:'top_n',             label:'Está en el top N del ranking (ej: top 5)',        tipo:'numero', placeholder:'5',  hint:'Ingresa el número de puesto máximo. Ej: 5 = debe estar entre el 1° y el 5°'},
+  {id:'pos_exacta',        label:'Está exactamente en el puesto N',                 tipo:'numero', placeholder:'1',  hint:'Solo se desbloquea si está en ese puesto exacto'},
+  {id:'mitad_superior',    label:'Está en la mitad superior del ranking',           tipo:'ninguno'},
+  // --- PORCENTAJE ---
+  {id:'pct_mayor_igual',   label:'Su % de satisfacción es mayor o igual a N',      tipo:'numero', placeholder:'80', hint:'Ej: 80 = necesita 80% o más'},
+  {id:'pct_menor_igual',   label:'Su % de satisfacción es menor o igual a N',      tipo:'numero', placeholder:'50', hint:'Ej: 50 = necesita 50% o menos'},
+  {id:'pct_exacto',        label:'Su % de satisfacción es exactamente N',          tipo:'numero', placeholder:'100',hint:'Solo si el % es exactamente ese valor'},
+  {id:'pct_entre',         label:'Su % está entre N y M (ej: 70-85)',              tipo:'rango',  placeholder:'70-85', hint:'Escribe los dos valores separados por guión: mínimo-máximo'},
+  {id:'pct_maximo_histor', label:'Su mejor % histórico es mayor o igual a N',      tipo:'numero', placeholder:'90', hint:'El porcentaje más alto que haya tenido alguna vez'},
+  {id:'pct_sube_n_puntos', label:'Subió N o más puntos respecto a la semana anterior', tipo:'numero', placeholder:'10', hint:'Diferencia entre esta semana y la anterior'},
+  {id:'supera_promedio_n', label:'Supera el promedio del equipo en N o más puntos', tipo:'numero', placeholder:'10', hint:'Si el equipo promedia 65% y pones 10, necesita 75%+'},
+  // --- RACHA ---
+  {id:'racha_mayor_igual', label:'Lleva N o más semanas seguidas sobre el 70%',    tipo:'numero', placeholder:'3',  hint:'Semanas consecutivas sin bajar del 70%'},
+  {id:'racha_exacta',      label:'Lleva exactamente N semanas en racha',           tipo:'numero', placeholder:'5',  hint:'Solo si tiene exactamente esa cantidad de semanas'},
+  {id:'racha_sobre_pct',   label:'Lleva N semanas seguidas sobre el M% (ej: 3-80)',tipo:'rango',  placeholder:'3-80',hint:'semanas-porcentaje. Ej: 3-80 = 3 semanas sobre 80%'},
+  // --- HISTORIAL ---
+  {id:'sem_total_mayor',   label:'Tiene N o más semanas registradas en total',     tipo:'numero', placeholder:'4',  hint:'Número total de semanas que aparece en el sistema'},
+  {id:'sem_mes_actual',    label:'Tiene N o más registros en el mes actual',       tipo:'numero', placeholder:'3',  hint:'Cuántas semanas del mes actual tiene registradas'},
+  {id:'nunca_bajo_pct',    label:'Nunca bajó del N% en el mes actual',             tipo:'numero', placeholder:'70', hint:'Todos sus registros de este mes son mayores a ese %'},
+  {id:'siempre_top_n_mes', label:'Siempre estuvo en el top N durante el mes',      tipo:'numero', placeholder:'5',  hint:'Todos sus registros del mes lo ubican en el top N'},
+  // --- RANKING ---
+  {id:'subio_n_puestos',   label:'Subió N o más puestos respecto a la semana anterior', tipo:'numero', placeholder:'5', hint:'Diferencia de posición entre semanas'},
+];
+
+// ── Estado ─────────────────────────────────────────────────────
+let _lgTab       = 'ver';      // 'ver' | 'editar'
+let _lgAsesor    = '';
+let _lgLogros    = {};         // logros del asesor actual
+let _lgDefs      = [];         // definiciones cargadas de Firebase
+let _lgCat       = 'Todos';
+let _lgEditId    = null;       // null = crear, string = editar
+let _lgConds     = [];         // condiciones del form actual
+let _lgSearchTimer = null;
+
+// ── Modal HTML ─────────────────────────────────────────────────
+const modal = document.createElement('div');
+modal.id = 'lg-modal';
+modal.innerHTML = `
+  <div id="lg-wrap">
+    <div id="lg-head">
+      <div id="lg-head-av">🏆</div>
+      <div style="flex:1;min-width:0">
+        <div style="font-size:10px;font-weight:800;color:#a78bfa;text-transform:uppercase;letter-spacing:.1em;margin-bottom:2px">🏆 Logros</div>
+        <div id="lg-head-name" style="font-size:16px;font-weight:900;color:#fff">Portal SAES</div>
+        <div id="lg-head-sub"  style="font-size:11px;color:rgba(255,255,255,.4);margin-top:1px"></div>
+      </div>
+      <button onclick="document.getElementById('lg-modal').classList.remove('open')"
+        style="background:rgba(255,255,255,.08);border:none;border-radius:10px;width:36px;height:36px;cursor:pointer;color:#fff;font-size:18px;display:flex;align-items:center;justify-content:center;font-family:inherit">✕</button>
+    </div>
+    <div class="lg-tabs">
+      <button class="lg-tab active" id="lg-tab-ver"    onclick="_lgSetTab('ver')">👤 Ver logros</button>
+      <button class="lg-tab"        id="lg-tab-editar" onclick="_lgSetTab('editar')" id="lg-tab-editar-btn" style="display:none">⚙️ Gestionar</button>
+    </div>
+    <div id="lg-body"></div>
+  </div>`;
+document.body.appendChild(modal);
+modal.addEventListener('click', e => { if(e.target===modal) modal.classList.remove('open'); });
+
+// ── Cargar definiciones de Firebase ───────────────────────────
+async function _lgCargarDefs() {
+  const {getFirestore,collection,getDocs} = window._fbModules||{};
+  if (!getFirestore) return;
+  try {
+    const snap = await getDocs(collection(getFirestore(),'logros_config'));
+    _lgDefs = snap.docs.map(d=>({...d.data(), _fid:d.id}));
+  } catch(e){ _lgDefs=[]; }
+}
+
+// ── Tabs ───────────────────────────────────────────────────────
+window._lgSetTab = function(tab) {
+  _lgTab = tab;
+  document.getElementById('lg-tab-ver').classList.toggle('active', tab==='ver');
+  document.getElementById('lg-tab-editar').classList.toggle('active', tab==='editar');
+  if (tab==='ver')    _lgRenderVer();
+  if (tab==='editar') _lgRenderEditar();
+};
+
+// ══════════════════════════════════════════════════════════════
+// TAB VER — buscador + grid de logros
+// ══════════════════════════════════════════════════════════════
+function _lgRenderVer() {
+  const body = document.getElementById('lg-body');
+  body.innerHTML = `
+    <div style="padding:16px 0 0">
+      <input class="lg-search" id="lg-search-input"
+        placeholder="🔍  Escribe el nombre de un asesor..."
+        oninput="_lgBuscar(this.value)">
+      <div id="lg-suggestions"></div>
+      <div id="lg-stats-wrap"  style="display:none" class="lg-stats"></div>
+      <div id="lg-cats-wrap"   style="display:none" class="lg-cats"></div>
+      <div id="lg-grid-wrap"   class="lg-grid"></div>
+      <div id="lg-empty" style="text-align:center;padding:40px;color:rgba(255,255,255,.3);display:none">
+        <div style="font-size:36px;margin-bottom:12px">🔍</div>
+        <div style="font-size:13px;font-weight:600">No se encontraron asesores</div>
+        <div style="font-size:11px;margin-top:4px">Prueba con otro nombre o verifica el Excel subido</div>
+      </div>
+    </div>`;
+
+  if (_lgAsesor) {
+    document.getElementById('lg-search-input').value = _lgAsesor;
+    _lgMostrarAsesor(_lgAsesor);
+  }
+}
+
+window._lgBuscar = function(q) {
+  clearTimeout(_lgSearchTimer);
+  _lgSearchTimer = setTimeout(() => {
+    const val = q.trim().toLowerCase();
+    const sugg = document.getElementById('lg-suggestions');
+    const empty = document.getElementById('lg-empty');
+    if (!val) { sugg.innerHTML=''; return; }
+
+    const data = window._satData||[];
+    const names = [...new Set(data.filter(r=>r.asesor.toLowerCase().includes(val)).map(r=>r.asesor))];
+
+    if (!names.length) {
+      sugg.innerHTML='';
+      empty.style.display='block';
+      document.getElementById('lg-grid-wrap').innerHTML='';
+      document.getElementById('lg-stats-wrap').style.display='none';
+      document.getElementById('lg-cats-wrap').style.display='none';
+      return;
+    }
+    empty.style.display='none';
+
+    if (names.length===1) {
+      sugg.innerHTML='';
+      _lgMostrarAsesor(names[0]);
+    } else {
+      sugg.innerHTML = names.map(n=>`
+        <div class="lg-suggestion" onclick="_lgMostrarAsesor('${n.replace(/'/g,"\\'")}');document.getElementById('lg-search-input').value='${n.replace(/'/g,"\\'")}'">${n}</div>`
+      ).join('');
+      document.getElementById('lg-grid-wrap').innerHTML='';
+      document.getElementById('lg-stats-wrap').style.display='none';
+      document.getElementById('lg-cats-wrap').style.display='none';
+    }
+  }, 350);
+};
+
+window._lgMostrarAsesor = async function(nombre) {
+  _lgAsesor = nombre;
+  document.getElementById('lg-suggestions').innerHTML='';
+
+  // Header
+  const av = document.getElementById('lg-head-av');
+  av.textContent = nombre.split(' ').slice(0,2).map(w=>w[0]||'').join('').toUpperCase();
+  document.getElementById('lg-head-name').textContent = nombre;
+  document.getElementById('lg-head-sub').textContent  = 'Calculando logros...';
+
+  // Calcular y cargar
+  await _lgCalcular(nombre);
+  const {getFirestore,doc,getDoc} = window._fbModules||{};
+  if (getFirestore) {
     try {
       const key  = nombre.trim().replace(/\s+/g,'_').toLowerCase();
       const snap = await getDoc(doc(getFirestore(),'logros_asesores',key));
-      _logrosData = snap.exists() ? (snap.data().logros||{}) : {};
-    } catch(e) { _logrosData = {}; }
-
-    _renderTodo();
-  };
-
-  // ── Calcular y guardar logros ─────────────────────────────────
-  async function _calcularLogros(nombre) {
-    const {getFirestore,doc,getDoc,setDoc,serverTimestamp} = window._fbModules||{};
-    if (!getFirestore) return;
-    const db = getFirestore();
-
-    // Get historial from satData
-    const hist = (window._satData||satData||[])
-      .filter(r => r.asesor === nombre)
-      .sort((a,b) => (a.mes+a.semana).localeCompare(b.mes+b.semana));
-    if (!hist.length) return;
-
-    const ranking = window._satLastRanking || [];
-    const myIdx   = ranking.findIndex(r=>r.asesor===nombre);
-    const myPos   = myIdx+1;
-    const myData  = ranking[myIdx] || {};
-    const pcts    = hist.map(h=>h.pct);
-    const maxPct  = Math.max(...pcts);
-    const pct     = pcts[pcts.length-1];
-    const racha   = myData.racha||0;
-    const avgTeam = ranking.length ? Math.round(ranking.reduce((s,r)=>s+r.pct,0)/ranking.length) : 0;
-
-    // Load existing
-    const key    = nombre.trim().replace(/\s+/g,'_').toLowerCase();
-    const docRef = doc(db,'logros_asesores',key);
-    let exist    = {};
-    try { const s=await getDoc(docRef); if(s.exists()) exist=s.data().logros||{}; } catch(e){}
-
-    const nuevos = {};
-    const chk = id => !exist[id] && !nuevos[id];
-
-    // INICIO
-    if(chk('primera_estrella') && hist.length>=1)    nuevos['primera_estrella']=true;
-    if(chk('top10_primero') && myPos>=1&&myPos<=10)  nuevos['top10_primero']=true;
-    if(chk('top3_primero')  && myPos>=1&&myPos<=3)   nuevos['top3_primero']=true;
-    if(chk('top1_primero')  && myPos===1)            nuevos['top1_primero']=true;
-    // PORCENTAJE
-    if(chk('pct_60')  && maxPct>=60)  nuevos['pct_60']=true;
-    if(chk('pct_70')  && maxPct>=70)  nuevos['pct_70']=true;
-    if(chk('pct_80')  && maxPct>=80)  nuevos['pct_80']=true;
-    if(chk('pct_90')  && maxPct>=90)  nuevos['pct_90']=true;
-    if(chk('pct_95')  && maxPct>=95)  nuevos['pct_95']=true;
-    if(chk('pct_100') && maxPct>=100) nuevos['pct_100']=true;
-    // RACHA
-    if(chk('racha_2') && racha>=2) nuevos['racha_2']=true;
-    if(chk('racha_3') && racha>=3) nuevos['racha_3']=true;
-    if(chk('racha_4') && racha>=4) nuevos['racha_4']=true;
-    if(chk('racha_6') && racha>=6) nuevos['racha_6']=true;
-    if(chk('racha_8') && racha>=8) nuevos['racha_8']=true;
-    // MEJORA
-    if(hist.length>=2 && chk('mejora_5') && myPos>0) {
-      const prevRank=window._satPrevRanking||[];
-      const prevPos=prevRank.findIndex(r=>r.asesor===nombre)+1;
-      if(prevPos>0 && prevPos-myPos>=5)  nuevos['mejora_5']=true;
-      if(prevPos>0 && prevPos-myPos>=10) nuevos['mejora_10']=true;
-      const diff=hist[hist.length-1].pct-hist[hist.length-2].pct;
-      if(chk('pct_sube_10') && diff>=10) nuevos['pct_sube_10']=true;
-      if(chk('pct_sube_20') && diff>=20) nuevos['pct_sube_20']=true;
-    }
-    // CONSISTENCIA
-    if(chk('sem_4_mes')) {
-      const mes=hist[hist.length-1]?.mes;
-      if(hist.filter(h=>h.mes===mes).length>=4) nuevos['sem_4_mes']=true;
-    }
-    if(chk('mes_completo')) {
-      const mes=hist[hist.length-1]?.mes;
-      const desMes=hist.filter(h=>h.mes===mes);
-      if(desMes.length>=3 && desMes.every(h=>h.pct>=70)) nuevos['mes_completo']=true;
-    }
-    if(chk('sin_bajar') && hist.length>=3) {
-      const l3=hist.slice(-3);
-      if(myPos>0 && l3.every((h,i,a)=>i===0||h.pct>=a[i-1].pct)) nuevos['sin_bajar']=true;
-    }
-    // POSICIÓN
-    if(chk('top2')    && myPos===2) nuevos['top2']=true;
-    if(chk('top1_mes')&& myPos===1) nuevos['top1_mes']=true;
-    // ESPECIALES
-    if(chk('pct_100_1a') && hist.length===1&&pct===100) nuevos['pct_100_1a']=true;
-    if(chk('nunca_cero') && hist.every(h=>h.pct>0))    nuevos['nunca_cero']=true;
-    if(chk('por_enc_avg')&& pct>=avgTeam+10)            nuevos['por_enc_avg']=true;
-    // RANGOS
-    if(chk('rango_oro')       && maxPct>=60) nuevos['rango_oro']=true;
-    if(chk('rango_esmeralda') && maxPct>=80) nuevos['rango_esmeralda']=true;
-    if(chk('rango_diamante')  && maxPct>=95) nuevos['rango_diamante']=true;
-
-    if(!Object.keys(nuevos).length) return;
-
-    const update={...exist};
-    const hoy=new Date().toLocaleDateString('es-PE');
-    Object.keys(nuevos).forEach(id=>{ update[id]={fecha:hoy,nuevo:true}; });
-    try { await setDoc(docRef,{logros:update,actualizado:serverTimestamp()},{merge:true}); } catch(e){}
+      _lgLogros = snap.exists() ? (snap.data().logros||{}) : {};
+    } catch(e){ _lgLogros={}; }
   }
 
-  // ── Render completo ───────────────────────────────────────────
-  function _renderTodo() {
-    const nombre = _asesorActual;
-    const logros = _logrosData;
-    const total  = LOGROS_DEF.length;
-    const desbl  = Object.keys(logros).length;
+  _lgRenderGrid();
+};
 
-    // Header
-    document.getElementById('logros-prog').textContent = desbl+' / '+total+' logros ('+Math.round(desbl/total*100)+'%)';
+function _lgRenderGrid() {
+  const defs = _lgDefs;
+  const desbloq = Object.keys(_lgLogros).length;
+  const total   = defs.length;
+  document.getElementById('lg-head-sub').textContent = `${desbloq} / ${total} logros (${total?Math.round(desbloq/total*100):0}%)`;
 
-    // Stats por rareza
-    const counts={comun:0,raro:0,epico:0,legendario:0};
-    Object.keys(logros).forEach(id=>{
-      const d=LOGROS_DEF.find(l=>l.id===id);
-      if(d) counts[d.rarity]++;
-    });
-    document.getElementById('logros-stats').innerHTML=[
-      {l:'Total',val:desbl,c:'#fff'},
-      {l:'Comunes',val:counts.comun,c:RARITY.comun.color},
-      {l:'Raros',val:counts.raro,c:RARITY.raro.color},
-      {l:'Épicos',val:counts.epico,c:RARITY.epico.color},
-      {l:'Legendarios',val:counts.legendario,c:RARITY.legendario.color},
-    ].map(s=>`<div class="logros-stat"><div class="logros-stat-val" style="color:${s.c}">${s.val}</div><div class="logros-stat-lbl">${s.l}</div></div>`).join('');
-
-    // Tabs
-    const cats=['Todos',...new Set(LOGROS_DEF.map(l=>l.cat))];
-    document.getElementById('logros-tabs').innerHTML=cats.map(c=>
-      `<button class="logros-tab${c===_catActiva?' active':''}" onclick="_logrosSetCat('${c}')">${c}</button>`
-    ).join('');
-
-    _renderGrid();
-  }
-
-  window._logrosSetCat = function(cat) {
-    _catActiva = cat;
-    document.querySelectorAll('.logros-tab').forEach(t=>{
-      t.classList.toggle('active', t.textContent===cat);
-    });
-    _renderGrid();
-  };
-
-  function _renderGrid() {
-    const logros   = _logrosData;
-    const filtered = _catActiva==='Todos' ? LOGROS_DEF : LOGROS_DEF.filter(l=>l.cat===_catActiva);
-    const sorted   = [...filtered].sort((a,b)=>{
-      const aD=!!logros[a.id], bD=!!logros[b.id];
-      return aD===bD ? 0 : aD ? -1 : 1;
-    });
-
-    document.getElementById('logros-empty').style.display = filtered.length ? 'none':'block';
-    document.getElementById('logros-grid').innerHTML = sorted.map(def=>{
-      const data = logros[def.id];
-      const r    = RARITY[def.rarity];
-      return `
-        <div class="logro-card ${data?'desbloqueado':'bloqueado'}"
-          style="--lc:${r.color};--lg:${r.glow}">
-          ${data&&data.nuevo ? '<div class="logro-nuevo">¡Nuevo!</div>' : ''}
-          ${data ? `<div class="logro-fecha">${data.fecha||''}</div>` : ''}
-          <span class="logro-icon">${data?def.icon:'🔒'}</span>
-          <div class="logro-nombre">${def.nombre}</div>
-          <div class="logro-desc">${data?def.desc:'???'}</div>
-          <div class="logro-rarity" style="color:${r.color};border-color:${r.color};background:${r.bg}">${r.label}</div>
-        </div>`;
-    }).join('');
-  }
-
-  // ── Abrir modal ───────────────────────────────────────────────
-  window._satAbrirLogros = async function(nombre) {
-    document.getElementById('logros-modal').classList.add('open');
-    if (nombre) {
-      document.getElementById('logros-search').value = nombre;
-      await window._cargarYMostrar(nombre);
-    }
-  };
-
-  // ── Botón en ranking para ver logros ─────────────────────────
-  // Se inyecta en _satVerHistorial via el historial modal
-  window._satGetBtnLogrosHtml = function(nombre) {
-    return `<button onclick="window._satAbrirLogros('${nombre.replace(/'/g,"\\'")}');document.getElementById('sat-hist-modal').style.display='none'"
-      style="display:flex;align-items:center;gap:7px;background:rgba(167,139,250,.12);border:1.5px solid rgba(167,139,250,.3);color:#a78bfa;border-radius:10px;padding:9px 16px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;margin-top:14px;width:100%;justify-content:center">
-      🏆 Ver logros de ${nombre.split(' ')[0]}
-    </button>`;
-  };
-
-  // ── Botón flotante de logros (acceso rápido propio) ───────────
-  const btnFloat = document.createElement('button');
-  btnFloat.id = 'logros-fab';
-  btnFloat.title = 'Ver mis logros';
-  btnFloat.innerHTML = '🏆';
-  btnFloat.style.cssText = `
-    position:fixed; bottom:80px; right:24px; z-index:9999;
-    width:48px; height:48px; border-radius:50%;
-    background:linear-gradient(135deg,#2d1b69,#1a0a3d);
-    border:2px solid rgba(167,139,250,.4);
-    box-shadow:0 4px 20px rgba(0,0,0,.5);
-    font-size:22px; cursor:pointer; display:none;
-    align-items:center; justify-content:center;
-    transition:transform .2s, box-shadow .2s;`;
-  btnFloat.onmouseover = ()=>{ btnFloat.style.transform='scale(1.1)'; btnFloat.style.boxShadow='0 6px 24px rgba(167,139,250,.4)'; };
-  btnFloat.onmouseout  = ()=>{ btnFloat.style.transform='scale(1)';   btnFloat.style.boxShadow='0 4px 20px rgba(0,0,0,.5)'; };
-  btnFloat.onclick = async () => {
-    const nombre = window._satNombreEnRanking || window.currentUserNombre || '';
-    document.getElementById('logros-modal').classList.add('open');
-    if (nombre) {
-      document.getElementById('logros-search').value = nombre;
-      await window._cargarYMostrar(nombre);
-    }
-  };
-  document.body.appendChild(btnFloat);
-
-  // Mostrar FAB cuando hay datos en el ranking
-  window.addEventListener('sise:rolCargado', () => {
-    btnFloat.style.display = 'flex';
+  // Stats
+  const counts={comun:0,raro:0,epico:0,legendario:0};
+  Object.keys(_lgLogros).forEach(id=>{
+    const d=defs.find(l=>l.id===id||l._fid===id);
+    if(d) counts[d.rarity||'comun']++;
   });
-  if (window.currentUserRol) btnFloat.style.display = 'flex';
+  const statsEl=document.getElementById('lg-stats-wrap');
+  statsEl.style.display='flex';
+  statsEl.innerHTML=[
+    {l:'Total',  v:desbloq,           c:'#fff'},
+    {l:'Comunes',v:counts.comun,      c:RAR.comun.color},
+    {l:'Raros',  v:counts.raro,       c:RAR.raro.color},
+    {l:'Épicos', v:counts.epico,      c:RAR.epico.color},
+    {l:'Legendarios',v:counts.legendario,c:RAR.legendario.color},
+  ].map(s=>`<div class="lg-stat"><div class="lg-stat-val" style="color:${s.c}">${s.v}</div><div class="lg-stat-lbl">${s.l}</div></div>`).join('');
+
+  // Cat tabs
+  const cats=['Todos',...new Set(defs.map(l=>l.cat||'General').filter(Boolean))];
+  const catsEl=document.getElementById('lg-cats-wrap');
+  catsEl.style.display='flex';
+  catsEl.innerHTML=cats.map(c=>`<button class="lg-cat${c===_lgCat?' active':''}" onclick="_lgSetCat('${c}')">${c}</button>`).join('');
+
+  // Grid
+  const filtered=_lgCat==='Todos'?defs:defs.filter(l=>(l.cat||'General')===_lgCat);
+  const sorted=[...filtered].sort((a,b)=>{
+    const aD=!!_lgLogros[a.id||a._fid], bD=!!_lgLogros[b.id||b._fid];
+    return aD===bD?0:aD?-1:1;
+  });
+
+  const grid=document.getElementById('lg-grid-wrap');
+  if(!sorted.length){ grid.innerHTML='<div style="color:rgba(255,255,255,.3);text-align:center;padding:24px;grid-column:1/-1">No hay logros en esta categoría</div>'; return; }
+
+  grid.innerHTML=sorted.map(def=>{
+    const key=def.id||def._fid;
+    const data=_lgLogros[key];
+    const r=RAR[def.rarity||'comun'];
+    return `<div class="lg-card ${data?'desbloq':'bloq'}" style="--c:${r.color};--g:${r.glow}">
+      ${data&&data.nuevo?'<div class="lg-nuevo">¡Nuevo!</div>':''}
+      ${data?`<div class="lg-date">${data.fecha||''}</div>`:''}
+      <span class="lg-icon">${data?(def.icon||'🏆'):'🔒'}</span>
+      <div class="lg-name">${def.nombre||'Sin nombre'}</div>
+      <div class="lg-desc">${data?(def.desc||''):'???'}</div>
+      <div class="lg-badge" style="color:${r.color};border-color:${r.color};background:${r.bg}">${r.label}</div>
+    </div>`;
+  }).join('');
+}
+
+window._lgSetCat = function(cat) {
+  _lgCat=cat;
+  document.querySelectorAll('.lg-cat').forEach(b=>b.classList.toggle('active',b.textContent===cat));
+  _lgRenderGrid();
+};
+
+// ══════════════════════════════════════════════════════════════
+// TAB EDITAR — lista + formulario
+// ══════════════════════════════════════════════════════════════
+function _lgRenderEditar() {
+  const body=document.getElementById('lg-body');
+  body.innerHTML=`
+    <div style="padding:16px 0 0">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
+        <div style="font-size:13px;font-weight:800;color:#fff">Logros definidos <span id="lg-edit-count" style="color:rgba(255,255,255,.4)"></span></div>
+        <button class="lg-btn-primary" onclick="_lgAbrirForm(null)" style="padding:8px 16px;font-size:12px">＋ Nuevo logro</button>
+      </div>
+      <input class="lg-search" id="lg-edit-search" placeholder="Buscar logro..." oninput="_lgFiltrarEdit(this.value)" style="margin-bottom:12px">
+      <div id="lg-edit-list"></div>
+      <div id="lg-form-wrap" style="display:none"></div>
+      <div class="lg-danger-zone">
+        <div class="lg-danger-title">⚠️ Reiniciar logros de todos</div>
+        <div class="lg-danger-desc">Borra todos los logros obtenidos por todos los asesores. No se puede deshacer. Los logros definidos no se eliminan.</div>
+        <button class="lg-btn-danger" onclick="_lgReiniciarTodos()" style="font-size:12px;padding:9px 18px">🗑️ Reiniciar logros de todos los asesores</button>
+      </div>
+    </div>`;
+  _lgRenderEditList();
+}
+
+function _lgRenderEditList(filtro='') {
+  const list=document.getElementById('lg-edit-list');
+  const count=document.getElementById('lg-edit-count');
+  if(!list) return;
+  const f=filtro.toLowerCase();
+  const filtered=f?_lgDefs.filter(l=>(l.nombre||'').toLowerCase().includes(f)||(l.cat||'').toLowerCase().includes(f)):_lgDefs;
+  if(count) count.textContent='('+_lgDefs.length+')';
+  if(!filtered.length){ list.innerHTML='<div style="color:rgba(255,255,255,.3);text-align:center;padding:24px;font-size:13px">No hay logros aún. ¡Crea el primero!</div>'; return; }
+  const r2c={comun:RAR.comun.color,raro:RAR.raro.color,epico:RAR.epico.color,legendario:RAR.legendario.color};
+  list.innerHTML=filtered.map(l=>`
+    <div class="lg-edit-row">
+      <div class="lg-edit-icon">${l.icon||'🏆'}</div>
+      <div class="lg-edit-info">
+        <div class="lg-edit-name">${l.nombre||'Sin nombre'}</div>
+        <div class="lg-edit-meta">
+          <span style="color:${r2c[l.rarity||'comun']}">${RAR[l.rarity||'comun']?.label}</span>
+          · ${l.cat||'General'}
+          ${l.condiciones?.length?'· <span style="color:#4ADE80">'+l.condiciones.length+' condición(es)</span>':'· <span style="color:#F59E0B">Manual</span>'}
+        </div>
+      </div>
+      <div class="lg-edit-btns">
+        <button class="lg-edit-btn" style="color:#a78bfa;border-color:rgba(167,139,250,.3);background:rgba(167,139,250,.08)" onclick="_lgAbrirForm('${(l._fid||'').replace(/'/g,"\\'")}')">✏️ Editar</button>
+        <button class="lg-edit-btn" style="color:#f87171;border-color:rgba(196,30,58,.3);background:rgba(196,30,58,.08)" onclick="_lgBorrarLogro('${(l._fid||'').replace(/'/g,"\\'")}')">🗑️</button>
+      </div>
+    </div>`).join('');
+}
+
+window._lgFiltrarEdit=function(q){ _lgRenderEditList(q); };
+
+// ── Formulario crear/editar ────────────────────────────────────
+window._lgAbrirForm=function(fid) {
+  _lgEditId=fid;
+  _lgConds=[];
+  const wrap=document.getElementById('lg-form-wrap');
+  const list=document.getElementById('lg-edit-list');
+  if(!wrap) return;
+
+  let def={icon:'🏆',nombre:'',desc:'',cat:'General',rarity:'comun',condiciones:[]};
+  if(fid) { const found=_lgDefs.find(l=>l._fid===fid); if(found){def={...found}; _lgConds=JSON.parse(JSON.stringify(found.condiciones||[]));} }
+
+  list.style.display='none';
+  wrap.style.display='block';
+  wrap.innerHTML=`
+    <div style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:16px;padding:18px;margin-bottom:16px">
+      <div style="font-size:14px;font-weight:800;color:#fff;margin-bottom:16px;display:flex;align-items:center;gap:8px">
+        <span id="lg-form-icon-prev">${def.icon}</span>
+        <span id="lg-form-title-txt">${fid?'Editar logro':'Crear nuevo logro'}</span>
+      </div>
+      <div class="lg-row2">
+        <div class="lg-field">
+          <label>Ícono (emoji)</label>
+          <input class="lg-input" id="lgf-icon" value="${def.icon}" placeholder="🏆" maxlength="4" oninput="document.getElementById('lg-form-icon-prev').textContent=this.value||'🏆'">
+        </div>
+        <div class="lg-field">
+          <label>Rareza</label>
+          <select class="lg-select" id="lgf-rarity">
+            ${['comun','raro','epico','legendario'].map(r=>`<option value="${r}" ${r===def.rarity?'selected':''}>${RAR[r].label}</option>`).join('')}
+          </select>
+        </div>
+      </div>
+      <div class="lg-row2">
+        <div class="lg-field">
+          <label>Nombre del logro</label>
+          <input class="lg-input" id="lgf-nombre" value="${def.nombre}" placeholder="El Imparable">
+        </div>
+        <div class="lg-field">
+          <label>Categoría</label>
+          <input class="lg-input" id="lgf-cat" value="${def.cat}" placeholder="General" list="lgf-cats-list">
+          <datalist id="lgf-cats-list">
+            <option value="Inicio"><option value="Porcentaje"><option value="Racha">
+            <option value="Mejora"><option value="Consistencia"><option value="Posición">
+            <option value="Especial"><option value="Rangos"><option value="Social">
+          </datalist>
+        </div>
+      </div>
+      <div class="lg-field">
+        <label>Descripción (visible al desbloquear)</label>
+        <input class="lg-input" id="lgf-desc" value="${def.desc}" placeholder="Descripción del logro...">
+      </div>
+
+      <!-- Condiciones -->
+      <div style="margin-top:16px">
+        <div style="font-size:11px;font-weight:700;color:rgba(255,255,255,.5);text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px">
+          ⚡ Condiciones de desbloqueo automático
+        </div>
+        <div style="font-size:11px;color:rgba(255,255,255,.3);margin-bottom:10px;line-height:1.6">
+          Se desbloquea cuando se cumplan <strong style="color:rgba(255,255,255,.6)">TODAS</strong> las condiciones. Si no pones ninguna, se asigna manualmente.
+        </div>
+        <div id="lgf-conds-list" class="lg-cond-list"></div>
+        <button class="lg-add-cond" onclick="_lgAddCond()">＋ Agregar condición</button>
+      </div>
+
+      <div style="display:flex;gap:10px;margin-top:18px;flex-wrap:wrap">
+        <button class="lg-btn-primary" onclick="_lgGuardarLogro()">
+          <span id="lgf-save-txt">${fid?'✓ Guardar cambios':'✓ Crear logro'}</span>
+        </button>
+        <button class="lg-btn-ghost" onclick="_lgCancelarForm()">Cancelar</button>
+      </div>
+      <div id="lgf-status" class="lg-status"></div>
+    </div>`;
+
+  _lgRenderConds();
+};
+
+window._lgCancelarForm=function(){
+  document.getElementById('lg-form-wrap').style.display='none';
+  document.getElementById('lg-edit-list').style.display='block';
+  _lgConds=[];
+};
+
+// Render condiciones en el form
+function _lgRenderConds() {
+  const list=document.getElementById('lgf-conds-list');
+  if(!list) return;
+  list.innerHTML=_lgConds.map((c,i)=>{
+    const def=CONDS.find(x=>x.id===c.id)||CONDS[0];
+    const needsVal=def.tipo!=='ninguno';
+    return `<div>
+      <div class="lg-cond-row">
+        <select class="lg-cond-sel" onchange="_lgChangeCond(${i},this.value)">
+          ${CONDS.map(op=>`<option value="${op.id}" ${op.id===c.id?'selected':''}>${op.label}</option>`).join('')}
+        </select>
+        ${needsVal?`<input class="lg-cond-val" placeholder="${def.placeholder||''}" value="${c.valor||''}" oninput="_lgCondVal(${i},this.value)">`:''}
+        <button class="lg-cond-del" onclick="_lgDelCond(${i})">✕</button>
+      </div>
+      ${def.hint?`<div class="lg-cond-hint">💡 ${def.hint}</div>`:''}
+    </div>`;
+  }).join('');
+}
+
+window._lgAddCond=function(){
+  _lgConds.push({id:CONDS[0].id,valor:''});
+  _lgRenderConds();
+};
+window._lgChangeCond=function(i,id){
+  _lgConds[i]={id,valor:''};
+  _lgRenderConds();
+};
+window._lgCondVal=function(i,v){ _lgConds[i].valor=v; };
+window._lgDelCond=function(i){
+  _lgConds.splice(i,1);
+  _lgRenderConds();
+};
+
+// ── Guardar logro en Firebase ──────────────────────────────────
+window._lgGuardarLogro=async function(){
+  const icon   =document.getElementById('lgf-icon')?.value.trim()||'🏆';
+  const nombre =document.getElementById('lgf-nombre')?.value.trim();
+  const desc   =document.getElementById('lgf-desc')?.value.trim();
+  const cat    =document.getElementById('lgf-cat')?.value.trim()||'General';
+  const rarity =document.getElementById('lgf-rarity')?.value||'comun';
+  const status =document.getElementById('lgf-status');
+
+  if(!nombre||!desc){ status.style.display='block'; status.style.color='#f87171'; status.textContent='⚠️ Completa nombre y descripción'; return; }
+
+  const {getFirestore,collection,doc,setDoc,addDoc,serverTimestamp}=window._fbModules||{};
+  if(!getFirestore) return;
+  const db=getFirestore();
+
+  status.style.display='block'; status.style.color='#a78bfa'; status.textContent='Guardando...';
+
+  const condiciones=_lgConds.filter(c=>c.id);
+  const data={icon,nombre,desc,cat,rarity,condiciones,actualizado:serverTimestamp()};
+
+  try{
+    if(_lgEditId){
+      await setDoc(doc(db,'logros_config',_lgEditId),data,{merge:true});
+    } else {
+      data.id='lg_'+Date.now();
+      await addDoc(collection(db,'logros_config'),data);
+    }
+    status.style.color='#4ADE80'; status.textContent='✅ Guardado';
+    await _lgCargarDefs();
+    setTimeout(()=>{ _lgCancelarForm(); _lgRenderEditList(); },900);
+  }catch(e){ status.style.color='#f87171'; status.textContent='❌ '+e.message; }
+};
+
+// ── Borrar logro ───────────────────────────────────────────────
+window._lgBorrarLogro=async function(fid){
+  if(!confirm('¿Eliminar este logro? Los asesores que lo tengan lo perderán de su historial.')) return;
+  const {getFirestore,doc,deleteDoc}=window._fbModules||{};
+  if(!getFirestore) return;
+  try{
+    await deleteDoc(doc(getFirestore(),'logros_config',fid));
+    showToast('Logro eliminado ✓');
+    await _lgCargarDefs();
+    _lgRenderEditList();
+  }catch(e){ showToast('Error: '+e.message,'error'); }
+};
+
+// ── Reiniciar logros de todos ──────────────────────────────────
+window._lgReiniciarTodos=async function(){
+  if(!confirm('⚠️ ¿Reiniciar TODOS los logros de TODOS los asesores?\n\nEsta acción no se puede deshacer.')) return;
+  const {getFirestore,collection,getDocs,doc,deleteDoc}=window._fbModules||{};
+  if(!getFirestore) return;
+  try{
+    const snap=await getDocs(collection(getFirestore(),'logros_asesores'));
+    await Promise.all(snap.docs.map(d=>deleteDoc(doc(getFirestore(),'logros_asesores',d.id))));
+    showToast('Logros reiniciados ✓');
+  }catch(e){ showToast('Error: '+e.message,'error'); }
+};
+
+// ══════════════════════════════════════════════════════════════
+// CALCULAR logros de un asesor
+// ══════════════════════════════════════════════════════════════
+async function _lgCalcular(nombre){
+  const {getFirestore,doc,getDoc,setDoc,serverTimestamp}=window._fbModules||{};
+  if(!getFirestore||!_lgDefs.length) return;
+  const db=getFirestore();
+
+  const data=window._satData||[];
+  const hist=data.filter(r=>r.asesor===nombre)
+    .sort((a,b)=>(a.mes+a.semana).localeCompare(b.mes+b.semana));
+  if(!hist.length) return;
+
+  const ranking=window._satLastRanking||[];
+  const myIdx=ranking.findIndex(r=>r.asesor===nombre);
+  const myPos=myIdx+1;
+  const myData=ranking[myIdx]||{};
+  const prevRank=window._satPrevRanking||[];
+  const prevPos=(prevRank.findIndex(r=>r.asesor===nombre)+1)||0;
+  const pcts=hist.map(h=>h.pct);
+  const pct=pcts[pcts.length-1]||0;
+  const maxPct=Math.max(...pcts);
+  const racha=myData.racha||0;
+  const avgTeam=ranking.length?Math.round(ranking.reduce((s,r)=>s+r.pct,0)/ranking.length):0;
+  const total=ranking.length;
+
+  // Agrupar por mes
+  const mesPcts={};
+  hist.forEach(h=>{ if(!mesPcts[h.mes]) mesPcts[h.mes]=[]; mesPcts[h.mes].push(h.pct); });
+  const mesAct=new Date().getFullYear()+'-'+String(new Date().getMonth()+1).padStart(2,'0');
+
+  const key=nombre.trim().replace(/\s+/g,'_').toLowerCase();
+  const ref=doc(db,'logros_asesores',key);
+  let exist={};
+  try{ const s=await getDoc(ref); if(s.exists()) exist=s.data().logros||{}; }catch(e){}
+
+  const nuevos={};
+  const chk=id=>!exist[id]&&!nuevos[id];
+
+  function evalCond(c){
+    const v=parseFloat(c.valor)||0;
+    const[v1,v2]=(c.valor||'').split('-').map(Number);
+    switch(c.id){
+      case 'primer_registro':   return hist.length===1;
+      case 'nunca_cero':        return hist.every(h=>h.pct>0);
+      case 'primer_reg_100':    return hist.length===1&&pct===100;
+      case 'mejor_equipo_mes':  return ranking.length>0&&pct===Math.max(...ranking.map(r=>r.pct));
+      case 'tmo_mas_bajo':      return ranking.length>0&&myData.tmo&&ranking.every(r=>!r.tmo||r.asesor===nombre||r.tmo>=myData.tmo);
+      case 'top_n':             return myPos>=1&&myPos<=v;
+      case 'pos_exacta':        return myPos===v;
+      case 'mitad_superior':    return total>0&&myPos<=Math.ceil(total/2);
+      case 'pct_mayor_igual':   return pct>=v;
+      case 'pct_menor_igual':   return pct<=v;
+      case 'pct_exacto':        return pct===v;
+      case 'pct_entre':         return pct>=v1&&pct<=v2;
+      case 'pct_maximo_histor': return maxPct>=v;
+      case 'pct_sube_n_puntos': return hist.length>=2&&(hist[hist.length-1].pct-hist[hist.length-2].pct)>=v;
+      case 'supera_promedio_n': return pct>=(avgTeam+v);
+      case 'racha_mayor_igual': return racha>=v;
+      case 'racha_exacta':      return racha===v;
+      case 'racha_sobre_pct':{  let rc=0; for(let i=hist.length-1;i>=0;i--){if(hist[i].pct>=(v2||70))rc++;else break;} return rc>=(v1||v); }
+      case 'sem_total_mayor':   return hist.length>=v;
+      case 'sem_mes_actual':    return (mesPcts[mesAct]||[]).length>=v;
+      case 'nunca_bajo_pct':    return (mesPcts[mesAct]||[]).length>0&&(mesPcts[mesAct]||[]).every(p=>p>=v);
+      case 'siempre_top_n_mes': return myPos>=1&&myPos<=v;
+      case 'subio_n_puestos':   return prevPos>0&&(prevPos-myPos)>=v;
+      default: return false;
+    }
+  }
+
+  _lgDefs.forEach(def=>{
+    const id=def.id||def._fid;
+    if(!chk(id)) return;
+    const conds=def.condiciones||[];
+    if(!conds.length) return; // manual
+    if(conds.every(c=>evalCond(c))) nuevos[id]=true;
+  });
+
+  if(!Object.keys(nuevos).length) return;
+  const update={...exist};
+  const hoy=new Date().toLocaleDateString('es-PE');
+  Object.keys(nuevos).forEach(id=>{ update[id]={fecha:hoy,nuevo:true}; });
+  try{ await setDoc(ref,{logros:update,actualizado:serverTimestamp()},{merge:true}); }catch(e){}
+
+  // Notificación
+  Object.keys(nuevos).forEach((id,i)=>{
+    const def=_lgDefs.find(l=>(l.id||l._fid)===id);
+    if(!def||!window._satShowNotif) return;
+    const r=RAR[def.rarity||'comun'];
+    setTimeout(()=>window._satShowNotif({
+      icon:def.icon||'🏆', label:'Logro desbloqueado — '+r.label,
+      title:def.nombre, sub:def.desc, color:r.color, duration:7000,
+    }),i*700);
+  });
+}
+
+// ══════════════════════════════════════════════════════════════
+// APERTURA DEL MODAL
+// ══════════════════════════════════════════════════════════════
+window._satAbrirLogros=async function(nombre){
+  await _lgCargarDefs();
+  _lgAsesor=nombre||'';
+  _lgLogros={};
+  _lgCat='Todos';
+
+  // Mostrar tab editar solo para supervisores
+  const rol=(window.currentUserRol||'').toLowerCase();
+  const esSup=rol==='supervisor'||rol==='bo'||rol==='formador';
+  const tabEdit=document.getElementById('lg-tab-editar');
+  if(tabEdit) tabEdit.style.display=esSup?'flex':'none';
+
+  modal.classList.add('open');
+  _lgSetTab('ver');
+};
+
+// ── Botón flotante 🏆 ──────────────────────────────────────────
+const fab=document.createElement('button');
+fab.title='Ver logros';
+fab.innerHTML='🏆';
+fab.style.cssText='position:fixed;bottom:80px;right:24px;z-index:9998;width:48px;height:48px;border-radius:50%;background:linear-gradient(135deg,#2d1b69,#1a0a3d);border:2px solid rgba(167,139,250,.4);box-shadow:0 4px 20px rgba(0,0,0,.5);font-size:22px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:transform .2s;';
+fab.onmouseover=()=>fab.style.transform='scale(1.1)';
+fab.onmouseout =()=>fab.style.transform='scale(1)';
+fab.onclick=()=>window._satAbrirLogros(window._satNombreEnRanking||window.currentUserNombre||'');
+document.body.appendChild(fab);
+
+// Cargar defs al iniciar
+window.addEventListener('sise:rolCargado',()=>_lgCargarDefs());
+if(window.currentUserRol) _lgCargarDefs();
 
 })();
 
