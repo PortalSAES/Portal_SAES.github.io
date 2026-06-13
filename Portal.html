@@ -9043,9 +9043,13 @@ document.getElementById('btn-pend-export-mensual').addEventListener('click', () 
           const key=def.id||def._fid;
           const data=_lgLogros[key];
           const r=RAR[def.rarity||'comun'];
-          return `<div class="lg-card ${data?'desbloq':'bloq'}" style="--c:${r.color};--g:${r.glow}">
+          const rol=(window.currentUserRol||'').toLowerCase();
+          const esSup=['supervisor','bo','formador'].includes(rol);
+          const safeKey=key.replace(/'/g,"\\'");
+          return `<div class="lg-card ${data?'desbloq':'bloq'}" style="--c:${r.color};--g:${r.glow};position:relative">
             ${data&&data.nuevo?'<div class="lg-nuevo">¡Nuevo!</div>':''}
             ${data?`<div class="lg-date">${data.fecha||''}</div>`:''}
+            ${data&&esSup?`<button onclick="event.stopPropagation();_lgQuitarLogro('${safeKey}')" title="Quitar este logro" style="position:absolute;bottom:10px;right:10px;background:rgba(196,30,58,.15);border:1px solid rgba(196,30,58,.3);color:#f87171;border-radius:7px;width:24px;height:24px;cursor:pointer;font-size:11px;display:flex;align-items:center;justify-content:center;transition:all .15s;font-family:inherit" onmouseover="this.style.background='rgba(196,30,58,.3)'" onmouseout="this.style.background='rgba(196,30,58,.15)'">✕</button>`:''}
             <span class="lg-icon">${data?(def.icon||'🏆'):'🔒'}</span>
             <div class="lg-name">${def.nombre||'Sin nombre'}</div>
             <div class="lg-desc">${data?(def.desc||''):'???'}</div>
@@ -9209,6 +9213,33 @@ document.getElementById('btn-pend-export-mensual').addEventListener('click', () 
       await Promise.all(snap.docs.map(d=>deleteDoc(doc(getFirestore(),'logros_asesores',d.id))));
       showToast('Logros reiniciados ✓');
     }catch(e){showToast('Error: '+e.message,'error');}
+  };
+
+  // ── Quitar logro individual a un asesor ──────────────────────
+  window._lgQuitarLogro = async function(logroKey) {
+    if (!_lgAsesor) return;
+    const def = _lgDefs.find(l=>(l.id||l._fid)===logroKey);
+    const nombre_logro = def ? def.nombre : logroKey;
+    if (!confirm(`¿Quitar el logro "${nombre_logro}" a ${_lgAsesor}?`)) return;
+
+    const {getFirestore,doc,getDoc,setDoc,serverTimestamp} = window._fbModules||{};
+    if (!getFirestore) return;
+    const db  = getFirestore();
+    const key = _lgAsesor.trim().replace(/\s+/g,'_').toLowerCase();
+    const ref = doc(db,'logros_asesores',key);
+
+    try {
+      const snap = await getDoc(ref);
+      if (!snap.exists()) return;
+      const logros = snap.data().logros || {};
+      delete logros[logroKey];
+      await setDoc(ref, {logros, actualizado:serverTimestamp()}, {merge:true});
+      _lgLogros = logros;
+      _lgRenderVer();
+      showToast(`Logro "${nombre_logro}" quitado a ${_lgAsesor.split(' ')[0]} ✓`);
+    } catch(e) {
+      showToast('Error: '+e.message,'error');
+    }
   };
 
   // ── Calcular logros automáticos ───────────────────────────────
