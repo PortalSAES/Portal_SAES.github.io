@@ -1,6 +1,17 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
+<script>
+// ── Blindaje global: ningún error de un módulo debe tumbar el portal ──
+window.addEventListener('error', function(e) {
+  console.error('Error capturado (no crítico para el portal):', e.message, e.filename, e.lineno);
+  // No propagar — evita que un error de un script detenga la ejecución de otros
+}, true);
+window.addEventListener('unhandledrejection', function(e) {
+  console.error('Promesa rechazada (capturada):', e.reason && e.reason.message ? e.reason.message : e.reason);
+  e.preventDefault && e.preventDefault();
+});
+</script>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <title>SISE · Portal SAES</title>
@@ -377,29 +388,29 @@ mark.plt-hl {
 
     // BO Llamadas — todos los meses, solo las NO atendidas (pendiente + no contesta)
     onSnapshot(collection(db, 'bo_llamadas'), snap => {
-      const activos = snap.docs.filter(d => {
-        const estado = (d.data().estadoLlamada || 'pendiente').toLowerCase();
-        return estado === 'pendiente' || estado === 'no_contesta' || estado === 'no contesta';
-      }).length;
-      const el = document.getElementById('home-stat-bo');
-      if (el) el.textContent = activos;
+      try {
+        const activos = snap.docs.filter(d => {
+          const estado = (d.data().estadoLlamada || 'pendiente').toLowerCase();
+          return estado === 'pendiente' || estado === 'no_contesta' || estado === 'no contesta';
+        }).length;
+        const el = document.getElementById('home-stat-bo');
+        if (el) el.textContent = activos;
+      } catch(e) { console.error('home-stat-bo:', e); }
     }, () => {});
 
     // Casos pendientes — solo los alertados SIN resuelto (ambos tags = no suma, ningún tag = suma)
     onSnapshot(collection(db, 'casos_pendientes'), snap => {
-      const activos = snap.docs.filter(d => {
-        const data = d.data();
-        const alertado = !!(data.alertado);
-        const resuelto = !!(data.resuelto);
-        // Si tiene ambos tags (alertado+resuelto) → NO suma
-        // Si tiene solo resuelto → NO suma
-        // Si tiene solo alertado → SÍ suma
-        // Si no tiene ninguno  → SÍ suma
-        if (resuelto) return false;
-        return true;
-      }).length;
-      const el = document.getElementById('home-stat-pend');
-      if (el) el.textContent = activos;
+      try {
+        const activos = snap.docs.filter(d => {
+          const data = d.data();
+          const alertado = !!(data.alertado);
+          const resuelto = !!(data.resuelto);
+          if (resuelto) return false;
+          return true;
+        }).length;
+        const el = document.getElementById('home-stat-pend');
+        if (el) el.textContent = activos;
+      } catch(e) { console.error('home-stat-pend:', e); }
     }, () => {});
   }
 
@@ -1735,29 +1746,6 @@ Amplio
 </div>
 </div>
 
-<div class="cfg-about-card">
-<div>
-<div class="cfg-about-title">SISE · Portal SAES</div>
-<div class="cfg-about-desc">Canal WhatsApp — Atención al Alumno<br>Desarrollado internamente para el Contact Center del Instituto SISE.</div>
-</div>
-<div class="cfg-about-meta">
-<div class="cfg-about-item">
-<div class="cfg-about-item-label">Versión</div>
-<div class="cfg-about-item-val">2.4.0</div>
-</div>
-<div class="cfg-divider"></div>
-<div class="cfg-about-item">
-<div class="cfg-about-item-label">Actualización</div>
-<div class="cfg-about-item-val">Jun 2026</div>
-</div>
-<div class="cfg-divider"></div>
-<div class="cfg-about-item">
-<div class="cfg-about-item-label">Soporte</div>
-<div class="cfg-about-item-val">G. Chacón</div>
-</div>
-</div>
-</div>
-
 </div>
 </div>
 
@@ -2000,6 +1988,29 @@ Amplio
   </div>
 </div>
 
+</div>
+
+<div class="global-app-footer">
+<div>
+<div class="cfg-about-title">SISE · Portal SAES</div>
+<div class="cfg-about-desc">Canal WhatsApp — Atención al Alumno<br>Desarrollado internamente para el Contact Center del Instituto SISE.</div>
+</div>
+<div class="cfg-about-meta">
+<div class="cfg-about-item">
+<div class="cfg-about-item-label">Versión</div>
+<div class="cfg-about-item-val">2.4.0</div>
+</div>
+<div class="cfg-divider"></div>
+<div class="cfg-about-item">
+<div class="cfg-about-item-label">Actualización</div>
+<div class="cfg-about-item-val">Jun 2026</div>
+</div>
+<div class="cfg-divider"></div>
+<div class="cfg-about-item">
+<div class="cfg-about-item-label">Soporte</div>
+<div class="cfg-about-item-val">G. Chacón</div>
+</div>
+</div>
 </div>
 </main>
 </div>
@@ -2265,7 +2276,7 @@ appId:             "1:244183203900:web:1a524507a77fef8f968339",
 measurementId:     "G-851590HRW3"
 });
 window.__firebaseApp = app;
-getAnalytics(app);
+try { getAnalytics(app); } catch(e) { console.warn('Analytics no disponible (posible ad-blocker):', e); }
 const auth = getAuth(app);
 const db      = getFirestore(app);
 const storage = getStorage(app);
@@ -2312,16 +2323,20 @@ addDoc(collection(db, 'tipificaciones'), { ...t, creadoEn: serverTimestamp() })
 onSnapshot(
 query(collection(db, 'tipificaciones'), orderBy('creadoEn', 'asc')),
 snap => {
+try {
 TIPIFICACIONES = snap.docs.map(d => ({ id: d.id, ...d.data() }));
 refreshTipi();
+} catch(e) { console.error('refreshTipi:', e); }
 },
 err => console.error('onSnapshot tipificaciones:', err)
 );
 onSnapshot(
 collection(db, 'categorias'),
 snap => {
+try {
 CATEGORIAS_EXTRA = snap.docs.map(d => d.data().nombre);
 refreshTipi();
+} catch(e) { console.error('refreshTipi (categorias):', e); }
 },
 err => console.error('onSnapshot categorias:', err)
 );
@@ -2642,48 +2657,82 @@ const catActionsHtml = formador ? `
 <button class="btn-tipi-cat-edit" title="Renombrar categoría" onclick="abrirModalCatGlobal('${cat}')"><i class="ti ti-pencil"></i></button>
 <button class="btn-tipi-cat-del"  title="Eliminar categoría"  onclick="eliminarCategoria('${cat}')"><i class="ti ti-trash"></i></button>
 </div>` : '';
-const thAcciones = formador ? `<th style="width:70px">Acciones</th>` : '';
-const rowsHtml = items.map((t, idx) => {
-const tdAcciones = formador ? `
-<td>
-<div class="tipi-row-actions" style="display:flex">
+
+const cardsHtml = items.map((t, idx) => {
+const editA = (campo) => formador
+? `onclick="event.stopPropagation();editarCelda('${t.id}','${campo}',this)" title="Clic para editar" style="cursor:text"`
+: '';
+const aplicaTxt = t.aplica ? (q ? _hlTokens(t.aplica, q) : escH(t.aplica)) : '<span style="color:#ccc">Sin información</span>';
+const tipoTxt   = t.tipoAtencion
+  ? `<span class="tipi-badge ${tipoClass(t.tipoAtencion)}" ${editA('tipoAtencion')}>${q ? _hlTokens(t.tipoAtencion, q) : escH(t.tipoAtencion)}</span>`
+  : `<span style="color:#ccc;font-size:11px" ${editA('tipoAtencion')}>—</span>`;
+const plazoTxt       = t.plazo       ? (q ? _hlTokens(t.plazo, q) : escH(t.plazo)) : '—';
+const plazoWebTxt    = t.plazoWeb    ? escH(t.plazoWeb)    : '—';
+const plazoManualTxt = t.plazoManual ? escH(t.plazoManual) : '—';
+const colaHtml = (t.colaDer && Array.isArray(t.colaDer) && t.colaDer.length)
+  ? t.colaDer.map(c => `<span class="cola-chip"><i class="ti ti-arrow-right" style="font-size:9px"></i>${escH(c)}</span>`).join('')
+  : '<span style="color:#ccc;font-size:11px">—</span>';
+const acciones = formador ? `
+<div class="tipi-card-actions" onclick="event.stopPropagation()">
 <button class="btn-tr-edit" title="Editar" onclick="editarTipi('${t.id}')"><i class="ti ti-pencil"></i></button>
 <button class="btn-tr-del"  title="Eliminar" onclick="eliminarTipi('${t.id}')"><i class="ti ti-trash"></i></button>
+</div>` : '';
+
+const matchInDetail = !!(q && _smartMatch([t.aplica||'', t.tipoAtencion||'', t.plazoWeb||'', t.plazoManual||'', ...(t.colaDer||[])], q) && !_smartMatch([t.modalidad||'', t.subProceso||'', t.asunto||''], q));
+
+return `<div class="tipi-card${matchInDetail?' tipi-card-open':''}" id="tipi-card-${t.id}" onclick="window.toggleTipiCard('${t.id}')">
+<div class="tipi-card-top">
+<div style="flex:1;min-width:0">
+<div class="tipi-card-tags">
+<span class="tipi-card-tag modalidad" ${editA('modalidad')}>${q ? _hlTokens(t.modalidad||'—', q) : escH(t.modalidad||'—')}</span>
+<span class="tipi-card-tag sub" ${editA('subProceso')}>${q ? _hlTokens(t.subProceso||'—', q) : escH(t.subProceso||'—')}</span>
 </div>
-</td>` : '';
-const editAttr = (campo) => formador
-? `onclick="editarCelda('${t.id}','${campo}',this)" title="Clic para editar" style="cursor:text"`
-: '';
-return `<tr>
-<td class="tipi-num">${idx + 1}</td>
-<td><span class="tipi-badge modalidad" ${editAttr('modalidad')}>${q ? _hlTokens(t.modalidad, q) : escH(t.modalidad)}</span></td>
-<td><span class="tipi-badge sub" ${editAttr('subProceso')}>${q ? _hlTokens(t.subProceso, q) : escH(t.subProceso)}</span></td>
-<td style="font-weight:600;font-size:12px;word-break:break-word" ${editAttr('asunto')}>${q ? _hlTokens(t.asunto, q) : escH(t.asunto)}</td>
-<td class="tipi-aplica" ${editAttr('aplica')} title="${escH(t.aplica)}">${t.aplica ? (q ? _hlTokens(t.aplica, q) : escH(t.aplica)) : '<span style="color:#ccc">—</span>'}</td>
-<td>${t.tipoAtencion
-? `<span class="tipi-badge ${tipoClass(t.tipoAtencion)}" ${editAttr('tipoAtencion')}>${q ? _hlTokens(t.tipoAtencion, q) : escH(t.tipoAtencion)}</span>`
-: `<span style="color:#ccc;font-size:11px" ${editAttr('tipoAtencion')}>—</span>`}</td>
-<td>${t.plazo
-? `<span class="tipi-badge plazo" ${editAttr('plazo')}><i class="ti ti-clock" style="font-size:10px"></i> ${q ? _hlTokens(t.plazo, q) : escH(t.plazo)}</span>`
-: `<span style="color:#ccc;font-size:11px" ${editAttr('plazo')}>—</span>`}</td>
-<td>${t.plazoWeb
-? `<span class="tipi-badge plazo" style="background:#EBF2FF;color:#1D5FBD" ${editAttr('plazoWeb')}><i class="ti ti-world" style="font-size:10px"></i> ${escH(t.plazoWeb)}</span>`
-: `<span style="color:#ccc;font-size:11px" ${editAttr('plazoWeb')}>—</span>`}</td>
-<td>${t.plazoManual
-? `<span class="tipi-badge plazo" style="background:#F5F0FF;color:#5B21B6" ${editAttr('plazoManual')}><i class="ti ti-user" style="font-size:10px"></i> ${escH(t.plazoManual)}</span>`
-: `<span style="color:#ccc;font-size:11px" ${editAttr('plazoManual')}>—</span>`}</td>
-<td style="vertical-align:top;padding:8px 10px">${
-(t.colaDer && Array.isArray(t.colaDer) && t.colaDer.length)
-? t.colaDer.map(c => `<span class="cola-chip"><i class="ti ti-arrow-right" style="font-size:9px"></i>${escH(c)}</span>`).join('')
-: `<span style="color:#ccc;font-size:11px">—</span>`
-}</td>
-${tdAcciones}
-</tr>`;
+<p class="tipi-card-asunto" ${editA('asunto')}>${q ? _hlTokens(t.asunto||'Sin asunto', q) : escH(t.asunto||'Sin asunto')}</p>
+</div>
+<i class="ti ti-chevron-down tipi-card-chevron"></i>
+</div>
+<div class="tipi-card-meta">
+<span class="tipi-card-meta-item"><i class="ti ti-clock"></i>${plazoTxt}</span>
+${t.plazoWeb ? `<span class="tipi-card-meta-item"><i class="ti ti-world"></i>${plazoWebTxt}</span>` : ''}
+${t.colaDer && t.colaDer.length ? `<span class="tipi-card-meta-item"><i class="ti ti-arrow-right"></i>${escH(t.colaDer[0])}${t.colaDer.length>1?` +${t.colaDer.length-1}`:''}</span>` : ''}
+</div>
+<div class="tipi-card-detail" style="display:${matchInDetail?'block':'none'}">
+<div class="tipi-card-detail-row">
+<div class="tipi-card-detail-block" style="flex-basis:100%">
+<div class="tipi-card-detail-label">En qué casos aplica</div>
+<div class="tipi-card-detail-val" ${editA('aplica')}>${aplicaTxt}</div>
+</div>
+</div>
+<div class="tipi-card-detail-row">
+<div class="tipi-card-detail-block">
+<div class="tipi-card-detail-label">Tipo de atención</div>
+<div class="tipi-card-detail-val">${tipoTxt}</div>
+</div>
+<div class="tipi-card-detail-block">
+<div class="tipi-card-detail-label">Plazo Web</div>
+<div class="tipi-card-detail-val" ${editA('plazoWeb')}>${plazoWebTxt}</div>
+</div>
+<div class="tipi-card-detail-block">
+<div class="tipi-card-detail-label">Plazo Manual</div>
+<div class="tipi-card-detail-val" ${editA('plazoManual')}>${plazoManualTxt}</div>
+</div>
+</div>
+<div class="tipi-card-detail-row">
+<div class="tipi-card-detail-block" style="flex-basis:100%">
+<div class="tipi-card-detail-label">Cola de derivación</div>
+<div class="tipi-card-detail-val">${colaHtml}</div>
+</div>
+</div>
+${acciones}
+</div>
+</div>`;
 }).join('');
-const emptyRow = formador && !items.length
-? `<tr><td colspan="${formador ? 11 : 10}" style="padding:20px;text-align:center;color:var(--muted);font-size:12px">
+
+const emptyState = formador && !items.length
+? `<div style="padding:20px;text-align:center;color:var(--muted);font-size:12px">
 <i class="ti ti-plus-circle" style="margin-right:5px"></i>Categoría vacía — usa "Nueva tipificación" para añadir.
-</td></tr>` : '';
+</div>` : '';
+
 container.innerHTML += `
 <div class="tipi-category-accordion${isOpen ? ' open' : ''}" id="tipi-acc-${catId}">
 <div class="tipi-category-header" onclick="toggleTipiAcc('${catId}')">
@@ -2698,39 +2747,7 @@ ${catActionsHtml}
 </div>
 </div>
 <div class="tipi-category-content">
-<div class="tipi-table-wrap">
-<table class="tipi-table">
-<colgroup>
-<col class="col-num"/>
-<col class="col-modal"/>
-<col class="col-sub"/>
-<col class="col-asunto"/>
-<col class="col-aplica"/>
-<col class="col-tipo"/>
-<col class="col-plazo"/>
-<col class="col-plazo-web"/>
-<col class="col-plazo-manual"/>
-<col class="col-cola"/>
-${formador ? '<col class="col-acc"/>' : ''}
-</colgroup>
-<thead>
-<tr>
-<th>#</th>
-<th>Modalidad</th>
-<th>Sub-Proceso</th>
-<th>Asunto</th>
-<th>En qué casos aplica</th>
-<th>Tipo de atención</th>
-<th>Plazo</th>
-<th>Plazo Web</th>
-<th>Plazo Manual</th>
-<th>Cola de derivación</th>
-${thAcciones}
-</tr>
-</thead>
-<tbody>${rowsHtml}${emptyRow}</tbody>
-</table>
-</div>
+<div class="tipi-cards-wrap">${cardsHtml}${emptyState}</div>
 </div>
 </div>`;
 if (activeCat === cat && !q) {
@@ -2745,6 +2762,13 @@ container.innerHTML = `<div class="tipi-empty"><i class="ti ti-tags"></i><p>No s
 }
 countEl.textContent = `${totalVisible} tipificación${totalVisible !== 1 ? 'es' : ''}`;
 }
+window.toggleTipiCard = function(id) {
+const card = document.getElementById(`tipi-card-${id}`);
+if (!card) return;
+const detail = card.querySelector('.tipi-card-detail');
+const open = card.classList.toggle('tipi-card-open');
+detail.style.display = open ? 'block' : 'none';
+};
 window.toggleTipiAcc = function(catId) {
 const el = document.getElementById(`tipi-acc-${catId}`);
 if (el) el.classList.toggle('open');
@@ -2810,35 +2834,44 @@ if (_splashEl) {
 
 currentUser = user;
 window.currentUser = user;
-document.getElementById('user-av').textContent   = user.email.substring(0, 2).toUpperCase();
-document.getElementById('user-name').textContent = user.email.split('@')[0];
+try {
+const avEl = document.getElementById('user-av');
+const nameEl = document.getElementById('user-name');
+if (avEl) avEl.textContent   = user.email.substring(0, 2).toUpperCase();
+if (nameEl) nameEl.textContent = user.email.split('@')[0];
+} catch(e) { console.error('user header:', e); }
 try {
 const snap = await getDoc(doc(db, 'asesores_autorizados', user.email.toLowerCase()));
 if (snap.exists()) {
   currentUserRol = snap.data().Rol || '';
   window.currentUserNombre = snap.data().Nombre || '';
 }
-} catch(e) { currentUserRol = ''; window.currentUserNombre = ''; }
+} catch(e) { console.error('asesores_autorizados:', e); currentUserRol = ''; window.currentUserNombre = ''; }
 window.currentUserRol = currentUserRol;
 // Expose firebase modules for satisfaccion module
 if (!window._fbModules) window._fbModules = { getFirestore, collection, onSnapshot, addDoc, query, where, orderBy, serverTimestamp, getDocs, deleteDoc, doc, updateDoc, setDoc, getDoc };
-if (window._initSatFirebase) window._initSatFirebase();
-window.dispatchEvent(new CustomEvent('sise:rolCargado', { detail: { rol: currentUserRol, nombre: window.currentUserNombre } }));
+try { if (window._initSatFirebase) window._initSatFirebase(); } catch(e) { console.error('_initSatFirebase:', e); }
+try { window.dispatchEvent(new CustomEvent('sise:rolCargado', { detail: { rol: currentUserRol, nombre: window.currentUserNombre } })); } catch(e) { console.error('rolCargado event:', e); }
 // Iniciar listeners de Firestore AHORA que hay sesión activa
-if (!_tipiListenersStarted) { _tipiListenersStarted = true; await iniciarListenersTipi(); }
-else refreshTipi();
+try {
+  if (!_tipiListenersStarted) { _tipiListenersStarted = true; await iniciarListenersTipi(); }
+  else refreshTipi();
+} catch(e) { console.error('iniciarListenersTipi:', e); }
 // Configurar barra de formador con el rol ya cargado
-if (!_tipiFormadorSetupDone) { _tipiFormadorSetupDone = true; setupTipiFormador(); }
-if (isFormador()) {
-document.getElementById('tipi-formador-bar').classList.add('visible');
-}
-if (!_pltListenersStarted) { _pltListenersStarted = true; iniciarListenersPlantillas(); }
-setupPltFormador();
-setupProtoEditor();
-loadCasos();
-loadPendientes();
-if (window._loadFaqs) window._loadFaqs();
-setTimeout(() => { if (window._rerenderFaqs) window._rerenderFaqs(); }, 1500);
+try {
+  if (!_tipiFormadorSetupDone) { _tipiFormadorSetupDone = true; setupTipiFormador(); }
+  if (isFormador()) {
+    const tfb = document.getElementById('tipi-formador-bar');
+    if (tfb) tfb.classList.add('visible');
+  }
+} catch(e) { console.error('setupTipiFormador:', e); }
+try { if (!_pltListenersStarted) { _pltListenersStarted = true; iniciarListenersPlantillas(); } } catch(e) { console.error('iniciarListenersPlantillas:', e); }
+try { setupPltFormador(); } catch(e) { console.error('setupPltFormador:', e); }
+try { setupProtoEditor(); } catch(e) { console.error('setupProtoEditor:', e); }
+try { loadCasos(); } catch(e) { console.error('loadCasos:', e); }
+try { loadPendientes(); } catch(e) { console.error('loadPendientes:', e); }
+try { if (window._loadFaqs) window._loadFaqs(); } catch(e) { console.error('_loadFaqs:', e); }
+setTimeout(() => { try { if (window._rerenderFaqs) window._rerenderFaqs(); } catch(e) { console.error('_rerenderFaqs:', e); } }, 1500);
 });
 document.getElementById('btn-logout').addEventListener('click', async () => {
 await signOut(auth);
@@ -2846,10 +2879,15 @@ window.location.href = 'index.html';
 });
 document.querySelectorAll('.nav-item[data-view]').forEach(item => {
 item.addEventListener('click', () => {
+try {
 document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
 document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
 item.classList.add('active');
-document.getElementById('view-' + item.dataset.view).classList.add('active');
+const target = document.getElementById('view-' + item.dataset.view);
+if (target) target.classList.add('active');
+} catch(e) {
+console.error('Error al cambiar de vista (capturado):', e);
+}
 });
 });
 const boOverlay = document.getElementById('modal-bo-overlay');
@@ -2971,12 +3009,15 @@ document.getElementById('bo-today').addEventListener('click', () => { boViewDay 
 function loadCasos() {
 const q = query(collection(db, 'bo_llamadas'), orderBy('creadoEn', 'asc'));
 onSnapshot(q, snap => {
+try {
 allCasos = snap.docs.map(d => ({ id: d.id, ...d.data() }));
 updateBoDayLabel();
 applyBoFilters();
+} catch(e) { console.error('bo_llamadas render:', e); }
 }, err => {
 console.error(err);
-document.getElementById('cards-container').innerHTML = '<div class="empty-state"><i class="ti ti-wifi-off"></i><p>Error al cargar.</p></div>';
+const el = document.getElementById('cards-container');
+if (el) el.innerHTML = '<div class="empty-state"><i class="ti ti-wifi-off"></i><p>Error al cargar.</p></div>';
 });
 }
 function applyBoFilters() {
@@ -3974,7 +4015,7 @@ addDoc(collection(db, 'plantillas'), { ...p, creadoEn: serverTimestamp() })
 }
 onSnapshot(
 query(collection(db, 'plantillas'), orderBy('orden', 'asc')),
-snap => { PLANTILLAS = snap.docs.map(d => ({ id: d.id, ...d.data() })); renderPlantillas(); },
+snap => { try { PLANTILLAS = snap.docs.map(d => ({ id: d.id, ...d.data() })); renderPlantillas(); } catch(e) { console.error('renderPlantillas:', e); } },
 err => console.error('onSnapshot plantillas:', err)
 );
 }
@@ -4392,7 +4433,7 @@ addDoc(collection(db, 'protocolo_atencion'), { ...p, creadoEn: serverTimestamp()
 }
 onSnapshot(
 query(collection(db, 'protocolo_atencion'), orderBy('paso', 'asc')),
-snap => { PROTOCOLO = snap.docs.map(d => ({ id: d.id, ...d.data() })); renderProtocolo(); },
+snap => { try { PROTOCOLO = snap.docs.map(d => ({ id: d.id, ...d.data() })); renderProtocolo(); } catch(e) { console.error('renderProtocolo:', e); } },
 err => console.error('onSnapshot protocolo:', err)
 );
 }
@@ -4629,10 +4670,12 @@ window._pendDel  = (id) => eliminarPendiente(id);
 function loadPendientes() {
 const q = query(collection(db, 'casos_pendientes'));
 onSnapshot(q, snap => {
+try {
 allPendientes = snap.docs.map(d => ({ id: d.id, ...d.data() }));
 allPendientes.sort((a,b) => (b.fechaRegistro||b.fecha||'') > (a.fechaRegistro||a.fecha||'') ? 1 : -1);
 updatePendBadge();
 renderPendientes();
+} catch(e) { console.error('renderPendientes:', e); }
 }, err => { console.error('pendientes error:', err); });
 }
 function updatePendBadge() {
@@ -5503,6 +5546,7 @@ const q = conOrden
 ? query(collection(db, 'faqs'), orderBy('creadoEn', 'asc'))
 : collection(db, 'faqs');
 return onSnapshot(q, snap => {
+try {
 allFaqs = snap.docs.map(d => ({ id: d.id, ...d.data() }));
 allFaqs.sort((a, b) => {
 const ta = a.creadoEn?.seconds ?? a.orden ?? 0;
@@ -5511,7 +5555,9 @@ return ta - tb;
 });
 allFaqs.forEach(f => getCatColor(f.categoria || 'General'));
 renderFaqView();
-if (puedeGestionar()) document.getElementById('btn-faq-nueva').style.display = '';
+const btnFaq = document.getElementById('btn-faq-nueva');
+if (puedeGestionar() && btnFaq) btnFaq.style.display = '';
+} catch(e) { console.error('renderFaqView:', e); }
 }, err => {
 console.error('faqs error:', err);
 if (conOrden && (err.code === 'failed-precondition' || err.message?.includes('index'))) {
@@ -7768,9 +7814,11 @@ document.getElementById('btn-pend-export-mensual').addEventListener('click', () 
     const {getFirestore,doc,onSnapshot} = window._fbModules||{};
     if (!getFirestore) return;
     onSnapshot(doc(getFirestore(),'satisfaccion_config','meta'), snap => {
-      window._satMeta = snap.exists() ? (snap.data().meta || null) : null;
-      renderStats(window._satLastRanking||[]);
-    }, ()=>{});
+      try {
+        window._satMeta = snap.exists() ? (snap.data().meta || null) : null;
+        renderStats(window._satLastRanking||[]);
+      } catch(e) { console.error('_loadMeta snapshot:', e); }
+    }, e => console.warn('_loadMeta onSnapshot error:', e));
   }
 
   window._satEditarMeta = async function() {
@@ -7897,22 +7945,30 @@ document.getElementById('btn-pend-export-mensual').addEventListener('click', () 
       const {getFirestore,collection,onSnapshot,addDoc,query,where,orderBy,serverTimestamp,getDocs,doc,updateDoc}=window._fbModules||{};
       if(!getFirestore) return;
       const db=getFirestore();
-      _loadMeta();
+      try { _loadMeta(); } catch(e) { console.error('_loadMeta:', e); }
+      try { window._lgNotifInit && window._lgNotifInit(); } catch(e) { console.error('_lgNotifInit:', e); }
       if(satUnsub) satUnsub();
       satUnsub=onSnapshot(
         query(collection(db,'satisfaccion'),orderBy('creadoEn','asc')),
         snap=>{
-          satData=snap.docs.map(d=>({id:d.id,...d.data()})); window._satData=satData; window._satData=satData; window._satData=satData;
+          try {
+          satData=snap.docs.map(d=>({id:d.id,...d.data()})); window._satData=satData;
           const ranking=calcRanking(satData);
-          renderPodio(ranking); renderRanking(ranking); renderStats(ranking); renderFilterBar(ranking);
+          try { renderPodio(ranking); } catch(e) { console.error('renderPodio:', e); }
+          try { renderRanking(ranking); } catch(e) { console.error('renderRanking:', e); }
+          try { renderStats(ranking); } catch(e) { console.error('renderStats:', e); }
+          try { renderFilterBar(ranking); } catch(e) { console.error('renderFilterBar:', e); }
           if(window._satNotifComparar) {
-            window._satPrevRanking = window._satLastRanking || [];
-            window._satLastRanking = ranking;
-            window._satNotifComparar(ranking);
+            try {
+              window._satPrevRanking = window._satLastRanking || [];
+              window._satLastRanking = ranking;
+              window._satNotifComparar(ranking);
+            } catch(e) { console.error('_satNotifComparar:', e); }
           }
 
           const mes=mesActual(), [y,m]=mes.split('-');
-          document.getElementById('sat-periodo-label').textContent='Mes en curso: '+MESES_N[parseInt(m)-1]+' '+y;
+          const periodoEl = document.getElementById('sat-periodo-label');
+          if (periodoEl) periodoEl.textContent='Mes en curso: '+MESES_N[parseInt(m)-1]+' '+y;
 
           // Actualizar calendario con fecha de hoy
           const hoy = new Date();
@@ -7929,9 +7985,11 @@ document.getElementById('btn-pend-export-mensual').addEventListener('click', () 
           const ultima=satData.filter(r=>r.mes===mes).sort((a,b)=>b.semana.localeCompare(a.semana))[0];
           if(ultima) {
             const label = typeof _formatSemana === 'function' ? _formatSemana(ultima.semana) : ultima.semana;
-            document.getElementById('sat-semana-label').textContent='Última carga: '+label;
+            const semanaEl = document.getElementById('sat-semana-label');
+            if (semanaEl) semanaEl.textContent='Última carga: '+label;
           }
-          checkReinicio(db,collection,getDocs,mes);
+          try { checkReinicio(db,collection,getDocs,mes); } catch(e) { console.error('checkReinicio:', e); }
+          } catch(e) { console.error('sat onSnapshot callback:', e); }
         },
         err=>console.warn('sat:',err)
       );
@@ -8584,7 +8642,7 @@ document.getElementById('btn-pend-export-mensual').addEventListener('click', () 
     if(!satUnsub) initSatFirebase();
   }
 
-  const obs=new MutationObserver(()=>{ const v=document.getElementById('view-satisfaccion'); if(v&&v.classList.contains('active')) onSatViewActive(); });
+  const obs=new MutationObserver(()=>{ try { const v=document.getElementById('view-satisfaccion'); if(v&&v.classList.contains('active')) onSatViewActive(); } catch(e) { console.error('onSatViewActive (capturado):', e); } });
   const mc=document.querySelector('.content');
   if(mc) obs.observe(mc,{subtree:true,attributes:true,attributeFilter:['class']});
   if(document.getElementById('view-satisfaccion')?.classList.contains('active')) onSatViewActive();
@@ -9028,8 +9086,8 @@ document.getElementById('btn-pend-export-mensual').addEventListener('click', () 
   let notifQueue = [];
   let isShowingQueue = false;
 
-  function showNotif({ icon, label, title, sub, color, duration = 5000, type = '' }) {
-    notifQueue.push({ icon, label, title, sub, color, duration, type });
+  function showNotif({ icon, label, title, sub, color, duration = 5000, type = '', onClick = null }) {
+    notifQueue.push({ icon, label, title, sub, color, duration, type, onClick });
     if (!isShowingQueue) processQueue();
   }
 
@@ -9041,11 +9099,12 @@ document.getElementById('btn-pend-export-mensual').addEventListener('click', () 
     setTimeout(processQueue, 600);
   }
 
-  function _renderNotif({ icon, label, title, sub, color, duration, type }) {
+  function _renderNotif({ icon, label, title, sub, color, duration, type, onClick }) {
     const el = document.createElement('div');
     el.className = 'sat-notif' + (type === 'top1' ? ' sat-notif-top1' : '');
     el.style.setProperty('--notif-color', color || '#a78bfa');
     el.style.setProperty('--notif-duration', (duration / 1000) + 's');
+    if (onClick) el.style.cursor = 'pointer';
     el.innerHTML = `
       <div class="sat-notif-inner">
         <div class="sat-notif-icon" style="background:${color}18">${icon}</div>
@@ -9056,7 +9115,15 @@ document.getElementById('btn-pend-export-mensual').addEventListener('click', () 
         </div>
       </div>
       <div class="sat-notif-progress"></div>
-      <button class="sat-notif-close" onclick="this.parentElement.remove()">✕</button>`;
+      <button class="sat-notif-close" onclick="event.stopPropagation();this.parentElement.remove()">✕</button>`;
+
+    if (onClick) {
+      el.addEventListener('click', () => {
+        try { onClick(); } catch(e) {}
+        el.classList.add('hide');
+        setTimeout(() => { if (el.parentElement) el.remove(); }, 400);
+      });
+    }
 
     container.appendChild(el);
 
@@ -9454,6 +9521,87 @@ document.getElementById('btn-pend-export-mensual').addEventListener('click', () 
     </div>`;
   document.body.appendChild(modal);
   modal.addEventListener('click', e => { if(e.target===modal) modal.classList.remove('open'); });
+
+  // ── Notificación de logros desbloqueados (tiempo real, propio usuario) ──
+  let _lgNotifUnsub = null;
+  let _lgNotifSeen  = null; // set de ids ya notificados (persistido)
+
+  function _lgNotifStorageKey() {
+    const nombre = (window.currentUserNombre||'').trim().toLowerCase();
+    return 'sise_logros_vistos_' + nombre.replace(/\s+/g,'_');
+  }
+
+  window._lgNotifInit = function() {
+    const {getFirestore,doc,onSnapshot} = window._fbModules||{};
+    if (!getFirestore) return;
+    const nombre = (window.currentUserNombre||'').trim();
+    if (!nombre) return;
+    const key = nombre.replace(/\s+/g,'_').toLowerCase();
+
+    // Cargar set de logros ya vistos desde localStorage
+    try {
+      const raw = localStorage.getItem(_lgNotifStorageKey());
+      _lgNotifSeen = new Set(raw ? JSON.parse(raw) : []);
+    } catch(e) { _lgNotifSeen = new Set(); }
+
+    if (_lgNotifUnsub) _lgNotifUnsub();
+    _lgNotifUnsub = onSnapshot(doc(getFirestore(),'logros_asesores',key), async snap => {
+      try {
+        if (!snap.exists()) return;
+        const logros = snap.data().logros || {};
+        const ids = Object.keys(logros);
+
+        // Primera carga: marcar todos los existentes como vistos sin notificar
+        if (!_lgNotifSeen._init) {
+          ids.forEach(id => _lgNotifSeen.add(id));
+          _lgNotifSeen._init = true;
+          _lgNotifPersist();
+          return;
+        }
+
+        const nuevos = ids.filter(id => !_lgNotifSeen.has(id));
+        if (!nuevos.length) return;
+
+        // Asegurar definiciones cargadas para mostrar icono/nombre
+        if (!_lgDefs.length) await _lgCargarDefs();
+
+        nuevos.forEach(id => _lgNotifSeen.add(id));
+        _lgNotifPersist();
+
+        if (nuevos.length === 1) {
+          const def = _lgDefs.find(l => (l.id||l._fid) === nuevos[0]);
+          showNotif({
+            icon: (def && def.icon) || '🏆',
+            label: '¡Logro desbloqueado!',
+            type: 'logro',
+            title: (def && def.nombre) || 'Nuevo logro',
+            sub: 'Toca para ver tus logros',
+            color: '#FFD700',
+            duration: 8000,
+            onClick: () => { window._lgAbrirAsesor(nombre); }
+          });
+        } else {
+          showNotif({
+            icon: '🏆',
+            label: '¡Logros desbloqueados!',
+            type: 'logro',
+            title: 'Has desbloqueado ' + nuevos.length + ' logros',
+            sub: 'Revísalos en Logros dentro de Satisfacción',
+            color: '#FFD700',
+            duration: 8000,
+            onClick: () => { window._lgAbrirAsesor(nombre); }
+          });
+        }
+        playNotifSound('top1');
+      } catch(e) { console.error('_lgNotifInit snapshot:', e); }
+    }, e => console.warn('_lgNotifInit onSnapshot error:', e));
+  }
+
+  function _lgNotifPersist() {
+    try {
+      localStorage.setItem(_lgNotifStorageKey(), JSON.stringify([...(_lgNotifSeen||[])]));
+    } catch(e) {}
+  }
 
   // ── Cargar definiciones de Firebase ──────────────────────────
   async function _lgCargarDefs() {
@@ -10493,9 +10641,11 @@ if (capUnsubscribe) capUnsubscribe();
 capUnsubscribe = onSnapshot(
 query(collection(db, 'capacitate'), orderBy('creadoEn', 'asc')),
 snap => {
+try {
 capItems = snap.docs.map(d => ({ id: d.id, ...d.data() }));
 renderCapCats();
 renderCapGrid();
+} catch(e) { console.error('renderCapGrid:', e); }
 },
 err => {
 console.warn('Capacítate onSnapshot:', err);
@@ -10853,17 +11003,21 @@ window._herrEliminar = async function(key) {
           return fs.addDoc(col, Object.assign({}, h, { creadoPor:'sistema', creadoEn:fs.serverTimestamp() }));
         })).then(function() {
           fs.onSnapshot(col, function(s) {
+            try {
             HERRAMIENTAS = s.docs.map(function(d){ return Object.assign({id:d.id}, d.data()); });
             HERRAMIENTAS.sort(function(a,b){ return (a.orden||0)-(b.orden||0); });
             window.renderHerrGrid();
-          });
+            } catch(e) { console.error('herramientas render (capturado):', e); }
+          }, function(e){ console.warn('herramientas onSnapshot:', e); });
         });
       } else {
         fs.onSnapshot(col, function(s) {
+          try {
           HERRAMIENTAS = s.docs.map(function(d){ return Object.assign({id:d.id}, d.data()); });
           HERRAMIENTAS.sort(function(a,b){ return (a.orden||0)-(b.orden||0); });
           window.renderHerrGrid();
-        });
+          } catch(e) { console.error('herramientas render (capturado):', e); }
+        }, function(e){ console.warn('herramientas onSnapshot:', e); });
       }
     }).catch(function(e){ console.warn('herramientas getDocs:', e); });
   }).catch(function(e){ console.warn('herramientas import:', e); });
