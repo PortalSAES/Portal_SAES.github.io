@@ -1,0 +1,2151 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<script>
+// ── Blindaje global: ningún error de un módulo debe tumbar el portal ──
+window.addEventListener('error', function(e) {
+  console.error('Error capturado (no crítico para el portal):', e.message, e.filename, e.lineno);
+  // No propagar — evita que un error de un script detenga la ejecución de otros
+}, true);
+window.addEventListener('unhandledrejection', function(e) {
+  console.error('Promesa rechazada (capturada):', e.reason && e.reason.message ? e.reason.message : e.reason);
+  e.preventDefault && e.preventDefault();
+});
+</script>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>SISE · Portal SAES</title>
+<link rel="icon" type="image/png" href="logo SAES.png"/>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet"/>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css"/>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
+<link rel="stylesheet" href="Portal.css"/>
+<style>
+/* ── CRÍTICO: visibilidad de vistas (fallback si Portal.css no carga) ── */
+/* Si el CSS externo ya define esto, estas reglas son redundantes pero inocuas */
+.view:not(.active) { display: none !important; }
+
+/* ── Plantillas: search highlight & snippet ─────────────────────────── */
+mark.plt-hl {
+  background: #FFF176;
+  color: inherit;
+  border-radius: 3px;
+  padding: 0 1px;
+  font-weight: 700;
+}
+.plt-snippet {
+  font-size: 11px;
+  color: var(--muted, #888);
+  margin-top: 4px;
+  line-height: 1.5;
+  display: flex;
+  align-items: flex-start;
+  gap: 4px;
+}
+.plt-snippet mark.plt-hl {
+  background: #FFE082;
+  font-weight: 600;
+}
+#search-plantillas:focus {
+  outline: 2px solid var(--orange);
+  outline-offset: -1px;
+}
+#plt-search-count {
+  font-variant-numeric: tabular-nums;
+}
+
+/* ── Tipificaciones: scrollbar naranja visible ───────────────── */
+.tipi-table-wrap::-webkit-scrollbar        { height: 8px; }
+.tipi-table-wrap::-webkit-scrollbar-track  { background: var(--border); border-radius: 99px; }
+.tipi-table-wrap::-webkit-scrollbar-thumb  { background: var(--orange); border-radius: 99px; }
+.tipi-table-wrap::-webkit-scrollbar-thumb:hover { background: var(--orange-dark); }
+.tipi-table-wrap { scrollbar-width: thin; scrollbar-color: var(--orange) var(--border); }
+</style>
+
+
+</head>
+<body>
+<!-- ── Splash de carga ── -->
+<div id="app-splash" style="position:fixed;inset:0;background:#0D0D0D;z-index:999999;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:20px">
+  <!-- Logo SISE -->
+  <div style="display:flex;flex-direction:column;align-items:center;gap:8px">
+    <div style="width:72px;height:72px;background:#fff;border-radius:18px;display:flex;align-items:center;justify-content:center;box-shadow:0 8px 32px rgba(196,30,58,.4)">
+      <span style="font-size:22px;font-weight:900;color:#0D0D0D;letter-spacing:-1px">SISE</span>
+    </div>
+    <div style="font-size:12px;font-weight:700;color:#C41E3A;letter-spacing:.1em;text-transform:uppercase">Portal SAES</div>
+  </div>
+  <!-- Spinner -->
+  <div style="display:flex;flex-direction:column;align-items:center;gap:12px">
+    <div style="width:36px;height:36px;border:3px solid rgba(255,255,255,.1);border-top-color:#C41E3A;border-radius:50%;animation:splash-spin 0.8s linear infinite"></div>
+    <div style="font-size:13px;color:rgba(255,255,255,.45);font-weight:500">Verificando sesión...</div>
+  </div>
+</div>
+<style>
+@keyframes splash-spin {
+  to { transform: rotate(360deg); }
+}
+</style>
+<div class="portal">
+<header class="topbar">
+<div class="topbar-left">
+<img src="logo SAES.png" alt="SISE" class="logo-img" onerror="this.style.display='none'"/>
+<div>
+<div class="brand-name">SISE · Portal SAES</div>
+<div class="brand-sub">Canal WhatsApp — Atención al Alumno</div>
+</div>
+</div>
+<div class="topbar-right">
+<div class="chip"><span class="dot"></span>En línea</div>
+<div class="avatar-chip">
+<div class="av" id="user-av">??</div>
+<span class="av-name" id="user-name">Cargando...</span>
+</div>
+<button class="btn-logout" id="btn-logout"><i class="ti ti-logout"></i>Salir</button>
+</div>
+</header>
+
+<div class="body">
+<nav class="sidebar">
+<div>
+<div class="nav-label">Menú</div>
+<div class="nav-item active" data-view="inicio" data-label="Inicio"><i class="ti ti-layout-dashboard"></i><span>Inicio</span></div>
+<div class="nav-item nav-satisfaccion" data-view="satisfaccion" data-label="Satisfacción" id="nav-satisfaccion"><i class="ti ti-trophy"></i><span>Satisfacción</span></div>
+</div>
+<div>
+<div class="nav-label">Recursos</div>
+<div class="nav-item" data-view="plantillas" data-label="Plantillas"><i class="ti ti-file-text"></i><span>Plantillas</span></div>
+<div class="nav-item" data-view="tipificaciones" data-label="Tipificaciones"><i class="ti ti-tags"></i><span>Tipificaciones</span></div>
+<div class="nav-item nav-preguntas" data-view="preguntas" data-label="Preguntas frecuentes"><i class="ti ti-award"></i><span>Preguntas frecuentes</span></div>
+<div class="nav-item" data-view="herramientas" data-label="Herramientas de trabajo"><i class="ti ti-tools"></i><span>Herramientas de trabajo</span></div>
+</div>
+<div>
+<div class="nav-label">Gestión</div>
+<div class="nav-item" data-view="bo-llamadas" data-label="Registro de llamadas"><i class="ti ti-phone-call"></i><span>Registro de llamadas</span><span class="nav-badge" id="badge-bo-llamadas" style="display:none">0</span></div>
+<div class="nav-item" data-view="pendientes" data-label="Casos pendientes"><i class="ti ti-alert-circle"></i><span>Casos pendientes</span><span class="nav-badge danger" id="badge-pendientes" style="display:none">0</span></div>
+</div>
+<div>
+<div class="nav-label">Formación</div>
+<div class="nav-item nav-capacitate" data-view="capacitate" data-label="Academia SAES"><i class="ti ti-player-play"></i><span>Academia SAES &nbsp;🎓</span></div>
+</div>
+<div>
+<div class="nav-label">Cuenta</div>
+<div class="nav-item" data-view="config" data-label="Configuración"><i class="ti ti-settings"></i><span>Configuración</span></div>
+<div class="nav-label">¿Por qué? existe este portal?</div>
+<div class="nav-item" data-view="acerca-de" data-label="Acerca de"><i class="ti ti-info-circle"></i><span>Acerca de</span></div>
+</div>
+</nav>
+
+<main class="content">
+
+<div class="view active" id="view-inicio">
+
+<!-- ── Hero rediseñado ── -->
+<div class="home-hero" style="position:relative;overflow:hidden;background:linear-gradient(135deg,#0D0D0D 0%,#1a0800 40%,#0D0D0D 100%);padding:40px 36px 36px;display:flex;align-items:center;justify-content:space-between;gap:24px">
+
+  <!-- Partículas decorativas -->
+  <div style="position:absolute;top:0;left:0;right:0;bottom:0;pointer-events:none;overflow:hidden">
+    <div style="position:absolute;top:-80px;right:-80px;width:360px;height:360px;border-radius:50%;background:radial-gradient(circle,rgba(242,101,34,.22) 0%,transparent 70%)"></div>
+    <div style="position:absolute;bottom:-60px;left:20%;width:240px;height:240px;border-radius:50%;background:radial-gradient(circle,rgba(242,101,34,.08) 0%,transparent 70%)"></div>
+    <div style="position:absolute;top:50%;left:45%;transform:translate(-50%,-50%);width:500px;height:2px;background:linear-gradient(90deg,transparent,rgba(242,101,34,.15),transparent)"></div>
+    <!-- Grid lines sutiles -->
+    <svg style="position:absolute;inset:0;width:100%;height:100%;opacity:.04" xmlns="http://www.w3.org/2000/svg">
+      <defs><pattern id="hgrid" width="40" height="40" patternUnits="userSpaceOnUse"><path d="M 40 0 L 0 0 0 40" fill="none" stroke="#F26522" stroke-width="0.5"/></pattern></defs>
+      <rect width="100%" height="100%" fill="url(#hgrid)"/>
+    </svg>
+  </div>
+
+  <div class="home-hero-left" style="flex:1;position:relative;z-index:1">
+    <!-- Tag de estado -->
+    <div style="display:inline-flex;align-items:center;gap:8px;background:rgba(61,189,114,.1);border:1px solid rgba(61,189,114,.25);border-radius:99px;padding:5px 14px;font-size:11px;color:#3DBD72;font-weight:700;margin-bottom:18px;letter-spacing:.04em">
+      <span style="width:6px;height:6px;border-radius:50%;background:#3DBD72;box-shadow:0 0 8px #3DBD72;animation:sat-blink 1.5s ease-in-out infinite;flex-shrink:0"></span>
+      Portal activo · Canal WhatsApp
+    </div>
+
+    <!-- Saludo dinámico -->
+    <h1 class="home-hero-title" style="font-size:30px;font-weight:900;color:#fff;margin-bottom:10px;line-height:1.2;letter-spacing:-.5px">
+      ¡Bienvenido, <span id="home-nombre-display" style="color:var(--orange)">asesor</span>!
+      <span id="home-rol-badge" style="font-size:14px;font-weight:600;color:#555;letter-spacing:0;vertical-align:middle;margin-left:6px">· Cargando...</span>
+    </h1>
+    <p class="home-hero-sub" style="font-size:13px;color:#666;line-height:1.75;max-width:500px;margin-bottom:22px">
+      Plataforma interna para asesores y supervisores del Contact Center. Gestiona casos, registra llamadas y centraliza el seguimiento de alumnos.
+    </p>
+
+    <!-- Chips de acceso rápido -->
+    <div style="display:flex;gap:8px;flex-wrap:wrap">
+      <span class="home-chip orange" onclick="document.querySelector('[data-view=bo-llamadas]').click()" style="display:flex;align-items:center;gap:6px;border-radius:10px;padding:8px 16px;font-size:12px;font-weight:700;cursor:pointer;background:rgba(242,101,34,.12);color:#F26522;border:1px solid rgba(242,101,34,.25);transition:all .2s" onmouseover="this.style.background='rgba(242,101,34,.22)'" onmouseout="this.style.background='rgba(242,101,34,.12)'">
+        <i class="ti ti-phone-call"></i> BO Llamadas
+      </span>
+      <span class="home-chip purple" onclick="document.querySelector('[data-view=pendientes]').click()" style="display:flex;align-items:center;gap:6px;border-radius:10px;padding:8px 16px;font-size:12px;font-weight:700;cursor:pointer;background:rgba(91,33,182,.12);color:#9B6FF5;border:1px solid rgba(91,33,182,.25);transition:all .2s" onmouseover="this.style.background='rgba(91,33,182,.22)'" onmouseout="this.style.background='rgba(91,33,182,.12)'">
+        <i class="ti ti-alert-circle"></i> Casos pendientes
+      </span>
+      <span class="home-chip green" onclick="document.querySelector('[data-view=plantillas]').click()" style="display:flex;align-items:center;gap:6px;border-radius:10px;padding:8px 16px;font-size:12px;font-weight:700;cursor:pointer;background:rgba(26,122,69,.12);color:#3DD68C;border:1px solid rgba(26,122,69,.25);transition:all .2s" onmouseover="this.style.background='rgba(26,122,69,.22)'" onmouseout="this.style.background='rgba(26,122,69,.12)'">
+        <i class="ti ti-file-text"></i> Plantillas
+      </span>
+      <span onclick="document.querySelector('[data-view=satisfaccion]').click()" style="display:flex;align-items:center;gap:6px;border-radius:10px;padding:8px 16px;font-size:12px;font-weight:700;cursor:pointer;background:rgba(240,192,64,.12);color:#F0C040;border:1px solid rgba(240,192,64,.25);transition:all .2s" onmouseover="this.style.background='rgba(240,192,64,.22)'" onmouseout="this.style.background='rgba(240,192,64,.12)'">
+        🏆 Ranking
+      </span>
+    </div>
+  </div>
+
+  <!-- Reloj -->
+  <div style="flex-shrink:0;position:relative;z-index:1">
+    <div style="display:flex;flex-direction:column;align-items:center;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:20px;padding:20px 24px;gap:4px;backdrop-filter:blur(8px)">
+      <div style="font-size:9px;font-weight:700;color:#444;text-transform:uppercase;letter-spacing:.12em;margin-bottom:2px;display:flex;align-items:center;gap:4px">
+        <i class="ti ti-map-pin" style="font-size:10px;color:var(--orange)"></i> Lima, Perú
+      </div>
+      <div>
+        <span class="home-clock-time" id="clock-time" style="font-size:38px;font-weight:800;color:#fff;letter-spacing:-1px;line-height:1;font-variant-numeric:tabular-nums">--:--</span>
+        <span class="home-clock-ampm" id="clock-ampm" style="font-size:13px;font-weight:600;color:var(--orange);margin-left:4px"></span>
+      </div>
+      <div id="clock-date" class="home-clock-date" style="font-size:11px;color:#444;text-align:center;margin-top:2px;text-transform:capitalize">—</div>
+      <div style="display:flex;align-items:center;gap:5px;font-size:10px;color:#333;margin-top:4px">
+        <i class="ti ti-clock" style="font-size:11px"></i>
+        <span>UTC-5 · Hora Lima</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ── Mini stats bar ── -->
+<div id="home-stats-bar" style="background:var(--white);border-bottom:1px solid var(--border);padding:0 28px;display:flex;align-items:stretch;gap:0;overflow-x:auto">
+  <div class="home-stat-item" onclick="document.querySelector('[data-view=bo-llamadas]').click()" style="display:flex;align-items:center;gap:10px;padding:14px 24px;cursor:pointer;border-right:1px solid var(--border);transition:background .15s;white-space:nowrap;min-width:0" onmouseover="this.style.background='#FFF5F0'" onmouseout="this.style.background='transparent'">
+    <div style="width:36px;height:36px;border-radius:10px;background:#FFF0E8;color:var(--orange-dark);display:flex;align-items:center;justify-content:center;font-size:17px;flex-shrink:0"><i class="ti ti-phone-call"></i></div>
+    <div>
+      <div id="home-stat-bo" style="font-size:18px;font-weight:900;color:var(--text)">—</div>
+      <div style="font-size:10px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.06em">BO Llamadas hoy</div>
+    </div>
+  </div>
+  <div class="home-stat-item" onclick="document.querySelector('[data-view=pendientes]').click()" style="display:flex;align-items:center;gap:10px;padding:14px 24px;cursor:pointer;border-right:1px solid var(--border);transition:background .15s;white-space:nowrap" onmouseover="this.style.background='#FFF5F5'" onmouseout="this.style.background='transparent'">
+    <div style="width:36px;height:36px;border-radius:10px;background:#FFF0F0;color:var(--danger);display:flex;align-items:center;justify-content:center;font-size:17px;flex-shrink:0"><i class="ti ti-alert-circle"></i></div>
+    <div>
+      <div id="home-stat-pend" style="font-size:18px;font-weight:900;color:var(--text)">—</div>
+      <div style="font-size:10px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.06em">Casos pendientes</div>
+    </div>
+  </div>
+  <div class="home-stat-item" onclick="document.querySelector('[data-view=satisfaccion]').click()" style="display:flex;align-items:center;gap:10px;padding:14px 24px;cursor:pointer;border-right:1px solid var(--border);transition:background .15s;white-space:nowrap" onmouseover="this.style.background='#FEFDF5'" onmouseout="this.style.background='transparent'">
+    <div style="width:36px;height:36px;border-radius:10px;background:rgba(240,192,64,.12);color:#B8860B;display:flex;align-items:center;justify-content:center;font-size:17px;flex-shrink:0">🏆</div>
+    <div>
+      <div id="home-stat-rank" style="font-size:18px;font-weight:900;color:var(--text)">—</div>
+      <div style="font-size:10px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.06em">Tu posición</div>
+    </div>
+  </div>
+  <div style="display:flex;align-items:center;gap:10px;padding:14px 24px;white-space:nowrap;margin-left:auto">
+    <div style="width:36px;height:36px;border-radius:10px;background:#E8FAF0;color:var(--success);display:flex;align-items:center;justify-content:center;font-size:17px;flex-shrink:0"><i class="ti ti-clock"></i></div>
+    <div>
+      <div id="home-stat-sesion" style="font-size:18px;font-weight:900;color:var(--text)">0 min</div>
+      <div style="font-size:10px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.06em">Tiempo en sesión</div>
+    </div>
+  </div>
+</div>
+
+<!-- ── Contenido principal ── -->
+<div class="home-content" style="padding:24px 28px 40px">
+
+  <!-- Accesos directos -->
+  <div class="home-section-label">Accesos directos</div>
+  <div class="home-cards-grid" style="margin-bottom:28px">
+
+    <div class="home-info-card" style="--card-accent:var(--orange)" onclick="document.querySelector('[data-view=bo-llamadas]').click()">
+      <div class="home-card-icon" style="background:#FFF0E8;color:var(--orange-dark)"><i class="ti ti-phone-call"></i></div>
+      <div class="home-card-body">
+        <div class="home-card-title">Registro de Llamadas BO</div>
+        <div class="home-card-desc">Deriva casos al equipo BackOffice y gestiona estados de llamadas.</div>
+      </div>
+      <i class="ti ti-arrow-right home-card-arrow"></i>
+    </div>
+
+    <div class="home-info-card" style="--card-accent:var(--danger)" onclick="document.querySelector('[data-view=pendientes]').click()">
+      <div class="home-card-icon" style="background:#FFF0F0;color:var(--danger)"><i class="ti ti-alert-circle"></i></div>
+      <div class="home-card-body">
+        <div class="home-card-title">Casos Pendientes Fuera de Plazo</div>
+        <div class="home-card-desc">Vista de calendario para supervisores del Contact Center.</div>
+      </div>
+      <i class="ti ti-arrow-right home-card-arrow"></i>
+    </div>
+
+    <div class="home-info-card" style="--card-accent:var(--info)" onclick="document.querySelector('[data-view=plantillas]').click()">
+      <div class="home-card-icon" style="background:#EBF2FF;color:var(--info)"><i class="ti ti-file-text"></i></div>
+      <div class="home-card-body">
+        <div class="home-card-title">Plantillas de Derivación</div>
+        <div class="home-card-desc">Plantillas listas para copiar y pegar en WhatsApp según el caso.</div>
+      </div>
+      <i class="ti ti-arrow-right home-card-arrow"></i>
+    </div>
+
+    <div class="home-info-card" style="--card-accent:var(--success)" onclick="document.querySelector('[data-view=preguntas]').click()">
+      <div class="home-card-icon" style="background:#E8FAF0;color:var(--success)"><i class="ti ti-award"></i></div>
+      <div class="home-card-body">
+        <div class="home-card-title">Preguntas Frecuentes</div>
+        <div class="home-card-desc">Respuestas rápidas para consultas comunes de alumnos en WhatsApp.</div>
+      </div>
+      <i class="ti ti-arrow-right home-card-arrow"></i>
+    </div>
+
+    <div class="home-info-card" style="--card-accent:var(--orange);background:linear-gradient(135deg,#1a0a00,#2d1200)" onclick="document.querySelector('[data-view=capacitate]').click()">
+      <div class="home-card-icon" style="background:rgba(242,101,34,.2);color:var(--orange)"><i class="ti ti-player-play-filled"></i></div>
+      <div class="home-card-body">
+        <div class="home-card-title" style="color:#fff">Capacítate</div>
+        <div class="home-card-desc" style="color:#666">Videos y recursos de formación para asesores del canal.</div>
+      </div>
+      <i class="ti ti-arrow-right" style="color:#333;font-size:15px;flex-shrink:0;margin-top:2px"></i>
+    </div>
+
+    <div class="home-info-card" id="tut-home-card" onclick="if(window._tutAbrir){window._tutAbrir()}" style="--card-accent:#0D9488;background:linear-gradient(135deg,#001a1a,#003333)">
+      <div class="home-card-icon" style="background:rgba(45,212,191,.18);color:#2DD4BF"><i class="ti ti-book-2"></i></div>
+      <div class="home-card-body">
+        <div class="home-card-title" style="color:#fff">Aprende a usar Portal SAES</div>
+        <div class="home-card-desc" style="color:#7ad8cd">Tutorial completo y detallado de cada sección del portal.</div>
+      </div>
+      <i class="ti ti-arrow-right" style="color:#0f4a45;font-size:15px;flex-shrink:0;margin-top:2px"></i>
+    </div>
+
+  </div>
+
+  <!-- Permisos por rol — más compacto y visual -->
+  <div class="home-section-label">Permisos por rol</div>
+  <div style="background:var(--white);border:1px solid var(--border);border-radius:16px;padding:20px 24px;margin-bottom:20px">
+    <div style="font-size:13px;font-weight:700;color:var(--text);margin-bottom:16px;display:flex;align-items:center;gap:7px">
+      <i class="ti ti-users-group" style="font-size:16px;color:var(--orange)"></i> ¿Quién puede hacer qué?
+    </div>
+    <div class="home-roles-grid">
+      <div class="home-role-card">
+        <div class="home-role-badge" style="background:#FFF0E8;color:var(--orange-dark)"><i class="ti ti-brand-whatsapp"></i>Asesor WSP</div>
+        <ul class="home-role-list">
+          <li><i class="ti ti-check"></i>Registrar casos para BO Llamadas</li>
+          <li><i class="ti ti-check"></i>Usar y copiar plantillas</li>
+          <li><i class="ti ti-check"></i>Consultar casos pendientes</li>
+          <li><i class="ti ti-x" style="color:var(--danger)"></i>No puede gestionar estados BO</li>
+        </ul>
+      </div>
+      <div class="home-role-card">
+        <div class="home-role-badge" style="background:#F5F0FF;color:var(--pending)"><i class="ti ti-headset"></i>Rol BO</div>
+        <ul class="home-role-list">
+          <li><i class="ti ti-check"></i>Cambiar estado de llamadas</li>
+          <li><i class="ti ti-check"></i>Comentar gestión de casos</li>
+          <li><i class="ti ti-check"></i>Eliminar casos de llamadas</li>
+          <li><i class="ti ti-check"></i>Puede eliminar casos pendientes</li>
+        </ul>
+      </div>
+      <div class="home-role-card">
+        <div class="home-role-badge" style="background:#FFF0F0;color:var(--danger)"><i class="ti ti-shield-check"></i>Supervisor</div>
+        <ul class="home-role-list">
+          <li><i class="ti ti-check"></i>Subir datos de satisfacción</li>
+          <li><i class="ti ti-check"></i>Gestionar logros del equipo</li>
+          <li><i class="ti ti-check"></i>Eliminar casos pendientes</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <div class="home-footer-note">
+    <i class="ti ti-info-circle"></i>
+    Para obtener acceso o reportar inconvenientes, contacta al formador <strong>Gerardo Chacón</strong> o al asesor <strong>Jhon Ruiz</strong> a través de <strong>Microsoft Teams</strong>.
+  </div>
+
+</div>
+
+<!-- Script para stats en tiempo real del home -->
+<script src="home-stats.js"></script>
+
+</div>
+
+
+<div class="view" id="view-bo-llamadas">
+<div class="bo-header">
+<div class="bo-title-wrap">
+<h2>Registro de Llamadas — BackOffice</h2>
+<p>Prioridad: más antiguos primero · BO, Supervisor y Formador pueden gestionar estados y comentar</p>
+</div>
+<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+<button class="btn-export excel" id="btn-bo-export-excel"><i class="ti ti-table-export"></i>Excel</button>
+<button class="btn-export pdf"   id="btn-bo-export-pdf"><i class="ti ti-file-type-pdf"></i>PDF</button>
+<button class="btn-export" id="btn-bo-export-mensual" style="background:var(--danger,#C41E3A);color:#fff;border-color:var(--danger,#C41E3A)"><i class="ti ti-chart-bar"></i>Reporte Mensual</button>
+<button class="btn-nuevo" id="btn-nuevo-registro"><i class="ti ti-plus"></i>Registrar caso</button>
+</div>
+</div>
+<div class="pend-filters" style="margin-bottom:14px">
+<button class="month-nav" id="bo-prev"><i class="ti ti-chevron-left"></i></button>
+<span class="month-label" id="bo-day-label">Hoy</span>
+<button class="month-nav" id="bo-next"><i class="ti ti-chevron-right"></i></button>
+<button class="month-nav" id="bo-today" style="width:auto;padding:0 10px;font-size:11px;font-weight:700;color:var(--orange);border-color:var(--orange)">Hoy</button>
+<div style="flex:1"></div>
+<div class="filter-search" style="max-width:260px">
+<i class="ti ti-search"></i>
+<input type="text" id="search-bo" placeholder="Buscar alumno, código, celular…"/>
+</div>
+<select class="filter-select" id="filter-estado" style="display:none">
+<option value="">Todos los estados</option>
+<option value="pendiente">Pendiente</option>
+<option value="no_contesta">No contesta</option>
+<option value="atendida">Atendida</option>
+</select>
+</div>
+<div id="cards-container"><div class="loading-state">Cargando casos...</div></div>
+
+<div id="llamados-hoy-section" style="margin-top:32px;display:none">
+<div class="pend-day-header" style="margin-bottom:14px">
+<div class="pend-day-pill today" id="llamados-hoy-pill"><i class="ti ti-phone-check" style="font-size:13px"></i>Gestionados del día</div>
+<div class="pend-day-line"></div>
+<span class="pend-day-count" id="llamados-hoy-count">0 llamadas</span>
+</div>
+<div id="llamados-hoy-container"></div>
+</div>
+</div>
+
+<div class="view" id="view-pendientes">
+<div class="pend-header">
+<div class="pend-title-wrap">
+<h2>Casos pendientes fuera de plazo</h2>
+<p>Registro diario para supervisores del Contact Center · Ordenado por fecha</p>
+</div>
+<div class="pend-actions">
+<button class="btn-mis-alertados" id="btn-mis-alertados"><i class="ti ti-bell-check"></i>Mis alertados</button>
+<button class="btn-export excel" id="btn-export-excel"><i class="ti ti-table-export"></i>Excel</button>
+<button class="btn-export pdf"   id="btn-export-pdf"><i class="ti ti-file-type-pdf"></i>PDF</button>
+<button class="btn-export" id="btn-pend-export-mensual" style="background:var(--danger,#C41E3A);color:#fff;border-color:var(--danger,#C41E3A)"><i class="ti ti-chart-bar"></i>Reporte Mensual</button>
+<button class="btn-nuevo" id="btn-nuevo-pendiente"><i class="ti ti-plus"></i>Nuevo caso</button>
+</div>
+</div>
+<div class="pend-filters" style="flex-wrap:wrap;gap:10px">
+<button class="month-nav" id="pend-prev"><i class="ti ti-chevron-left"></i></button>
+<span class="month-label" id="pend-month-label">Hoy</span>
+<button class="month-nav" id="pend-next"><i class="ti ti-chevron-right"></i></button>
+<button class="month-nav" id="pend-today" title="Ir a hoy" style="width:auto;padding:0 10px;font-size:11px;font-weight:700;color:var(--orange);border-color:var(--orange)">Hoy</button>
+<div class="pend-view-toggle">
+<button class="pend-view-btn active" data-filter="todos" id="pend-filter-todos"><i class="ti ti-users"></i>Todos</button>
+<button class="pend-view-btn" data-filter="mios" id="pend-filter-mios"><i class="ti ti-user"></i>Mis casos</button>
+</div>
+<div style="flex:1"></div>
+<div class="filter-search" style="max-width:260px">
+<i class="ti ti-search"></i>
+<input type="text" id="search-pend" placeholder="Buscar caso o descripción…"/>
+</div>
+</div>
+<div id="pend-calendar-container"><div class="loading-state">Cargando casos...</div></div>
+
+<div class="pend-atendidos-section" id="pend-atendidos-section" style="display:none;margin-top:28px">
+<div class="pend-day-header" style="margin-bottom:12px">
+<div class="pend-day-pill" style="background:var(--success)"><i class="ti ti-checks" style="font-size:13px"></i>Resueltos del día</div>
+<div class="pend-day-line"></div>
+<span class="pend-day-count" id="pend-atendidos-count">0 casos</span>
+</div>
+<div id="pend-atendidos-container"></div>
+</div>
+</div>
+
+<div class="view" id="view-herramientas">
+<div class="bo-header">
+<div class="bo-title-wrap">
+<h2>Herramientas de Trabajo</h2>
+<p>Acceso rápido a todos los sistemas y aplicativos del Contact Center</p>
+</div>
+<button class="btn-nuevo" id="btn-herr-docx" onclick="descargarHerramientasDocx()">
+<i class="ti ti-download"></i>Descargar lista (.docx)
+</button>
+</div>
+
+<div class="herr-grid" id="herr-grid"></div>
+
+<div class="herr-section-divider" style="margin-top:32px">
+<div class="herr-section-line"></div>
+<div class="herr-section-label"><i class="ti ti-device-desktop"></i> Aula Virtual Canvas — Guía del Estudiante</div>
+<div class="herr-section-line"></div>
+</div>
+<p class="herr-section-sub">Guía de ingreso y uso del Aula Virtual Canvas para compartir con los estudiantes del Instituto SISE.</p>
+
+<div style="background:linear-gradient(135deg,#7B0000 0%,#C0392B 60%,#7B0000 100%);border-radius:16px;padding:22px 26px;display:flex;align-items:center;justify-content:space-between;gap:20px;margin-bottom:20px;position:relative;overflow:hidden">
+<div style="position:absolute;top:-40px;right:-40px;width:200px;height:200px;border-radius:50%;background:radial-gradient(circle,rgba(255,255,255,0.08) 0%,transparent 70%);pointer-events:none"></div>
+<div style="position:relative;z-index:1">
+<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
+<span style="font-size:20px">🎓</span>
+<h3 style="font-size:18px;font-weight:800;color:#fff;margin:0">Aula Virtual Canvas</h3>
+</div>
+<p style="font-size:13px;color:rgba(255,255,255,0.75);margin:0 0 16px">Guía de ingreso y uso para el estudiante — Instituto SISE</p>
+<button onclick="descargarGuiaCanvas()" id="btn-canvas-pdf" style="display:inline-flex;align-items:center;gap:8px;background:#fff;color:#C0392B;border:none;border-radius:10px;padding:10px 20px;font-size:13px;font-weight:700;font-family:var(--font);cursor:pointer;transition:all 0.15s;box-shadow:0 4px 12px rgba(0,0,0,0.2)">
+<i class="ti ti-download" style="font-size:16px"></i>Descargar Guía PDF
+</button>
+</div>
+<div style="flex-shrink:0;position:relative;z-index:1;font-size:64px;opacity:0.35">🖥️</div>
+</div>
+
+<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:12px;margin-bottom:8px" id="canvas-steps-grid">
+
+<div class="herr-card" style="cursor:default;flex-direction:column;gap:10px;padding:16px">
+<div style="display:flex;align-items:center;gap:10px">
+<div style="width:32px;height:32px;border-radius:50%;background:#C0392B;color:#fff;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:800;flex-shrink:0">1</div>
+<div style="font-size:13px;font-weight:700;color:var(--black)">Ingresar al enlace</div>
+</div>
+<div style="font-size:12px;color:#666;line-height:1.55;padding-left:42px">Ir a <strong>aulavirtual.sise.edu.pe</strong> desde el navegador.</div>
+</div>
+<div class="herr-card" style="cursor:default;flex-direction:column;gap:10px;padding:16px">
+<div style="display:flex;align-items:center;gap:10px">
+<div style="width:32px;height:32px;border-radius:50%;background:#C0392B;color:#fff;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:800;flex-shrink:0">2</div>
+<div style="font-size:13px;font-weight:700;color:var(--black)">Iniciar sesión con Microsoft</div>
+</div>
+<div style="font-size:12px;color:#666;line-height:1.55;padding-left:42px">Clic en <em>"Iniciar sesión con Microsoft"</em> con el correo institucional.</div>
+</div>
+<div class="herr-card" style="cursor:default;flex-direction:column;gap:10px;padding:16px">
+<div style="display:flex;align-items:center;gap:10px">
+<div style="width:32px;height:32px;border-radius:50%;background:#C0392B;color:#fff;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:800;flex-shrink:0">3</div>
+<div style="font-size:13px;font-weight:700;color:var(--black)">Ingresar credenciales</div>
+</div>
+<div style="font-size:12px;color:#666;line-height:1.55;padding-left:42px">Correo institucional y contraseña en el portal de Microsoft.</div>
+</div>
+<div class="herr-card" style="cursor:default;flex-direction:column;gap:10px;padding:16px">
+<div style="display:flex;align-items:center;gap:10px">
+<div style="width:32px;height:32px;border-radius:50%;background:#C0392B;color:#fff;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:800;flex-shrink:0">4</div>
+<div style="font-size:13px;font-weight:700;color:var(--black)">Doble autenticación</div>
+</div>
+<div style="font-size:12px;color:#666;line-height:1.55;padding-left:42px">Primera vez: configurar Microsoft Authenticator o verificación por SMS.</div>
+</div>
+<div class="herr-card" style="cursor:default;flex-direction:column;gap:10px;padding:16px">
+<div style="display:flex;align-items:center;gap:10px">
+<div style="width:32px;height:32px;border-radius:50%;background:#C0392B;color:#fff;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:800;flex-shrink:0">5</div>
+<div style="font-size:13px;font-weight:700;color:var(--black)">Tablero de cursos</div>
+</div>
+<div style="font-size:12px;color:#666;line-height:1.55;padding-left:42px">Visualiza todos los cursos activos. Se recomienda activar la vista de <strong>TARJETA</strong>.</div>
+</div>
+<div class="herr-card" style="cursor:default;flex-direction:column;gap:10px;padding:16px">
+<div style="display:flex;align-items:center;gap:10px">
+<div style="width:32px;height:32px;border-radius:50%;background:#C0392B;color:#fff;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:800;flex-shrink:0">6</div>
+<div style="font-size:13px;font-weight:700;color:var(--black)">Salas de Teams y Contenido</div>
+</div>
+<div style="font-size:12px;color:#666;line-height:1.55;padding-left:42px"><em>Salas de Teams</em> para el encuentro virtual; <em>Contenido</em> para los materiales del curso.</div>
+</div>
+<div class="herr-card" style="cursor:default;flex-direction:column;gap:10px;padding:16px">
+<div style="display:flex;align-items:center;gap:10px">
+<div style="width:32px;height:32px;border-radius:50%;background:#C0392B;color:#fff;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:800;flex-shrink:0">7</div>
+<div style="font-size:13px;font-weight:700;color:var(--black)">Módulos por semanas</div>
+</div>
+<div style="font-size:12px;color:#666;line-height:1.55;padding-left:42px">Guías y presentaciones organizadas por semanas: Semana 01, Semana 02, etc.</div>
+</div>
+<div class="herr-card" style="cursor:default;flex-direction:column;gap:10px;padding:16px">
+<div style="display:flex;align-items:center;gap:10px">
+<div style="width:32px;height:32px;border-radius:50%;background:#C0392B;color:#fff;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:800;flex-shrink:0">8</div>
+<div style="font-size:13px;font-weight:700;color:var(--black)">Unirse a la clase en vivo</div>
+</div>
+<div style="font-size:12px;color:#666;line-height:1.55;padding-left:42px">En Salas de Teams, clic en <em>Ingresar</em> en la fecha y hora correspondiente.</div>
+</div>
+<div class="herr-card" style="cursor:default;flex-direction:column;gap:10px;padding:16px">
+<div style="display:flex;align-items:center;gap:10px">
+<div style="width:32px;height:32px;border-radius:50%;background:#C0392B;color:#fff;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:800;flex-shrink:0">9</div>
+<div style="font-size:13px;font-weight:700;color:var(--black)">Grabaciones</div>
+</div>
+<div style="font-size:12px;color:#666;line-height:1.55;padding-left:42px">Al final de los módulos. Si no aparecen, el estudiante debe solicitarlas al docente.</div>
+</div>
+<div class="herr-card" style="cursor:default;flex-direction:column;gap:10px;padding:16px">
+<div style="display:flex;align-items:center;gap:10px">
+<div style="width:32px;height:32px;border-radius:50%;background:#C0392B;color:#fff;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:800;flex-shrink:0">10</div>
+<div style="font-size:13px;font-weight:700;color:var(--black)">Bandeja de entrada</div>
+</div>
+<div style="font-size:12px;color:#666;line-height:1.55;padding-left:42px">Mensajes a docentes y compañeros, como un correo integrado dentro del aula.</div>
+</div>
+<div class="herr-card" style="cursor:default;flex-direction:column;gap:10px;padding:16px">
+<div style="display:flex;align-items:center;gap:10px">
+<div style="width:32px;height:32px;border-radius:50%;background:#C0392B;color:#fff;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:800;flex-shrink:0">11</div>
+<div style="font-size:13px;font-weight:700;color:var(--black)">Calendario</div>
+</div>
+<div style="font-size:12px;color:#666;line-height:1.55;padding-left:42px">Evaluaciones y tareas programadas. Se pueden agregar actividades personales propias.</div>
+</div>
+</div>
+
+<!-- ── Guías visuales descargables ─────────────────────────── -->
+<div class="herr-section-divider" style="margin-top:32px">
+<div class="herr-section-line"></div>
+<div class="herr-section-label"><i class="ti ti-photo"></i> Guías visuales</div>
+<div class="herr-section-line"></div>
+</div>
+<p class="herr-section-sub">Imágenes de referencia rápida para compartir con los estudiantes. Descarga cada guía con un clic.</p>
+
+<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:16px;margin-bottom:32px">
+
+  <!-- Card 1 -->
+  <div style="background:#fff;border:1.5px solid #F0EDE8;border-radius:16px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,0.05);display:flex;flex-direction:column">
+    <div style="width:100%;background:#F5F2EE;overflow:hidden;position:relative;min-height:160px;display:flex;align-items:center;justify-content:center">
+      <img id="guia-img-1" src="Sede_Comas.jpeg" alt="Guía 1" crossorigin="anonymous"
+           style="width:100%;height:auto;display:block;object-fit:contain"
+           onerror="this.style.display='none';this.parentElement.querySelector('.img-placeholder').style.display='flex'"/>
+      <div class="img-placeholder" style="display:none;position:absolute;inset:0;align-items:center;justify-content:center;flex-direction:column;gap:8px;color:#C0B8B0">
+        <i class="ti ti-photo" style="font-size:32px"></i>
+        <span style="font-size:11px;font-weight:600">Sede SISE Comas</span>
+      </div>
+    </div>
+    <div style="padding:16px;display:flex;flex-direction:column;gap:10px;flex:1">
+      <div>
+        <div style="font-size:14px;font-weight:700;color:var(--black);margin-bottom:4px">Sede SISE Comas – Canal de Atención 📍</div>
+        <div style="font-size:12px;color:#888;line-height:1.5">Canal de atención oficial de la sede franquiciada SISE Comas. 📍📞🙂</div>
+      </div>
+      <button onclick="descargarGuiaImg('guia-img-1','Guia_1_Canvas_SISE.png',this)"
+              style="margin-top:auto;display:inline-flex;align-items:center;justify-content:center;gap:7px;background:var(--orange,#C0392B);color:#fff;border:none;border-radius:10px;padding:9px 16px;font-size:13px;font-weight:700;font-family:var(--font);cursor:pointer;transition:opacity .15s;width:100%"
+              onmouseover="this.style.opacity='.85'" onmouseout="this.style.opacity='1'">
+        <i class="ti ti-download" style="font-size:15px"></i>Descargar
+      </button>
+    </div>
+  </div>
+
+  <!-- Card 2 -->
+  <div style="background:#fff;border:1.5px solid #F0EDE8;border-radius:16px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,0.05);display:flex;flex-direction:column">
+    <div style="width:100%;background:#F5F2EE;overflow:hidden;position:relative;min-height:160px;display:flex;align-items:center;justify-content:center">
+      <img id="guia-img-2" src="guia-2.png" alt="Guía 2" crossorigin="anonymous"
+           style="width:100%;height:auto;display:block;object-fit:contain"
+           onerror="this.style.display='none';this.parentElement.querySelector('.img-placeholder').style.display='flex'"/>
+      <div class="img-placeholder" style="display:none;position:absolute;inset:0;align-items:center;justify-content:center;flex-direction:column;gap:8px;color:#C0B8B0">
+        <i class="ti ti-photo" style="font-size:32px"></i>
+        <span style="font-size:11px;font-weight:600">guia-2.png</span>
+      </div>
+    </div>
+    <div style="padding:16px;display:flex;flex-direction:column;gap:10px;flex:1">
+      <div>
+        <div style="font-size:14px;font-weight:700;color:var(--black);margin-bottom:4px">Guía 2</div>
+        <div style="font-size:12px;color:#888;line-height:1.5">Descripción de la guía. Edita este texto.</div>
+      </div>
+      <button onclick="descargarGuiaImg('guia-img-2','Guia_2_Canvas_SISE.png',this)"
+              style="margin-top:auto;display:inline-flex;align-items:center;justify-content:center;gap:7px;background:var(--orange,#C0392B);color:#fff;border:none;border-radius:10px;padding:9px 16px;font-size:13px;font-weight:700;font-family:var(--font);cursor:pointer;transition:opacity .15s;width:100%"
+              onmouseover="this.style.opacity='.85'" onmouseout="this.style.opacity='1'">
+        <i class="ti ti-download" style="font-size:15px"></i>Descargar
+      </button>
+    </div>
+  </div>
+
+  <!-- Card 3 -->
+  <div style="background:#fff;border:1.5px solid #F0EDE8;border-radius:16px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,0.05);display:flex;flex-direction:column">
+    <div style="width:100%;background:#F5F2EE;overflow:hidden;position:relative;min-height:160px;display:flex;align-items:center;justify-content:center">
+      <img id="guia-img-3" src="guia-3.png" alt="Guía 3" crossorigin="anonymous"
+           style="width:100%;height:auto;display:block;object-fit:contain"
+           onerror="this.style.display='none';this.parentElement.querySelector('.img-placeholder').style.display='flex'"/>
+      <div class="img-placeholder" style="display:none;position:absolute;inset:0;align-items:center;justify-content:center;flex-direction:column;gap:8px;color:#C0B8B0">
+        <i class="ti ti-photo" style="font-size:32px"></i>
+        <span style="font-size:11px;font-weight:600">guia-3.png</span>
+      </div>
+    </div>
+    <div style="padding:16px;display:flex;flex-direction:column;gap:10px;flex:1">
+      <div>
+        <div style="font-size:14px;font-weight:700;color:var(--black);margin-bottom:4px">Guía 3</div>
+        <div style="font-size:12px;color:#888;line-height:1.5">Descripción de la guía. Edita este texto.</div>
+      </div>
+      <button onclick="descargarGuiaImg('guia-img-3','Guia_3_Canvas_SISE.png',this)"
+              style="margin-top:auto;display:inline-flex;align-items:center;justify-content:center;gap:7px;background:var(--orange,#C0392B);color:#fff;border:none;border-radius:10px;padding:9px 16px;font-size:13px;font-weight:700;font-family:var(--font);cursor:pointer;transition:opacity .15s;width:100%"
+              onmouseover="this.style.opacity='.85'" onmouseout="this.style.opacity='1'">
+        <i class="ti ti-download" style="font-size:15px"></i>Descargar
+      </button>
+    </div>
+  </div>
+
+</div>
+<!-- ── Fin guías visuales ──────────────────────────────────── -->
+
+<div class="herr-section-divider">
+<div class="herr-section-line"></div>
+<div class="herr-section-line"></div>
+</div>
+</div><!-- ── Cierre view-herramientas ── -->
+
+<div class="view" id="view-tipificaciones">
+<div class="tipi-header">
+<div class="tipi-title-wrap">
+<h2>Tipificaciones</h2>
+<p>Clasificación de motivos de contacto para una correcta gestión de casos</p>
+</div>
+</div>
+
+<div class="tipi-formador-bar" id="tipi-formador-bar">
+<i class="ti ti-shield-check"></i>
+<span><strong>Modo Formador activo</strong> — Puedes editar celdas, añadir o eliminar tipificaciones y categorías.</span>
+<div class="fb-actions">
+<button class="btn-tipi-add-cat" id="btn-tipi-add-cat"><i class="ti ti-folder-plus"></i>Nueva categoría</button>
+<button class="btn-tipi-add-row" id="btn-tipi-add-row"><i class="ti ti-plus"></i>Nueva tipificación</button>
+</div>
+</div>
+<div class="tipi-chips-container" id="tipi-chips-bar"></div>
+
+<div class="tipi-search-bar">
+<div class="filter-search" style="max-width:480px">
+<i class="ti ti-search"></i>
+<input type="text" id="search-tipi" placeholder="Buscar por proceso, sub-proceso, asunto o tipo de atención…"/>
+</div>
+<span class="tipi-count" id="tipi-count">10 tipificaciones</span>
+</div>
+
+<div id="tipi-acordeones-container"></div>
+</div>
+
+<div class="view" id="view-plantillas">
+<div class="plantillas-topbar">
+<div>
+<h2 id="plt-view-title">Plantillas de derivación</h2>
+<p id="plt-view-subtitle">Copia la plantilla correspondiente y úsala en WhatsApp para solicitar información al alumno</p>
+</div>
+<div class="plantillas-search" id="search-plt-wrap" style="position:relative;display:flex;align-items:center">
+<i class="ti ti-search" style="position:absolute;left:12px;pointer-events:none;color:var(--muted);z-index:1"></i>
+<input type="text" id="search-plantillas" placeholder="Buscar por nombre, descripción o contenido…" style="padding-left:36px;padding-right:72px;width:100%"/>
+<button id="plt-search-clear" title="Limpiar" style="display:none;position:absolute;right:40px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:var(--muted);font-size:15px;padding:2px 5px;line-height:1"><i class="ti ti-x"></i></button>
+<span id="plt-search-count" style="display:none;position:absolute;right:10px;top:50%;transform:translateY(-50%);font-size:10px;font-weight:700;color:var(--orange);white-space:nowrap;pointer-events:none"></span>
+</div>
+<div class="plantillas-search" id="search-proto-wrap" style="display:none">
+<i class="ti ti-search"></i>
+<input type="text" id="search-protocolo" placeholder="Buscar paso o glosa…"/>
+</div>
+</div>
+
+<div class="plt-tabs-bar">
+<button class="plt-tab-btn" id="tab-protocolo-btn" onclick="switchPltTab('protocolo')">
+<i class="ti ti-list-check"></i>Protocolo de atención
+</button>
+<button class="plt-tab-btn active" id="tab-plantillas-btn" onclick="switchPltTab('plantillas')">
+<i class="ti ti-file-text"></i>Plantillas de derivación
+</button>
+</div>
+
+<div class="plt-tab-panel active" id="plt-panel-plantillas">
+
+<div class="plt-formador-bar" id="plt-formador-bar">
+<i class="ti ti-shield-check"></i>
+<span><strong>Modo Formador activo</strong> — Puedes añadir, editar o eliminar plantillas.</span>
+<div class="fb-actions">
+<button class="btn-plt-add" id="btn-plt-nueva"><i class="ti ti-plus"></i>Nueva plantilla</button>
+</div>
+</div>
+<div class="plantillas-list" id="plantillas-grid"></div>
+</div>
+
+<div class="plt-tab-panel" id="plt-panel-protocolo">
+
+<div class="plt-personal-bar" id="plt-personal-bar">
+<div class="plt-personal-header">
+<i class="ti ti-pencil"></i>
+<span class="plt-personal-title">Personaliza — se aplican al copiar</span>
+</div>
+<div class="plt-personal-fields">
+<div class="plt-personal-field">
+<div class="plt-personal-tag">[NOMBRE_USUARIO]</div>
+<input type="text" class="plt-personal-input" id="pvar-nombre-usuario" placeholder="Nombre del estudiante"/>
+</div>
+<div class="plt-personal-field">
+<div class="plt-personal-tag">[NOMBRE_ASESOR]</div>
+<input type="text" class="plt-personal-input" id="pvar-nombre-asesor" placeholder="Tu nombre"/>
+</div>
+<div class="plt-personal-field">
+<div class="plt-personal-tag">[N°_CASO]</div>
+<input type="text" class="plt-personal-input" id="pvar-ncaso" placeholder="Ej: 00123456"/>
+</div>
+<div class="plt-personal-field">
+<div class="plt-personal-tag">[__ días hábiles]</div>
+<input type="text" class="plt-personal-input" id="pvar-dias" placeholder="Ej: 5"/>
+</div>
+</div>
+</div>
+
+<div class="proto-formador-bar" id="proto-editor-bar">
+<i class="ti ti-shield-check"></i>
+<span><strong>Modo Editor activo</strong> — Puedes añadir, editar o eliminar pasos del protocolo.</span>
+<div class="fb-actions">
+<button class="btn-proto-add" id="btn-proto-nuevo"><i class="ti ti-plus"></i>Nuevo paso</button>
+</div>
+</div>
+<div id="proto-list" class="proto-grid"></div>
+</div>
+
+<div class="modal-overlay" id="modal-plantilla-overlay">
+<div class="modal modal-plantilla">
+<div class="modal-header">
+<div>
+<div class="modal-title" id="mp-title">Plantilla</div>
+<div class="modal-subtitle" id="mp-desc"></div>
+</div>
+<button class="modal-close" id="mp-close"><i class="ti ti-x"></i></button>
+</div>
+<div id="mp-img-wrap" style="margin-bottom:14px;display:none">
+<img id="mp-img" src="" alt="referencia" style="width:100%;max-height:200px;object-fit:contain;border-radius:10px;border:1px solid var(--border)"/>
+</div>
+<pre id="mp-body" style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:16px;font-family:var(--font);font-size:13px;line-height:1.7;white-space:pre-wrap;word-break:break-word;color:var(--text)"></pre>
+<div class="form-actions">
+<button class="btn-cancel" id="mp-cancel">Cerrar</button>
+<button class="btn-save" id="mp-copy" style="background:var(--success)">
+<i class="ti ti-copy"></i><span>Copiar plantilla</span>
+</button>
+</div>
+</div>
+</div>
+</div>
+
+<div class="modal-overlay" id="modal-proto-overlay">
+<div class="modal modal-proto">
+<div class="modal-header">
+<div>
+<div class="modal-title" id="modal-proto-title">Nuevo paso</div>
+<div class="modal-subtitle">Protocolo de atención WhatsApp Carla</div>
+</div>
+<button class="modal-close" id="modal-proto-close"><i class="ti ti-x"></i></button>
+</div>
+<div class="form-grid">
+<div class="form-group">
+<label>Nº Paso <span class="req">*</span></label>
+<input type="number" class="form-control" id="fproto-paso" placeholder="Ej: 1" min="1"/>
+</div>
+<div class="form-group">
+<label>Etiqueta de proceso</label>
+<input type="text" class="form-control" id="fproto-proceso" placeholder="Ej: Saludo (ASESOR)"/>
+</div>
+<div class="form-group span2">
+<label>Nombre del paso <span class="req">*</span></label>
+<input type="text" class="form-control" id="fproto-nombre" placeholder="Ej: Saludo inicial al estudiante"/>
+</div>
+<div class="form-group span2">
+<label>Color de acento</label>
+<div class="plt-color-picker" id="fproto-color-picker">
+<div class="plt-color-swatch selected" data-color="#F26522" style="background:#F26522" onclick="selProtoColor(this)" title="Naranja SISE"></div>
+<div class="plt-color-swatch" data-color="#1D5FBD" style="background:#1D5FBD" onclick="selProtoColor(this)" title="Azul"></div>
+<div class="plt-color-swatch" data-color="#1A7A45" style="background:#1A7A45" onclick="selProtoColor(this)" title="Verde"></div>
+<div class="plt-color-swatch" data-color="#E03131" style="background:#E03131" onclick="selProtoColor(this)" title="Rojo"></div>
+<div class="plt-color-swatch" data-color="#5B21B6" style="background:#5B21B6" onclick="selProtoColor(this)" title="Morado"></div>
+<div class="plt-color-swatch" data-color="#B87000" style="background:#B87000" onclick="selProtoColor(this)" title="Amarillo oscuro"></div>
+<div class="plt-color-swatch" data-color="#0D0D0D" style="background:#0D0D0D" onclick="selProtoColor(this)" title="Negro"></div>
+</div>
+<input type="hidden" id="fproto-color" value="#F26522"/>
+</div>
+<div class="form-group span2">
+<label>Glosas / Textos del paso <span class="req">*</span></label>
+<div class="glosa-list-editor" id="glosa-list-editor"></div>
+<button class="btn-add-glosa" id="btn-add-glosa" type="button">
+<i class="ti ti-plus"></i> Agregar glosa
+</button>
+</div>
+</div>
+<div class="form-actions">
+<button class="btn-cancel" id="modal-proto-cancel">Cancelar</button>
+<button class="btn-save" id="modal-proto-save"><i class="ti ti-device-floppy"></i> Guardar paso</button>
+</div>
+</div>
+</div>
+
+<div class="modal-overlay" id="modal-plt-form-overlay">
+<div class="modal modal-plt-form">
+<div class="modal-header">
+<div>
+<div class="modal-title" id="modal-plt-form-title">Nueva plantilla</div>
+<div class="modal-subtitle">Solo visible para el rol Formador</div>
+</div>
+<button class="modal-close" id="modal-plt-form-close"><i class="ti ti-x"></i></button>
+</div>
+<div class="form-grid">
+<div class="form-group span2">
+<label>Nombre de la plantilla <span class="req">*</span></label>
+<input type="text" class="form-control" id="fplt-nombre" placeholder="Ej: Solicitud de constancia de estudios"/>
+</div>
+<div class="form-group span2">
+<label>Descripción breve <span class="req">*</span></label>
+<input type="text" class="form-control" id="fplt-desc" placeholder="Cuándo se usa esta plantilla…"/>
+</div>
+<div class="form-group span2">
+<label>Texto de la plantilla (lo que se copia) <span class="req">*</span></label>
+<textarea class="form-control" id="fplt-texto" style="min-height:120px" placeholder="📢 Bríndame la siguiente información:&#10;&#10;Campo 1:&#10;Campo 2:"></textarea>
+</div>
+<div class="form-group span2">
+<label>Ícono</label>
+<div class="plt-icon-picker" id="fplt-icon-picker">
+<div class="plt-icon-opt selected" data-icon="ti-file-text"     onclick="selPltIcon(this)"><i class="ti ti-file-text"></i></div>
+<div class="plt-icon-opt" data-icon="ti-user"          onclick="selPltIcon(this)"><i class="ti ti-user"></i></div>
+<div class="plt-icon-opt" data-icon="ti-building"      onclick="selPltIcon(this)"><i class="ti ti-building"></i></div>
+<div class="plt-icon-opt" data-icon="ti-certificate"   onclick="selPltIcon(this)"><i class="ti ti-certificate"></i></div>
+<div class="plt-icon-opt" data-icon="ti-school"        onclick="selPltIcon(this)"><i class="ti ti-school"></i></div>
+<div class="plt-icon-opt" data-icon="ti-edit"          onclick="selPltIcon(this)"><i class="ti ti-edit"></i></div>
+<div class="plt-icon-opt" data-icon="ti-search"        onclick="selPltIcon(this)"><i class="ti ti-search"></i></div>
+<div class="plt-icon-opt" data-icon="ti-alert-triangle" onclick="selPltIcon(this)"><i class="ti ti-alert-triangle"></i></div>
+<div class="plt-icon-opt" data-icon="ti-mood-sad"      onclick="selPltIcon(this)"><i class="ti ti-mood-sad"></i></div>
+<div class="plt-icon-opt" data-icon="ti-users"         onclick="selPltIcon(this)"><i class="ti ti-users"></i></div>
+<div class="plt-icon-opt" data-icon="ti-id-badge"      onclick="selPltIcon(this)"><i class="ti ti-id-badge"></i></div>
+<div class="plt-icon-opt" data-icon="ti-user-minus"    onclick="selPltIcon(this)"><i class="ti ti-user-minus"></i></div>
+<div class="plt-icon-opt" data-icon="ti-coin"          onclick="selPltIcon(this)"><i class="ti ti-coin"></i></div>
+<div class="plt-icon-opt" data-icon="ti-clipboard"     onclick="selPltIcon(this)"><i class="ti ti-clipboard"></i></div>
+<div class="plt-icon-opt" data-icon="ti-mail"          onclick="selPltIcon(this)"><i class="ti ti-mail"></i></div>
+<div class="plt-icon-opt" data-icon="ti-phone"         onclick="selPltIcon(this)"><i class="ti ti-phone"></i></div>
+</div>
+<input type="hidden" id="fplt-icon" value="ti-file-text"/>
+</div>
+<div class="form-group span2">
+<label>Color de fondo del ícono</label>
+<div class="plt-color-picker" id="fplt-color-picker">
+<div class="plt-color-swatch selected" data-color="#EBF2FF" style="background:#EBF2FF" onclick="selPltColor(this)" title="Azul claro"></div>
+<div class="plt-color-swatch" data-color="#FFF0E8" style="background:#FFF0E8" onclick="selPltColor(this)" title="Naranja claro"></div>
+<div class="plt-color-swatch" data-color="#FFF7E6" style="background:#FFF7E6" onclick="selPltColor(this)" title="Amarillo"></div>
+<div class="plt-color-swatch" data-color="#E8FAF0" style="background:#E8FAF0" onclick="selPltColor(this)" title="Verde claro"></div>
+<div class="plt-color-swatch" data-color="#FFF0F0" style="background:#FFF0F0" onclick="selPltColor(this)" title="Rojo claro"></div>
+<div class="plt-color-swatch" data-color="#F5F0FF" style="background:#F5F0FF" onclick="selPltColor(this)" title="Morado claro"></div>
+<div class="plt-color-swatch" data-color="#F0F0F0" style="background:#F0F0F0" onclick="selPltColor(this)" title="Gris claro"></div>
+<div class="plt-color-swatch" data-color="#E8F8FF" style="background:#E8F8FF" onclick="selPltColor(this)" title="Cyan claro"></div>
+</div>
+<input type="hidden" id="fplt-color" value="#EBF2FF"/>
+</div>
+<div class="form-group span2">
+<label>Imagen de referencia (opcional)</label>
+<div class="plt-img-upload-area" id="fplt-img-drop">
+<input type="file" id="fplt-img-file" accept="image/*"/>
+<i class="ti ti-photo-up"></i>
+<p>Haz clic o arrastra una imagen aquí<br><span style="font-size:11px;color:#bbb">PNG, JPG, WEBP — máx. 2 MB</span></p>
+</div>
+<img id="fplt-img-preview" class="plt-img-preview" alt="preview"/>
+<input type="hidden" id="fplt-img-b64" value=""/>
+</div>
+</div>
+<div class="form-actions">
+<button class="btn-cancel" id="btn-plt-form-cancel">Cancelar</button>
+<button class="btn-save"   id="btn-plt-form-save">
+<i class="ti ti-device-floppy"></i><span id="btn-plt-form-save-text">Guardar plantilla</span>
+</button>
+</div>
+</div>
+</div>
+
+<div class="view" id="view-preguntas">
+
+<!-- ── CSS Biblioteca ── -->
+<style>
+  #view-preguntas { padding:0 !important; background:#FAF7F2; }
+
+  /* Portada tipo biblioteca */
+  .bib-portada {
+    background:linear-gradient(135deg,#1a0f00 0%,#2d1a00 50%,#0D0D0D 100%);
+    padding:32px 36px 28px;
+    position:relative; overflow:hidden;
+    border-bottom:3px solid var(--orange);
+  }
+  .bib-portada::before {
+    content:''; position:absolute; inset:0;
+    background:repeating-linear-gradient(
+      90deg,
+      transparent,transparent 39px,
+      rgba(242,101,34,.06) 39px,rgba(242,101,34,.06) 40px
+    );
+    pointer-events:none;
+  }
+  .bib-portada::after {
+    content:''; position:absolute;
+    top:-80px; right:-80px; width:300px; height:300px; border-radius:50%;
+    background:radial-gradient(circle,rgba(242,101,34,.18) 0%,transparent 70%);
+    pointer-events:none;
+  }
+  .bib-title {
+    font-size:26px; font-weight:900; color:#fff;
+    display:flex; align-items:center; gap:12px;
+    position:relative; z-index:1;
+    margin-bottom:6px;
+  }
+  .bib-title-icon {
+    width:48px; height:48px; border-radius:14px;
+    background:var(--orange); display:flex; align-items:center;
+    justify-content:center; font-size:22px; flex-shrink:0;
+    box-shadow:0 4px 16px rgba(242,101,34,.4);
+  }
+  .bib-subtitle {
+    font-size:12px; color:rgba(255,255,255,.45);
+    position:relative; z-index:1; margin-left:60px;
+    margin-bottom:22px;
+  }
+
+  /* Barra de búsqueda estilo biblioteca */
+  .bib-search-wrap {
+    position:relative; z-index:1; margin-left:0;
+    max-width:580px;
+  }
+  .bib-search-bar {
+    display:flex; align-items:center; gap:0;
+    background:#fff; border-radius:14px;
+    overflow:hidden; box-shadow:0 4px 24px rgba(0,0,0,.3);
+  }
+  .bib-search-icon {
+    width:52px; height:52px; display:flex; align-items:center;
+    justify-content:center; background:var(--orange); color:#fff; font-size:20px;
+    flex-shrink:0; transition:background .15s;
+  }
+  #faq-search {
+    flex:1; height:52px; border:none; outline:none;
+    font-size:14px; font-weight:500; color:#1a1a1a;
+    background:transparent; padding:0 16px;
+    font-family:var(--font);
+  }
+  #faq-search::placeholder { color:#aaa; }
+  .bib-search-hint {
+    font-size:10.5px; color:rgba(255,255,255,.35);
+    margin-top:8px; padding-left:4px; position:relative; z-index:1;
+  }
+
+  /* Stats de biblioteca */
+  .bib-stats {
+    display:flex; gap:20px; margin-top:18px;
+    position:relative; z-index:1;
+  }
+  .bib-stat { text-align:center; }
+  .bib-stat-val { font-size:22px; font-weight:900; color:var(--orange); line-height:1; }
+  .bib-stat-lbl { font-size:9px; font-weight:700; color:rgba(255,255,255,.3); text-transform:uppercase; letter-spacing:.08em; margin-top:2px; }
+
+  /* Cuerpo */
+  .bib-body { padding:24px 28px 40px; }
+
+  /* Categorías como estanterías */
+  .bib-cats-label {
+    font-size:10px; font-weight:700; color:var(--muted);
+    text-transform:uppercase; letter-spacing:.1em;
+    margin-bottom:10px; display:flex; align-items:center; gap:8px;
+  }
+  .bib-cats-label::after { content:''; flex:1; height:1px; background:var(--border); }
+  .faq-chips-bar {
+    display:flex; gap:6px; flex-wrap:wrap; margin-bottom:22px;
+  }
+  .faq-chip {
+    display:flex; align-items:center; gap:5px;
+    padding:6px 14px; border-radius:8px;
+    border:1.5px solid var(--border); background:#fff;
+    font-size:12px; font-weight:600; color:#555;
+    cursor:pointer; transition:all .15s;
+  }
+  .faq-chip:hover { border-color:var(--orange); color:var(--orange-dark); background:var(--orange-light); }
+  .faq-chip.active { border-color:var(--orange); color:var(--orange-dark); background:var(--orange-light); }
+  .faq-chip-n { font-size:10px; background:rgba(242,101,34,.1); color:var(--orange-dark); border-radius:99px; padding:1px 6px; font-weight:700; }
+  .faq-chip.active .faq-chip-n { background:rgba(242,101,34,.2); }
+
+  /* Grid de libros */
+  .faq-grid {
+    display:grid;
+    grid-template-columns:repeat(auto-fill, minmax(300px,1fr));
+    gap:14px;
+  }
+
+  /* Card estilo libro de biblioteca */
+  .faq-card {
+    background:#fff;
+    border-radius:12px;
+    overflow:hidden;
+    cursor:pointer;
+    transition:box-shadow .18s, transform .18s;
+    display:flex; flex-direction:column;
+    border:1px solid #E8E4DE;
+    position:relative;
+  }
+  .faq-card:hover {
+    box-shadow:0 8px 32px rgba(0,0,0,.12);
+    transform:translateY(-3px);
+  }
+  /* Lomo del libro */
+  .faq-card-spine {
+    height:6px; width:100%;
+  }
+  .faq-card-top {
+    padding:16px 18px 12px; flex:1;
+  }
+  .faq-card-cat {
+    display:inline-flex; align-items:center; gap:5px;
+    border-radius:6px; padding:3px 10px;
+    font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:.05em;
+    margin-bottom:10px;
+  }
+  .faq-card-q {
+    font-size:13px; font-weight:700; color:#1a1a1a;
+    line-height:1.55; margin-bottom:10px;
+  }
+  .faq-card-a-preview {
+    font-size:12px; color:#666; line-height:1.6;
+    display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden;
+  }
+  .faq-card-footer {
+    padding:10px 18px; border-top:1px solid #F0EEE9;
+    background:#FAFAF8; display:flex; align-items:center;
+    justify-content:space-between; gap:8px;
+  }
+  .faq-card-meta { font-size:10px; color:var(--muted); }
+  .faq-card-num  { font-size:10px; font-weight:700; color:var(--muted); }
+
+  /* Estado de búsqueda activa */
+  .bib-searching {
+    text-align:center; padding:48px 24px;
+    color:var(--muted);
+  }
+  .bib-searching-icon {
+    font-size:48px; margin-bottom:14px; display:block;
+    animation:bib-search-spin 1.5s ease-in-out infinite alternate;
+  }
+  @keyframes bib-search-spin {
+    from { transform:rotate(-8deg) scale(.95); }
+    to   { transform:rotate(8deg)  scale(1.05); }
+  }
+  .bib-no-results {
+    text-align:center; padding:48px 24px; color:var(--muted);
+  }
+
+  /* Resultado de búsqueda — tarjeta destacada */
+  .faq-card.search-match {
+    border-color:var(--orange);
+    box-shadow:0 0 0 2px rgba(242,101,34,.15);
+  }
+  .faq-card.search-match .faq-card-spine {
+    background:var(--orange) !important;
+  }
+
+  /* Toolbar oculta (la movemos a la portada) */
+  .faq-toolbar { display:none !important; }
+</style>
+
+<!-- ── Portada de biblioteca ── -->
+<div class="bib-portada">
+  <div class="bib-title">
+    <div class="bib-title-icon">📚</div>
+    Biblioteca de Preguntas Frecuentes
+  </div>
+  <div class="bib-subtitle">Respuestas oficiales para asesores del canal WhatsApp · Solo BO, Supervisor y Formador pueden añadir preguntas</div>
+
+  <!-- Buscador estilo biblioteca -->
+  <div class="bib-search-wrap">
+    <div class="bib-search-bar">
+      <div class="bib-search-icon"><i class="ti ti-search"></i></div>
+      <input type="text" id="faq-search"
+        placeholder="Buscar en la biblioteca… ej: 'canvas', 'matrícula', 'beca'">
+      <button id="faq-search-clear" onclick="document.getElementById('faq-search').value='';document.getElementById('faq-search').dispatchEvent(new Event('input'));"
+        style="display:none;background:none;border:none;cursor:pointer;color:#aaa;font-size:18px;padding:0 14px;line-height:1">
+        <i class="ti ti-x"></i>
+      </button>
+    </div>
+    <div class="bib-search-hint">💡 Escribe palabras clave para encontrar la respuesta exacta</div>
+  </div>
+
+  <!-- Stats -->
+  <div class="bib-stats">
+    <div class="bib-stat">
+      <div class="bib-stat-val" id="faq-count-val">—</div>
+      <div class="bib-stat-lbl">Respuestas</div>
+    </div>
+    <div class="bib-stat">
+      <div class="bib-stat-val" id="faq-cats-val">—</div>
+      <div class="bib-stat-lbl">Categorías</div>
+    </div>
+  </div>
+
+  <!-- Botón nueva pregunta -->
+  <button class="btn-nuevo" id="btn-faq-nueva"
+    style="display:none;position:absolute;top:24px;right:28px;z-index:2">
+    <i class="ti ti-plus"></i>Nueva pregunta
+  </button>
+  <span class="faq-search-badge" style="display:none;position:absolute;bottom:18px;right:28px;align-items:center;gap:4px;font-size:11px;color:var(--orange);background:rgba(242,101,34,.1);border:1px solid rgba(242,101,34,.3);border-radius:12px;padding:3px 10px;z-index:2">
+    <i class="ti ti-sparkles" style="font-size:12px"></i>Búsqueda inteligente
+  </span>
+</div>
+
+<!-- Toolbar oculta (requerida por el JS) -->
+<div class="faq-toolbar" style="display:none">
+  <div class="filter-search" style="display:none">
+    <i class="ti ti-search"></i>
+    <input type="text" style="display:none"/>
+  </div>
+  <select class="filter-select" id="faq-cat-filter" style="display:none">
+    <option value="">Todas las categorías</option>
+  </select>
+  <span class="faq-count" id="faq-count" style="display:none">0 respuestas</span>
+  <span class="faq-search-badge" style="display:none"></span>
+</div>
+
+<!-- Cuerpo -->
+<div class="bib-body">
+  <!-- Categorías -->
+  <div class="bib-cats-label">Secciones de la biblioteca</div>
+  <div class="faq-chips-bar" id="faq-chips-bar"></div>
+
+  <!-- Grid -->
+  <div class="faq-grid" id="faq-grid">
+    <div class="loading-state" style="grid-column:1/-1;text-align:center;padding:48px">
+      <i class="ti ti-loader" style="display:block;font-size:32px;margin-bottom:10px;opacity:.3"></i>
+      Cargando biblioteca…
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="modal-faq-view-overlay">
+<div class="modal modal-faq-view">
+<div class="modal-header">
+<div style="flex:1;min-width:0">
+<div class="faq-modal-num" id="fmv-num"></div>
+<div class="modal-title" id="fmv-pregunta" style="font-size:16px;line-height:1.4;margin-top:4px"></div>
+<div style="display:flex;align-items:center;gap:8px;margin-top:8px;flex-wrap:wrap">
+<span class="faq-cat-badge" id="fmv-cat"></span>
+<span style="font-size:11px;color:var(--muted)" id="fmv-meta"></span>
+</div>
+</div>
+<button class="modal-close" id="fmv-close"><i class="ti ti-x"></i></button>
+</div>
+<div style="background:var(--success-bg);border:1px solid rgba(26,122,69,0.2);border-radius:10px;padding:16px 18px;margin-bottom:16px">
+<div style="font-size:10px;font-weight:700;color:var(--success);text-transform:uppercase;letter-spacing:.07em;margin-bottom:6px;display:flex;align-items:center;gap:5px"><i class="ti ti-check-circle" style="font-size:13px"></i>Respuesta oficial</div>
+<div id="fmv-respuesta" style="font-size:14px;color:var(--text);line-height:1.7;white-space:pre-wrap"></div>
+</div>
+<div id="fmv-img-wrap" style="display:none;margin-bottom:14px">
+<div style="font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.07em;margin-bottom:8px"><i class="ti ti-photo"></i> Imagen de referencia</div>
+<img id="fmv-img" src="" alt="referencia" style="width:100%;max-height:260px;object-fit:contain;border-radius:10px;border:1px solid var(--border);cursor:zoom-in"/>
+</div>
+<div id="fmv-video-wrap" style="display:none;margin-bottom:14px">
+<div style="font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.07em;margin-bottom:8px"><i class="ti ti-brand-youtube"></i> Video explicativo</div>
+<div id="fmv-video-embed" style="border-radius:10px;overflow:hidden;aspect-ratio:16/9;background:#000"></div>
+<a id="fmv-video-link" href="#" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;gap:5px;margin-top:8px;font-size:12px;color:var(--info)"><i class="ti ti-external-link"></i>Abrir en YouTube</a>
+</div>
+<div class="form-actions" style="margin-top:8px;padding-top:14px">
+<button class="btn-cancel" id="fmv-cancel">Cerrar</button>
+<button class="btn-save" id="fmv-edit-btn" style="display:none;background:var(--warning)"><i class="ti ti-pencil"></i>Editar</button>
+</div>
+</div>
+</div>
+
+<div class="modal-overlay" id="modal-faq-form-overlay">
+<div class="modal modal-faq-form">
+<div class="modal-header">
+<div>
+<div class="modal-title" id="modal-faq-form-title">Nueva pregunta</div>
+<div class="modal-subtitle">Solo BO, Supervisor y Formador</div>
+</div>
+<button class="modal-close" id="modal-faq-form-close"><i class="ti ti-x"></i></button>
+</div>
+<div class="form-grid">
+<div class="form-group span2">
+<label>Categoría <span class="req">*</span></label>
+<input type="text" class="form-control" id="ffaq-cat" placeholder="Ej: Derivaciones, Pagos, Matrículas…"/>
+<div id="ffaq-cat-sugerencias" style="display:flex;gap:6px;flex-wrap:wrap;margin-top:6px"></div>
+</div>
+<div class="form-group span2">
+<label>Pregunta <span class="req">*</span></label>
+<textarea class="form-control" id="ffaq-pregunta" style="min-height:70px" placeholder="¿Cuál es la duda que tienen los asesores?"></textarea>
+</div>
+<div class="form-group span2">
+<label>Respuesta oficial <span class="req">*</span></label>
+<textarea class="form-control" id="ffaq-respuesta" style="min-height:100px" placeholder="Escribe la respuesta clara y completa…"></textarea>
+</div>
+<div class="form-group span2">
+<label>Imagen de referencia <span style="font-weight:400;color:var(--muted)">(opcional)</span></label>
+<div id="ffaq-img-drop" style="padding:16px;text-align:center;border:2px dashed var(--border);border-radius:10px;cursor:pointer;background:var(--surface)">
+<input type="file" id="ffaq-img-file" accept="image/*" style="display:none"/>
+<i class="ti ti-photo-up" style="font-size:22px;color:var(--muted);display:block;margin-bottom:4px"></i>
+<p style="font-size:12px;color:var(--muted)">Clic para subir imagen <span style="font-size:11px;color:#bbb;display:block">PNG, JPG — máx. 2 MB</span></p>
+</div>
+<img id="ffaq-img-preview" src="" alt="preview" style="display:none;width:100%;max-height:160px;object-fit:contain;border-radius:8px;border:1px solid var(--border);margin-top:8px"/>
+<input type="hidden" id="ffaq-img-b64" value=""/>
+</div>
+<div class="form-group span2">
+<label>URL de video YouTube <span style="font-weight:400;color:var(--muted)">(opcional)</span></label>
+<input type="text" class="form-control" id="ffaq-video" placeholder="https://www.youtube.com/watch?v=…"/>
+</div>
+</div>
+<div class="form-actions">
+<button class="btn-cancel" id="btn-faq-form-cancel">Cancelar</button>
+<button class="btn-save" id="btn-faq-form-save">
+<i class="ti ti-device-floppy"></i><span id="btn-faq-form-save-text">Guardar pregunta</span>
+</button>
+</div>
+</div>
+</div>
+</div>
+
+
+<div class="view" id="view-capacitate">
+
+<div class="cap-header">
+<div class="cap-title-wrap">
+<h2><i class="ti ti-player-play-filled"></i>Capacítate</h2>
+<p>Videos de formación y recursos para asesores · Formador, Supervisor y BO pueden añadir contenido</p>
+</div>
+</div>
+
+<div class="cap-formador-bar" id="cap-formador-bar">
+<i class="ti ti-shield-check"></i>
+<span><strong style="color:var(--orange)">Modo gestor activo</strong> — Puedes añadir, editar o eliminar videos y recursos.</span>
+<div style="display:flex;gap:8px;flex-wrap:wrap">
+<button class="btn-cap-add" id="btn-cap-nueva"><i class="ti ti-brand-youtube"></i>Agregar video</button>
+<button class="btn-cap-add" id="btn-cap-nueva-doc" style="background:var(--warning);"><i class="ti ti-upload"></i>Subir documento</button>
+</div>
+</div>
+<div class="cap-search-bar">
+<div class="filter-search" style="flex:1;max-width:420px">
+<i class="ti ti-search"></i>
+<input type="text" id="cap-search" placeholder="Buscar por título, categoría…"/>
+</div>
+<span id="cap-count" style="font-size:12px;color:var(--muted);font-weight:600;white-space:nowrap">0 recursos</span>
+</div>
+
+<div class="cap-cats-bar" id="cap-cats-bar">
+<button class="cap-cat-btn active" data-cat="">Todos</button>
+</div>
+
+<div class="cap-grid" id="cap-grid">
+<div class="loading-state">Cargando videos…</div>
+</div>
+
+<div class="modal-overlay" id="modal-cap-view-overlay">
+<div class="modal modal-cap">
+<div class="modal-header">
+<div style="flex:1;min-width:0">
+<div style="font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.07em" id="cmv-cat-label"></div>
+<div class="modal-title" id="cmv-title" style="font-size:16px;line-height:1.4;margin-top:4px"></div>
+<div style="font-size:12px;color:var(--muted);margin-top:4px" id="cmv-autor"></div>
+</div>
+<button class="modal-close" id="cmv-close"><i class="ti ti-x"></i></button>
+</div>
+<div class="cap-video-embed" id="cmv-embed"></div>
+<div id="cmv-desc" style="font-size:13px;color:#555;line-height:1.65;margin-bottom:12px"></div>
+<div class="cap-modal-meta">
+<a class="cap-modal-link" id="cmv-ext-link" href="#" target="_blank" rel="noopener"><i class="ti ti-external-link"></i>Abrir en nueva pestaña</a>
+</div>
+<div class="form-actions" style="margin-top:8px;padding-top:14px">
+<button class="btn-cancel" id="cmv-cancel">Cerrar</button>
+</div>
+</div>
+</div>
+
+<div class="modal-overlay" id="modal-cap-form-overlay">
+<div class="modal modal-cap-form">
+<div class="modal-header">
+<div>
+<div class="modal-title" id="modal-cap-form-title">Agregar video</div>
+<div class="modal-subtitle">Formador, Supervisor y BO</div>
+</div>
+<button class="modal-close" id="modal-cap-form-close"><i class="ti ti-x"></i></button>
+</div>
+<div class="form-grid">
+<div class="form-group span2">
+<label>Título del video <span class="req">*</span></label>
+<input type="text" class="form-control" id="fcap-titulo" placeholder="Ej: Cómo gestionar casos de matrícula"/>
+</div>
+<div class="form-group span2">
+<label>URL del video <span class="req">*</span></label>
+<input type="text" class="form-control" id="fcap-url" placeholder="https://www.youtube.com/watch?v=… o enlace de Drive"/>
+</div>
+<div class="form-group">
+<label>Categoría <span class="req">*</span></label>
+<input type="text" class="form-control" id="fcap-cat" placeholder="Ej: Accesos, Matrículas…"/>
+</div>
+<div class="form-group">
+<label>Duración <span style="font-weight:400;color:var(--muted)">(opcional)</span></label>
+<input type="text" class="form-control" id="fcap-duracion" placeholder="Ej: 12:30"/>
+</div>
+<div class="form-group span2">
+<label>Descripción <span style="font-weight:400;color:var(--muted)">(opcional)</span></label>
+<textarea class="form-control" id="fcap-desc" style="min-height:70px" placeholder="Breve descripción del contenido…"></textarea>
+</div>
+</div>
+<div class="form-actions">
+<button class="btn-cancel" id="btn-cap-form-cancel">Cancelar</button>
+<button class="btn-save" id="btn-cap-form-save">
+<i class="ti ti-device-floppy"></i><span id="btn-cap-form-save-text">Guardar video</span>
+</button>
+</div>
+</div>
+</div>
+
+<div class="modal-overlay" id="modal-cap-doc-overlay">
+<div class="modal modal-cap-doc" style="max-width:560px">
+<div class="modal-header">
+<div>
+<div class="modal-title" id="modal-cap-doc-title">Subir documento</div>
+<div class="modal-subtitle">PPT, PDF, Word o Excel — Formador, Supervisor y BO</div>
+</div>
+<button class="modal-close" id="modal-cap-doc-close"><i class="ti ti-x"></i></button>
+</div>
+
+<div class="cap-tipo-selector">
+<button class="cap-tipo-btn active-ppt" id="cap-doc-tipo-ppt" onclick="capDocSetTipo('ppt')">
+<i class="ti ti-presentation"></i>PowerPoint
+</button>
+<button class="cap-tipo-btn" id="cap-doc-tipo-pdf" onclick="capDocSetTipo('pdf')">
+<i class="ti ti-file-type-pdf"></i>PDF
+</button>
+<button class="cap-tipo-btn" id="cap-doc-tipo-word" onclick="capDocSetTipo('word')">
+<i class="ti ti-file-type-doc"></i>Word
+</button>
+<button class="cap-tipo-btn" id="cap-doc-tipo-excel" onclick="capDocSetTipo('excel')">
+<i class="ti ti-file-type-xls"></i>Excel
+</button>
+</div>
+
+<div class="form-grid">
+<div class="form-group span2">
+<label>Título <span class="req">*</span></label>
+<input type="text" class="form-control" id="fdoc-titulo" placeholder="Ej: Presentación inducción de matrícula"/>
+</div>
+<div class="form-group">
+<label>Categoría <span class="req">*</span></label>
+<input type="text" class="form-control" id="fdoc-cat" placeholder="Ej: Matrículas, Accesos…"/>
+</div>
+<div class="form-group">
+<label>Descripción <span style="font-weight:400;color:var(--muted)">(opcional)</span></label>
+<input type="text" class="form-control" id="fdoc-desc" placeholder="Breve descripción…"/>
+</div>
+<div class="form-group span2">
+<label>Archivo <span class="req">*</span></label>
+<div class="cap-upload-zone" id="fdoc-drop-zone" onclick="document.getElementById('fdoc-file-input').click()">
+<input type="file" id="fdoc-file-input" accept=".ppt,.pptx,.pdf" style="display:none"/>
+<i class="ti ti-cloud-upload"></i>
+<p>Arrastra aquí o haz clic para seleccionar</p>
+<span id="fdoc-drop-hint">PPT, PPTX o PDF — máx. 8 MB</span>
+</div>
+<div class="cap-upload-progress" id="fdoc-progress-wrap" style="display:none">
+<div class="cap-upload-filename" id="fdoc-filename"><i class="ti ti-file"></i><span></span></div>
+<div class="cap-upload-bar-wrap"><div class="cap-upload-bar" id="fdoc-bar"></div></div>
+</div>
+</div>
+</div>
+
+<div id="fdoc-size-warning" style="display:none;margin-top:10px;font-size:12px;color:var(--danger);background:var(--danger-bg);border-radius:8px;padding:8px 12px">
+<i class="ti ti-alert-triangle"></i> Error al procesar el archivo. Intenta de nuevo.
+</div>
+
+<div class="form-actions">
+<button class="btn-cancel" id="btn-cap-doc-cancel">Cancelar</button>
+<button class="btn-save" id="btn-cap-doc-save" style="background:var(--warning)">
+<i class="ti ti-upload"></i><span id="btn-cap-doc-save-text">Subir documento</span>
+</button>
+</div>
+</div>
+</div>
+
+<div class="modal-overlay" id="modal-cap-docview-overlay">
+<div class="modal modal-cap-doc">
+<div class="modal-header">
+<div style="flex:1;min-width:0">
+<div style="font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.07em" id="cdv-cat"></div>
+<div class="modal-title" id="cdv-title" style="font-size:16px;margin-top:4px"></div>
+<div style="font-size:12px;color:var(--muted);margin-top:3px" id="cdv-autor"></div>
+</div>
+<button class="modal-close" id="modal-cap-docview-close"><i class="ti ti-x"></i></button>
+</div>
+<div id="cdv-embed-wrap" style="margin-bottom:14px">
+
+</div>
+<div id="cdv-desc" style="font-size:13px;color:#555;line-height:1.65;margin-bottom:8px"></div>
+<div class="form-actions" style="margin-top:4px;padding-top:14px">
+<button class="btn-cancel" id="btn-cap-docview-close">Cerrar</button>
+<a id="cdv-download-btn" href="#" download style="display:inline-flex;align-items:center;gap:7px;background:var(--info);color:#fff;border:none;border-radius:8px;padding:9px 18px;font-size:13px;font-weight:700;text-decoration:none">
+<i class="ti ti-download"></i>Descargar
+</a>
+</div>
+</div>
+</div>
+</div>
+
+<div class="view" id="view-config">
+
+<div class="cfg-page-header">
+<h2 class="cfg-page-title">Configuración</h2>
+<p class="cfg-page-sub">Personaliza tu experiencia en el Portal SAES</p>
+</div>
+
+<div class="cfg-grid">
+
+<div class="cfg-profile-card">
+<div class="cfg-av-ring" id="cfg-av"></div>
+<div class="cfg-profile-info">
+<div class="cfg-profile-name" id="cfg-nombre">—</div>
+<div class="cfg-profile-email" id="cfg-email"></div>
+<div>
+<span class="cfg-profile-badge" id="cfg-rol-badge">
+<i class="ti ti-shield-check" style="font-size:12px"></i>
+<span id="cfg-rol-text">Cargando...</span>
+</span>
+</div>
+</div>
+<div class="cfg-profile-sesion">
+<div class="cfg-sesion-label">Sesión activa desde</div>
+<div class="cfg-sesion-val" id="cfg-sesion-hora">—</div>
+</div>
+</div>
+
+<div class="cfg-card">
+<div style="display:flex;align-items:center;gap:10px;margin-bottom:4px">
+<div class="cfg-card-icon" style="background:#FFF0E8;color:var(--orange-dark)"><i class="ti ti-palette"></i></div>
+<div>
+<div class="cfg-card-title">Apariencia</div>
+<div class="cfg-card-sub" style="margin-bottom:0">Personaliza cómo se ve el portal</div>
+</div>
+</div>
+<div style="height:1px;background:var(--border);margin:16px 0"></div>
+
+<div class="cfg-section-label">Tema de color</div>
+<div class="cfg-tema-grid" id="cfg-temas">
+<button class="cfg-tema-btn active" data-tema="orange">
+<div class="tema-swatch" style="background:#F26522"></div>
+Naranja
+</button>
+<button class="cfg-tema-btn" data-tema="blue">
+<div class="tema-swatch" style="background:#1D5FBD"></div>
+Azul
+</button>
+<button class="cfg-tema-btn" data-tema="green">
+<div class="tema-swatch" style="background:#1A7A45"></div>
+Verde
+</button>
+<button class="cfg-tema-btn" data-tema="purple">
+<div class="tema-swatch" style="background:#7C3AED"></div>
+Morado
+</button>
+<button class="cfg-tema-btn" data-tema="red">
+<div class="tema-swatch" style="background:#DC2626"></div>
+Rojo
+</button>
+<button class="cfg-tema-btn" data-tema="pink">
+<div class="tema-swatch" style="background:#DB2777"></div>
+Rosa
+</button>
+<button class="cfg-tema-btn" data-tema="teal">
+<div class="tema-swatch" style="background:#0D9488"></div>
+Cian
+</button>
+</div>
+
+<div class="cfg-section-label" style="margin-top:4px">Densidad de vista</div>
+<div class="cfg-den-grid" id="cfg-densidad">
+<button class="cfg-den-btn" data-den="compact">
+<div class="den-preview">
+<div class="den-bar" style="width:80%"></div>
+<div class="den-bar" style="width:80%"></div>
+<div class="den-bar" style="width:80%"></div>
+<div class="den-bar" style="width:80%"></div>
+</div>
+Compacto
+</button>
+<button class="cfg-den-btn active" data-den="normal">
+<div class="den-preview">
+<div class="den-bar" style="width:80%"></div>
+<div class="den-bar" style="width:0;height:2px"></div>
+<div class="den-bar" style="width:80%"></div>
+<div class="den-bar" style="width:0;height:2px"></div>
+<div class="den-bar" style="width:80%"></div>
+</div>
+Normal
+</button>
+<button class="cfg-den-btn" data-den="spacious">
+<div class="den-preview">
+<div class="den-bar" style="width:80%"></div>
+<div class="den-bar" style="width:0;height:5px"></div>
+<div class="den-bar" style="width:80%"></div>
+<div class="den-bar" style="width:0;height:5px"></div>
+<div class="den-bar" style="width:80%"></div>
+</div>
+Amplio
+</button>
+</div>
+</div>
+
+<div class="cfg-card">
+<div style="display:flex;align-items:center;gap:10px;margin-bottom:4px">
+<div class="cfg-card-icon" style="background:#F5F0FF;color:var(--pending)"><i class="ti ti-bell"></i></div>
+<div>
+<div class="cfg-card-title">Preferencias</div>
+<div class="cfg-card-sub" style="margin-bottom:0">Ajusta el comportamiento del portal</div>
+</div>
+</div>
+<div style="height:1px;background:var(--border);margin:16px 0"></div>
+
+<div class="cfg-pref-row">
+<div class="cfg-pref-text">
+<div class="cfg-pref-name">Sonido al copiar plantilla</div>
+<div class="cfg-pref-hint">Reproduce un clic al copiar texto</div>
+</div>
+<div class="cfg-toggle" id="tog-sonido" data-key="pref_sonido" data-on="true">
+<div class="cfg-toggle-knob"></div>
+</div>
+</div>
+<div class="cfg-pref-row">
+<div class="cfg-pref-text">
+<div class="cfg-pref-name">Confirmar antes de eliminar</div>
+<div class="cfg-pref-hint">Pide confirmación al borrar registros</div>
+</div>
+<div class="cfg-toggle active" id="tog-confirmar" data-key="pref_confirmar" data-on="true">
+<div class="cfg-toggle-knob"></div>
+</div>
+</div>
+<div class="cfg-pref-row">
+<div class="cfg-pref-text">
+<div class="cfg-pref-name">Resaltar casos de alta prioridad</div>
+<div class="cfg-pref-hint">Muestra animación en tarjetas rojas</div>
+</div>
+<div class="cfg-toggle active" id="tog-resaltar" data-key="pref_resaltar" data-on="true">
+<div class="cfg-toggle-knob"></div>
+</div>
+</div>
+<div class="cfg-pref-row">
+<div class="cfg-pref-text">
+<div class="cfg-pref-name">Animaciones de la interfaz</div>
+<div class="cfg-pref-hint">Efectos visuales y transiciones</div>
+</div>
+<div class="cfg-toggle active" id="tog-animaciones" data-key="pref_animaciones" data-on="true">
+<div class="cfg-toggle-knob"></div>
+</div>
+</div>
+</div>
+
+<div class="cfg-card">
+<div style="display:flex;align-items:center;gap:10px;margin-bottom:4px">
+<div class="cfg-card-icon" style="background:#FFF7E6;color:var(--warning)"><i class="ti ti-bolt"></i></div>
+<div>
+<div class="cfg-card-title">Accesos rápidos</div>
+<div class="cfg-card-sub" style="margin-bottom:0">Atajos de teclado disponibles</div>
+</div>
+</div>
+<div style="height:1px;background:var(--border);margin:16px 0"></div>
+
+<div class="cfg-shortcut-row">
+<span class="cfg-shortcut-name">Ir a Plantillas</span>
+<span style="display:flex;gap:4px"><kbd class="cfg-kbd">Alt</kbd><kbd class="cfg-kbd">P</kbd></span>
+</div>
+<div class="cfg-shortcut-row">
+<span class="cfg-shortcut-name">Ir a Tipificaciones</span>
+<span style="display:flex;gap:4px"><kbd class="cfg-kbd">Alt</kbd><kbd class="cfg-kbd">T</kbd></span>
+</div>
+<div class="cfg-shortcut-row">
+<span class="cfg-shortcut-name">Ir a BackOffice</span>
+<span style="display:flex;gap:4px"><kbd class="cfg-kbd">Alt</kbd><kbd class="cfg-kbd">B</kbd></span>
+</div>
+<div class="cfg-shortcut-row">
+<span class="cfg-shortcut-name">Ir a Casos pendientes</span>
+<span style="display:flex;gap:4px"><kbd class="cfg-kbd">Alt</kbd><kbd class="cfg-kbd">C</kbd></span>
+</div>
+<div class="cfg-shortcut-row">
+<span class="cfg-shortcut-name">Ir a Inicio</span>
+<span style="display:flex;gap:4px"><kbd class="cfg-kbd">Alt</kbd><kbd class="cfg-kbd">I</kbd></span>
+</div>
+</div>
+
+<div class="cfg-card">
+<div style="display:flex;align-items:center;gap:10px;margin-bottom:4px">
+<div class="cfg-card-icon" style="background:#E8FAF0;color:var(--success)"><i class="ti ti-brush"></i></div>
+<div>
+<div class="cfg-card-title">Personalización avanzada</div>
+<div class="cfg-card-sub" style="margin-bottom:0">Ajusta detalles visuales del portal</div>
+</div>
+</div>
+<div style="height:1px;background:var(--border);margin:16px 0"></div>
+
+<div class="cfg-section-label">Tamaño de texto</div>
+<div class="cfg-font-grid" id="cfg-fontsize">
+<button class="cfg-font-btn" data-size="small">
+<span style="font-size:10px;font-weight:700;display:block;margin-bottom:3px">Aa</span>
+<span style="font-size:10px">Pequeño</span>
+</button>
+<button class="cfg-font-btn active" data-size="medium">
+<span style="font-size:13px;font-weight:700;display:block;margin-bottom:3px">Aa</span>
+<span style="font-size:10px">Normal</span>
+</button>
+<button class="cfg-font-btn" data-size="large">
+<span style="font-size:16px;font-weight:700;display:block;margin-bottom:3px">Aa</span>
+<span style="font-size:10px">Grande</span>
+</button>
+<button class="cfg-font-btn" data-size="xlarge">
+<span style="font-size:19px;font-weight:700;display:block;margin-bottom:3px">Aa</span>
+<span style="font-size:10px">Muy grande</span>
+</button>
+</div>
+
+<div class="cfg-section-label" style="margin-top:16px">Borde de tarjetas</div>
+<div style="display:flex;gap:8px">
+<button class="cfg-font-btn active" data-radius="normal" id="cfg-radius-normal" style="flex:1;text-align:center">Redondeado</button>
+<button class="cfg-font-btn" data-radius="sharp" id="cfg-radius-sharp" style="flex:1;text-align:center">Angular</button>
+</div>
+
+<div class="cfg-section-label" style="margin-top:16px">Sidebar compacto</div>
+<div class="cfg-pref-row" style="padding:0">
+<div class="cfg-pref-text">
+<div class="cfg-pref-name">Ocultar etiquetas del menú</div>
+<div class="cfg-pref-hint">Muestra solo iconos en la barra lateral</div>
+</div>
+<div class="cfg-toggle" id="tog-sidebar-mini" data-key="pref_sidebar_mini" data-on="false">
+<div class="cfg-toggle-knob"></div>
+</div>
+</div>
+</div>
+
+</div>
+</div>
+
+<!-- VISTA: ACERCA DE -->
+<div class="view" id="view-acerca-de">
+
+<div class="cfg-page-header">
+<h2 class="cfg-page-title">Acerca de</h2>
+<p class="cfg-page-sub">Conoce el origen y los creadores del Portal SAES</p>
+</div>
+
+<div style="max-width:780px;margin:0 auto">
+
+  <!-- HERO TEXT -->
+  <div style="background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:28px 32px;margin-bottom:20px;box-shadow:0 2px 16px rgba(0,0,0,0.06)">
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px">
+      <div style="width:38px;height:38px;border-radius:10px;background:var(--orange-fade,#FFF0E8);color:var(--orange);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0"><i class="ti ti-rocket"></i></div>
+      <div>
+        <div style="font-size:16px;font-weight:800;color:var(--text)">Portal SAES</div>
+        <div style="font-size:12px;color:var(--text-muted,#6B6661)">Canal WhatsApp — Atención al Alumno</div>
+      </div>
+    </div>
+    <p style="font-size:14px;line-height:1.75;color:var(--text-muted,#6B6661);margin-bottom:12px">Portal SAES nació con el objetivo de centralizar herramientas, procesos, documentación y recursos de apoyo para los equipos de atención al alumno, facilitando una gestión más rápida, organizada y eficiente.</p>
+    <p style="font-size:14px;line-height:1.75;color:var(--text-muted,#6B6661)">Este proyecto fue desarrollado para optimizar las operaciones diarias del Contact Center, brindando acceso a información actualizada, tipificaciones, plantillas, material de capacitación y herramientas de seguimiento en una sola plataforma.</p>
+  </div>
+
+  <!-- MISIÓN -->
+  <div style="background:linear-gradient(135deg,#1A0A00 0%,#C0420A 60%,#1A0A00 100%);border-radius:16px;padding:28px 32px;margin-bottom:20px;position:relative;overflow:hidden">
+    <div style="position:absolute;top:-50px;right:-50px;width:200px;height:200px;border-radius:50%;background:radial-gradient(circle,rgba(255,255,255,0.07) 0%,transparent 70%);pointer-events:none"></div>
+    <div style="position:relative;z-index:1">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px">
+        <span style="font-size:22px">✨</span>
+        <span style="font-size:14px;font-weight:800;color:#fff;letter-spacing:0.5px;text-transform:uppercase">Nuestra misión</span>
+      </div>
+      <p style="font-size:14px;line-height:1.75;color:rgba(255,255,255,0.85);margin-bottom:16px">Brindar una plataforma moderna, práctica y en constante evolución que contribuya al desarrollo de los asesores, la mejora de los procesos y la excelencia en la atención al alumno.</p>
+      <div style="border-left:3px solid rgba(255,255,255,0.4);padding-left:16px">
+        <p style="font-size:13px;line-height:1.75;color:rgba(255,255,255,0.7);font-style:italic">"Portal SAES fue creado por colaboradores para colaboradores, con el propósito de transformar el conocimiento operativo en herramientas accesibles que permitan ofrecer una mejor experiencia a nuestros estudiantes."</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- LABEL CREADORES -->
+  <div style="font-size:11px;font-weight:800;letter-spacing:1.2px;text-transform:uppercase;color:var(--text-muted,#6B6661);margin:28px 0 14px;display:flex;align-items:center;gap:8px">
+    <i class="ti ti-users" style="font-size:13px"></i> Creadores
+    <div style="flex:1;height:1px;background:var(--border,#E8E6E1)"></div>
+  </div>
+
+  <!-- CREADORES GRID -->
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:24px">
+
+    <!-- Gerardo -->
+    <div style="background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:24px 20px;text-align:center;box-shadow:0 2px 12px rgba(0,0,0,0.05);transition:transform 0.18s,box-shadow 0.18s" onmouseover="this.style.transform='translateY(-3px)';this.style.boxShadow='0 8px 32px rgba(0,0,0,0.10)'" onmouseout="this.style.transform='';this.style.boxShadow='0 2px 12px rgba(0,0,0,0.05)'">
+      <div style="position:relative;display:inline-block;margin-bottom:14px">
+        <img src="foto_gerardo.png" alt="Gerardo Chacón" style="width:88px;height:88px;border-radius:50%;object-fit:cover;border:3px solid var(--orange,#F26522);display:block" onerror="this.style.display='none';document.getElementById('av-gerardo').style.display='flex'"/>
+        <div id="av-gerardo" style="display:none;width:88px;height:88px;border-radius:50%;background:linear-gradient(135deg,var(--orange,#F26522),#C0420A);align-items:center;justify-content:center;font-size:28px;font-weight:800;color:#fff;border:3px solid var(--orange,#F26522)">GC</div>
+      </div>
+      <div style="font-size:24px;margin-bottom:8px">🧑🏽‍🏫</div>
+      <div style="font-size:15px;font-weight:800;color:var(--text);margin-bottom:6px">Gerardo Gabriel Chacón Rodríguez</div>
+      <div style="display:inline-block;font-size:11px;font-weight:700;color:var(--orange,#F26522);background:#FFF0E8;border-radius:99px;padding:3px 12px;margin-bottom:12px">Área de Formación</div>
+      <p style="font-size:13px;line-height:1.65;color:var(--text-muted,#6B6661);margin-bottom:16px">Impulsor de la iniciativa Portal SAES y líder en la implementación de nuevas metodologías de formación para asesores del Contact Center, promoviendo la mejora continua y la excelencia operativa.</p>
+      <a href="mailto:GCHACONR@cientifica.edu.pe" style="display:inline-flex;align-items:center;gap:6px;background:var(--bg,#F4F2EF);border:1px solid var(--border,#E8E6E1);border-radius:8px;padding:7px 13px;font-size:11px;font-weight:600;color:var(--text-muted,#6B6661);text-decoration:none;transition:all 0.15s;font-family:var(--font,'Plus Jakarta Sans')" onmouseover="this.style.background='var(--orange,#F26522)';this.style.color='#fff';this.style.borderColor='var(--orange,#F26522)'" onmouseout="this.style.background='var(--bg,#F4F2EF)';this.style.color='var(--text-muted,#6B6661)';this.style.borderColor='var(--border,#E8E6E1)'">
+        <i class="ti ti-mail" style="font-size:13px"></i>
+        GCHACONR@cientifica.edu.pe
+      </a>
+    </div>
+
+    <!-- Jhon -->
+    <div style="background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:24px 20px;text-align:center;box-shadow:0 2px 12px rgba(0,0,0,0.05);transition:transform 0.18s,box-shadow 0.18s" onmouseover="this.style.transform='translateY(-3px)';this.style.boxShadow='0 8px 32px rgba(0,0,0,0.10)'" onmouseout="this.style.transform='';this.style.boxShadow='0 2px 12px rgba(0,0,0,0.05)'">
+      <div style="position:relative;display:inline-block;margin-bottom:14px">
+        <img src="foto_jhon.png" alt="Jhon Ruiz" style="width:88px;height:88px;border-radius:50%;object-fit:cover;border:3px solid var(--orange,#F26522);display:block" onerror="this.style.display='none';document.getElementById('av-jhon').style.display='flex'"/>
+        <div id="av-jhon" style="display:none;width:88px;height:88px;border-radius:50%;background:linear-gradient(135deg,var(--orange,#F26522),#C0420A);align-items:center;justify-content:center;font-size:28px;font-weight:800;color:#fff;border:3px solid var(--orange,#F26522)">JR</div>
+      </div>
+      <div style="font-size:24px;margin-bottom:8px">👨🏻‍💻</div>
+      <div style="font-size:15px;font-weight:800;color:var(--text);margin-bottom:6px">Jhon Anibal Ruiz Silva</div>
+      <div style="display:inline-block;font-size:11px;font-weight:700;color:var(--orange,#F26522);background:#FFF0E8;border-radius:99px;padding:3px 12px;margin-bottom:12px">Asesor Canal WhatsApp</div>
+      <p style="font-size:13px;line-height:1.65;color:var(--text-muted,#6B6661);margin-bottom:16px">Desarrollador del portal y encargado del diseño, implementación y automatización de herramientas para la operación.</p>
+      <a href="mailto:jruizsi@cientifica.edu.pe" style="display:inline-flex;align-items:center;gap:6px;background:var(--bg,#F4F2EF);border:1px solid var(--border,#E8E6E1);border-radius:8px;padding:7px 13px;font-size:11px;font-weight:600;color:var(--text-muted,#6B6661);text-decoration:none;transition:all 0.15s;font-family:var(--font,'Plus Jakarta Sans')" onmouseover="this.style.background='var(--orange,#F26522)';this.style.color='#fff';this.style.borderColor='var(--orange,#F26522)'" onmouseout="this.style.background='var(--bg,#F4F2EF)';this.style.color='var(--text-muted,#6B6661)';this.style.borderColor='var(--border,#E8E6E1)'">
+        <i class="ti ti-mail" style="font-size:13px"></i>
+        jruizsi@cientifica.edu.pe
+      </a>
+    </div>
+
+  </div>
+
+</div>
+</div>
+<!-- FIN VISTA ACERCA DE -->
+
+
+<div class="view" id="view-satisfaccion" style="background:#1a1035;min-height:100vh;padding:0;margin:-24px;padding:24px">
+
+<!-- SUPERVISOR: Upload bar -->
+<div id="sat-supervisor-bar" style="display:none;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);backdrop-filter:blur(8px);border-radius:16px;padding:16px 22px;margin-bottom:24px;align-items:center;gap:16px;flex-wrap:wrap">
+  <div style="flex:1;min-width:0">
+    <div style="font-size:10px;font-weight:800;color:#a78bfa;text-transform:uppercase;letter-spacing:.1em;margin-bottom:3px">⚡ Panel Supervisor</div>
+    <div style="font-size:15px;font-weight:800;color:#fff;margin-bottom:2px">Subir reporte de satisfacción</div>
+    <div style="font-size:12px;color:rgba(255,255,255,.45)">Excel exportado de Genesys — columnas: Asesor, % Satisfacción, TMO</div>
+  </div>
+  <label style="display:flex;align-items:center;gap:8px;background:linear-gradient(135deg,#7c3aed,#5b21b6);color:#fff;border-radius:12px;padding:11px 22px;font-size:13px;font-weight:700;cursor:pointer;transition:opacity .15s;white-space:nowrap;box-shadow:0 4px 16px rgba(124,58,237,.4)">
+    <i class="ti ti-table-export"></i> Subir Excel
+    <input type="file" id="sat-file-input" accept=".xlsx,.xls,.csv" style="display:none">
+  </label>
+  <button id="btn-gestionar-logros" onclick="_lgAbrirGestionar()" style="display:none;align-items:center;gap:7px;background:rgba(255,215,0,.1);border:1.5px solid rgba(255,215,0,.3);color:#FFD700;border-radius:12px;padding:10px 16px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;white-space:nowrap">
+    🏆 Gestionar Logros
+  </button>
+  <div id="sat-upload-status" style="font-size:12px;color:rgba(255,255,255,.5)"></div>
+</div>
+
+<!-- Header Kahoot style -->
+<div style="text-align:center;margin-bottom:28px">
+  <div style="display:inline-flex;align-items:center;gap:10px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:99px;padding:6px 18px;margin-bottom:14px">
+    <span style="width:8px;height:8px;border-radius:50%;background:#4ade80;display:inline-block;box-shadow:0 0 8px #4ade80;animation:sat-blink 1.5s ease-in-out infinite"></span>
+    <span style="font-size:11px;font-weight:700;color:rgba(255,255,255,.7);letter-spacing:.06em">EN VIVO</span>
+  </div>
+  <h1 style="font-size:32px;font-weight:900;color:#fff;margin-bottom:6px;letter-spacing:-.5px">
+    🏆 Satisfacción del Equipo
+  </h1>
+  <p id="sat-periodo-label" style="font-size:13px;color:rgba(255,255,255,.5);font-weight:600">Cargando...</p>
+</div>
+
+<!-- Stats globales -->
+<div id="sat-global-stats" style="display:flex;gap:12px;flex-wrap:wrap;justify-content:center;margin-bottom:32px"></div>
+
+<!-- Podio top 3 -->
+<div id="sat-podio" style="display:flex;align-items:flex-end;justify-content:center;gap:12px;margin-bottom:32px;min-height:200px"></div>
+
+<!-- Barra de búsqueda + controles supervisor -->
+<div id="sat-controls" style="margin-bottom:20px;display:flex;gap:10px;flex-wrap:wrap;align-items:center">
+  <!-- Búsqueda -->
+  <div style="flex:1;min-width:200px;position:relative">
+    <i class="ti ti-search" style="position:absolute;left:14px;top:50%;transform:translateY(-50%);color:rgba(255,255,255,.4);font-size:16px;pointer-events:none"></i>
+    <input id="sat-search" type="text" placeholder="Buscar asesor..." oninput="_satBuscar(this.value)"
+      style="width:100%;background:rgba(255,255,255,.07);border:1.5px solid rgba(255,255,255,.1);border-radius:12px;padding:11px 14px 11px 42px;font-size:13px;color:#fff;font-family:inherit;outline:none;transition:border-color .2s;box-sizing:border-box"
+      onfocus="this.style.borderColor='rgba(167,139,250,.6)'" onblur="this.style.borderColor='rgba(255,255,255,.1)'">
+  </div>
+  <!-- Botón reiniciar (solo supervisores) -->
+  <button id="sat-btn-reset-mes" onclick="_satConfirmarReinicio()" style="display:none;align-items:center;gap:8px;background:rgba(196,30,58,.15);border:1.5px solid rgba(196,30,58,.4);color:#f87171;border-radius:12px;padding:11px 18px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;transition:all .2s;white-space:nowrap">
+    <i class="ti ti-trash"></i> Reiniciar tabla del mes
+  </button>
+</div>
+
+<!-- Modal confirmar reinicio -->
+<div id="sat-confirm-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.85);backdrop-filter:blur(8px);z-index:999999;align-items:center;justify-content:center">
+  <div style="background:#1a1035;border:1px solid rgba(196,30,58,.4);border-radius:20px;max-width:400px;width:calc(100% - 40px);padding:32px 28px;text-align:center;box-shadow:0 32px 80px rgba(0,0,0,.8)">
+    <div style="font-size:44px;margin-bottom:12px">⚠️</div>
+    <div style="font-size:18px;font-weight:900;color:#fff;margin-bottom:8px">¿Reiniciar tabla del mes?</div>
+    <div style="font-size:13px;color:rgba(255,255,255,.5);margin-bottom:24px;line-height:1.6">Se eliminarán todos los datos del mes actual del ranking. Esta acción no se puede deshacer.</div>
+      <label style="display:flex;align-items:center;gap:8px;margin-bottom:16px;cursor:pointer">
+        <input type="checkbox" id="sat-reset-logros-cb" style="accent-color:#C41E3A;width:15px;height:15px">
+        <span style="font-size:12px;color:rgba(255,255,255,.5)">También borrar logros obtenidos por todos los asesores</span>
+      </label>
+    <div style="display:flex;gap:12px">
+      <button onclick="document.getElementById('sat-confirm-modal').style.display='none'" style="flex:1;padding:12px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.15);color:#fff;border-radius:12px;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit">Cancelar</button>
+      <button onclick="_satEjecutarReinicio()" style="flex:1;padding:12px;background:#C41E3A;border:none;color:#fff;border-radius:12px;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit">Sí, reiniciar</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal historial asesor -->
+<div id="sat-hist-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.85);backdrop-filter:blur(10px);z-index:99999;align-items:center;justify-content:center;padding:20px">
+  <div style="background:#1a1035;border:1px solid rgba(255,255,255,.12);border-radius:24px;max-width:520px;width:100%;max-height:85vh;overflow:hidden;display:flex;flex-direction:column;box-shadow:0 40px 100px rgba(0,0,0,.8)">
+    <div style="background:rgba(0,0,0,.3);padding:20px 24px;display:flex;align-items:center;gap:14px;border-bottom:1px solid rgba(255,255,255,.06);flex-shrink:0">
+      <div id="sat-hist-avatar" style="width:48px;height:48px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:900;color:#fff;flex-shrink:0"></div>
+      <div style="flex:1;min-width:0">
+        <div id="sat-hist-name" style="font-size:17px;font-weight:900;color:#fff"></div>
+        <div id="sat-hist-badge" style="margin-top:3px"></div>
+      </div>
+      <button onclick="document.getElementById('sat-hist-modal').style.display='none'" style="background:rgba(255,255,255,.08);border:none;border-radius:10px;width:36px;height:36px;cursor:pointer;color:#fff;font-size:18px;display:flex;align-items:center;justify-content:center">✕</button>
+    </div>
+    <div style="padding:20px 24px;overflow-y:auto;flex:1">
+      <!-- KPIs del asesor -->
+      <div id="sat-hist-kpis" style="display:flex;gap:10px;margin-bottom:20px;flex-wrap:wrap"></div>
+      <!-- Gráfica de barras por día -->
+      <div style="font-size:11px;font-weight:700;color:rgba(255,255,255,.4);text-transform:uppercase;letter-spacing:.08em;margin-bottom:12px">Historial por día</div>
+      <div id="sat-hist-chart" style="display:flex;align-items:flex-end;gap:4px;height:100px;padding:0 4px"></div>
+      <div id="sat-hist-labels" style="display:flex;gap:4px;margin-top:6px;padding:0 4px"></div>
+      <!-- Tabs: Semanal / Diario -->
+      <div style="display:flex;gap:6px;margin-top:20px;margin-bottom:14px">
+        <button id="sat-tab-sem" onclick="_satTabSwitch('sem')" style="flex:1;padding:8px;border-radius:10px;font-size:12px;font-weight:700;cursor:pointer;border:1.5px solid #a78bfa;background:#a78bfa;color:#fff;font-family:inherit">Por semana</button>
+        <button id="sat-tab-dia" onclick="_satTabSwitch('dia')" style="flex:1;padding:8px;border-radius:10px;font-size:12px;font-weight:700;cursor:pointer;border:1.5px solid rgba(255,255,255,.15);background:transparent;color:rgba(255,255,255,.5);font-family:inherit">Por día</button>
+      </div>
+      <div id="sat-hist-table"></div>
+      <div id="sat-hist-daily" style="display:none"></div>
+    </div>
+  </div>
+</div>
+
+<!-- Ranking completo -->
+<div style="background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.08);border-radius:20px;overflow:hidden;backdrop-filter:blur(8px)">
+  <div style="background:rgba(0,0,0,.3);padding:16px 22px;display:flex;align-items:center;gap:10px;border-bottom:1px solid rgba(255,255,255,.06)">
+    <i class="ti ti-list-numbers" style="color:#a78bfa;font-size:20px"></i>
+    <span style="font-size:15px;font-weight:800;color:#fff">Ranking completo</span>
+    <span id="sat-semana-label" style="margin-left:auto;font-size:11px;color:rgba(255,255,255,.4);font-weight:600"></span>
+  </div>
+  <div id="sat-ranking-list" style="padding:6px 0"></div>
+  <div id="sat-empty-state" style="padding:64px 24px;text-align:center;color:rgba(255,255,255,.4);display:none">
+    <i class="ti ti-trophy" style="font-size:44px;display:block;margin-bottom:14px;opacity:.3"></i>
+    <p style="font-size:14px;font-weight:700;color:#fff">Aún no hay datos este mes</p>
+    <span style="font-size:12px">El supervisor puede subir el reporte Excel de Genesys</span>
+  </div>
+</div>
+
+<!-- Modal reinicio -->
+<div id="sat-reset-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.8);backdrop-filter:blur(8px);z-index:99999;align-items:center;justify-content:center">
+  <div style="background:#1a1035;border:1px solid rgba(255,255,255,.12);border-radius:28px;max-width:440px;width:calc(100% - 40px);overflow:hidden;box-shadow:0 40px 100px rgba(0,0,0,.7)">
+    <div style="background:linear-gradient(135deg,#2d1b69,#1a1035);padding:36px 28px 28px;text-align:center">
+      <div style="font-size:56px;margin-bottom:10px;filter:drop-shadow(0 4px 16px rgba(255,215,0,.4))">🏆</div>
+      <div style="font-size:10px;font-weight:800;color:#a78bfa;text-transform:uppercase;letter-spacing:.12em;margin-bottom:8px">Fin de mes</div>
+      <div id="sat-reset-title" style="font-size:24px;font-weight:900;color:#fff;line-height:1.3"></div>
+    </div>
+    <div style="padding:24px 28px">
+      <div id="sat-reset-winner" style="background:rgba(255,255,255,.06);border:1.5px solid rgba(240,192,64,.4);border-radius:16px;padding:20px;text-align:center;margin-bottom:18px"></div>
+      <div id="sat-reset-msg" style="font-size:14px;color:rgba(255,255,255,.6);line-height:1.7;text-align:center;margin-bottom:20px"></div>
+      <button id="sat-reset-close" style="width:100%;padding:14px;background:linear-gradient(135deg,#7c3aed,#5b21b6);color:#fff;border:none;border-radius:14px;font-size:15px;font-weight:800;cursor:pointer;font-family:inherit;box-shadow:0 4px 20px rgba(124,58,237,.5)">¡Comenzar nuevo mes! 🚀</button>
+    </div>
+  </div>
+</div>
+
+</div>
+
+<div class="global-app-footer">
+<div>
+<div class="cfg-about-title">SISE · Portal SAES</div>
+<div class="cfg-about-desc">Canal WhatsApp — Atención al Alumno<br>Desarrollado internamente para el Contact Center del Instituto SISE.</div>
+</div>
+<div class="cfg-about-meta">
+<div class="cfg-about-item">
+<div class="cfg-about-item-label">Versión</div>
+<div class="cfg-about-item-val">2.4.0</div>
+</div>
+<div class="cfg-divider"></div>
+<div class="cfg-about-item">
+<div class="cfg-about-item-label">Actualización</div>
+<div class="cfg-about-item-val">Jun 2026</div>
+</div>
+<div class="cfg-divider"></div>
+<div class="cfg-about-item">
+<div class="cfg-about-item-label">Soporte</div>
+<div class="cfg-about-item-val">G. Chacón</div>
+</div>
+</div>
+</div>
+</main>
+</div>
+</div>
+
+<div class="modal-overlay" id="modal-bo-overlay">
+<div class="modal">
+<div class="modal-header">
+<div>
+<div class="modal-title" id="modal-bo-title">Registrar caso para llamada</div>
+<div class="modal-subtitle">Ingresa los datos del alumno que requiere ser llamado por el BO</div>
+</div>
+<button class="modal-close" id="modal-bo-close"><i class="ti ti-x"></i></button>
+</div>
+<div class="info-banner">
+<i class="ti ti-info-circle"></i>
+<span>Este formulario es para que los <strong>asesores WSP</strong> deriven un caso a llamadas BO.</span>
+</div>
+<div class="form-grid">
+<div class="form-group">
+<label>Código del caso <span class="req">*</span></label>
+<input type="text" class="form-control" id="f-codigo" placeholder="Ej: 855848"/>
+</div>
+<div class="form-group">
+<label>Nombre del alumno <span class="req">*</span></label>
+<input type="text" class="form-control" id="f-nombre" placeholder="Nombre completo"/>
+</div>
+<div class="form-group">
+<label>Celular del alumno <span class="req">*</span></label>
+<input type="text" class="form-control" id="f-celular" placeholder="Ej: 977611564"/>
+</div>
+<div class="form-group">
+<label>Asesor WSP que deriva <span class="req">*</span></label>
+<input type="text" class="form-control" id="f-asesor-wsp" placeholder="Tu nombre"/>
+</div>
+<div class="form-group span2">
+<label>Motivo por el que se deriva a llamada <span class="req">*</span></label>
+<textarea class="form-control" id="f-motivo" placeholder="Describe el motivo..."></textarea>
+</div>
+<div class="form-group span2">
+<label>Prioridad del caso <span class="req">*</span></label>
+<div class="prioridad-selector" id="prioridad-selector">
+<label class="prioridad-opt" id="prio-bajo">
+<input type="radio" name="prioridad" value="bajo" style="display:none"/>
+<i class="ti ti-flag"></i>Bajo
+</label>
+<label class="prioridad-opt" id="prio-medio">
+<input type="radio" name="prioridad" value="medio" style="display:none"/>
+<i class="ti ti-flag-2"></i>Medio
+</label>
+<label class="prioridad-opt" id="prio-alto">
+<input type="radio" name="prioridad" value="alto" style="display:none"/>
+<i class="ti ti-flag-3"></i>Alto
+</label>
+</div>
+</div>
+</div>
+<div class="form-actions">
+<button class="btn-cancel" id="btn-bo-cancel">Cancelar</button>
+<button class="btn-save" id="btn-bo-save">
+<i class="ti ti-phone-plus"></i><span id="btn-bo-save-text">Crear caso</span>
+</button>
+</div>
+</div>
+</div>
+
+<div class="modal-overlay" id="modal-pend-overlay">
+<div class="modal modal-pend">
+<div class="modal-header">
+<div>
+<div class="modal-title" id="modal-pend-title">Registrar caso pendiente</div>
+<div class="modal-subtitle">Caso fuera de plazo para supervisores del Contact Center</div>
+</div>
+<button class="modal-close" id="modal-pend-close"><i class="ti ti-x"></i></button>
+</div>
+<div class="form-grid">
+<div class="form-group">
+<label>N° de caso <span class="req">*</span></label>
+<input type="text" class="form-control" id="fp-numero" placeholder="Ej: 855848"/>
+</div>
+<div class="form-group">
+<label>Fecha de creación del caso <span class="req">*</span></label>
+<input type="date" class="form-control" id="fp-fecha"/>
+</div>
+<div class="form-group span2">
+<label>Tipo de escalamiento <span class="req">*</span></label>
+<div class="tipo-check-selector" id="fp-tipo-selector">
+<button type="button" class="tipo-check-btn" id="fp-tipo-supervisor" onclick="selPendTipo('supervisor')">
+<i class="ti ti-shield-check"></i>Supervisor
+</button>
+<button type="button" class="tipo-check-btn" id="fp-tipo-bo" onclick="selPendTipo('backoffice')">
+<i class="ti ti-headset"></i>Back Office
+</button>
+</div>
+<input type="hidden" id="fp-tipo" value=""/>
+<div id="fp-tipo-locked-msg" style="display:none;font-size:11px;color:var(--muted);margin-top:4px"><i class="ti ti-lock" style="font-size:11px"></i> Ya seleccionado — solo Supervisor, BO o Formador pueden cambiarlo</div>
+</div>
+<div class="form-group span2">
+<label>Descripción detallada del caso <span class="req">*</span></label>
+<textarea class="form-control" id="fp-descripcion" style="min-height:100px"
+placeholder="Describe detalladamente el caso pendiente, el motivo por el que está fuera de plazo y las acciones pendientes..."></textarea>
+</div>
+<div class="form-group">
+<label>Asesor que registra <span class="req">*</span></label>
+<input type="text" class="form-control" id="fp-asesor" placeholder="Tu nombre"/>
+</div>
+</div>
+<div class="form-actions">
+<button class="btn-cancel" id="btn-pend-cancel">Cancelar</button>
+<button class="btn-save" id="btn-pend-save" style="background:var(--danger)">
+<i class="ti ti-alert-triangle"></i><span id="btn-pend-save-text">Registrar caso pendiente</span>
+</button>
+</div>
+</div>
+</div>
+
+<div class="modal-overlay" id="modal-tipi-overlay">
+<div class="modal modal-tipi">
+<div class="modal-header">
+<div>
+<div class="modal-title" id="modal-tipi-title">Nueva tipificación</div>
+<div class="modal-subtitle">Solo visible para el rol Formador</div>
+</div>
+<button class="modal-close" id="modal-tipi-close"><i class="ti ti-x"></i></button>
+</div>
+<div class="form-grid">
+<div class="form-group span2">
+<label>Categoría <span class="req">*</span></label>
+<select class="form-control" id="ft-categoria"></select>
+</div>
+<div class="form-group">
+<label>Modalidad <span class="req">*</span></label>
+<input type="text" class="form-control" id="ft-modalidad" placeholder="Ej: TODAS, PRESENCIAL…"/>
+</div>
+<div class="form-group">
+<label>Sub-Proceso <span class="req">*</span></label>
+<input type="text" class="form-control" id="ft-subproceso" placeholder="Ej: MFA, No le llegan sus accesos…"/>
+</div>
+<div class="form-group span2">
+<label>Asunto <span class="req">*</span></label>
+<input type="text" class="form-control" id="ft-asunto" placeholder="Describe el asunto específico"/>
+</div>
+<div class="form-group span2">
+<label>En qué casos aplica</label>
+<textarea class="form-control" id="ft-aplica" style="min-height:70px" placeholder="Describe cuándo aplica esta tipificación…"></textarea>
+</div>
+<div class="form-group span2">
+<label>Tipo de atención</label>
+<div class="tipi-tipo-selector" id="ft-tipo-selector">
+<button type="button" class="tipi-tipo-btn" data-tipo="Consulta"      onclick="selTipoAtencion('Consulta')">Consulta</button>
+<button type="button" class="tipi-tipo-btn" data-tipo="Requerimiento" onclick="selTipoAtencion('Requerimiento')">Requerimiento</button>
+<button type="button" class="tipi-tipo-btn" data-tipo="Queja"         onclick="selTipoAtencion('Queja')">Queja</button>
+</div>
+<input type="hidden" id="ft-tipo" value=""/>
+</div>
+<div class="form-group span2">
+<label>Cola de derivación</label>
+<div class="cola-checkboxes-grid" id="ft-cola-grid">
+<label class="cola-checkbox-item" onclick="toggleColaItem(this)">
+<input type="checkbox" value="SISE Sedes" onclick="event.stopPropagation()"/> SISE Sedes
+</label>
+<label class="cola-checkbox-item" onclick="toggleColaItem(this)">
+<input type="checkbox" value="SISE Reclamos" onclick="event.stopPropagation()"/> SISE Reclamos
+</label>
+<label class="cola-checkbox-item" onclick="toggleColaItem(this)">
+<input type="checkbox" value="SISE Retención" onclick="event.stopPropagation()"/> SISE Retención
+</label>
+<label class="cola-checkbox-item" onclick="toggleColaItem(this)">
+<input type="checkbox" value="SISE Procesos, Proyectos y Registros" onclick="event.stopPropagation()"/> SISE Procesos, Proyectos y Registros
+</label>
+<label class="cola-checkbox-item" onclick="toggleColaItem(this)">
+<input type="checkbox" value="SISE Contact Center Back Office" onclick="event.stopPropagation()"/> SISE Contact Center Back Office
+</label>
+<label class="cola-checkbox-item" onclick="toggleColaItem(this)">
+<input type="checkbox" value="SISE Cobranzas" onclick="event.stopPropagation()"/> SISE Cobranzas
+</label>
+<label class="cola-checkbox-item" onclick="toggleColaItem(this)">
+<input type="checkbox" value="SISE Empleabilidad" onclick="event.stopPropagation()"/> SISE Empleabilidad
+</label>
+<label class="cola-checkbox-item" onclick="toggleColaItem(this)">
+<input type="checkbox" value="SISE Prog y Matrícula FCI y Tit" onclick="event.stopPropagation()"/> SISE Prog y Matrícula FCI y Tit
+</label>
+</div>
+<div class="cola-add-custom">
+<input type="text" id="ft-cola-nueva" placeholder="Añadir nueva cola personalizada…"/>
+<button type="button" onclick="agregarColaNueva()"><i class="ti ti-plus"></i> Añadir</button>
+</div>
+<input type="hidden" id="ft-cola" value="[]"/>
+</div>
+<div class="form-group">
+<label>Plazo de atención</label>
+<input type="text" class="form-control" id="ft-plazo" placeholder="Ej: 24h, Inmediato…"/>
+</div>
+<div class="form-group">
+<label>Plazo — Trámite web</label>
+<input type="text" class="form-control" id="ft-plazo-web" placeholder="Ej: 48h, 3 días hábiles…"/>
+</div>
+<div class="form-group">
+<label>Plazo — Caso manual</label>
+<input type="text" class="form-control" id="ft-plazo-manual" placeholder="Ej: Inmediato, 24h…"/>
+</div>
+</div>
+<div class="form-actions">
+<button class="btn-cancel" id="btn-tipi-cancel">Cancelar</button>
+<button class="btn-save" id="btn-tipi-save">
+<i class="ti ti-device-floppy"></i><span id="btn-tipi-save-text">Guardar tipificación</span>
+</button>
+</div>
+</div>
+</div>
+
+<div class="modal-overlay" id="modal-cat-overlay">
+<div class="modal modal-cat">
+<div class="modal-header">
+<div>
+<div class="modal-title" id="modal-cat-title">Nueva categoría</div>
+<div class="modal-subtitle">Se añadirá como acordeón en el módulo de tipificaciones</div>
+</div>
+<button class="modal-close" id="modal-cat-close"><i class="ti ti-x"></i></button>
+</div>
+<div class="form-group" style="margin-bottom:0">
+<label>Nombre de la categoría <span class="req">*</span></label>
+<input type="text" class="form-control" id="fc-nombre" placeholder="Ej: COBRANZAS, MATRÍCULA…" style="text-transform:uppercase"/>
+</div>
+<div class="form-actions">
+<button class="btn-cancel" id="btn-cat-cancel">Cancelar</button>
+<button class="btn-save" id="btn-cat-save"><i class="ti ti-folder-plus"></i><span id="btn-cat-save-text">Crear categoría</span></button>
+</div>
+</div>
+</div>
+
+<div class="img-zoom-overlay" id="zoom-overlay">
+<button class="zoom-close-btn" id="zoom-close"><i class="ti ti-x"></i></button>
+<img id="zoom-img" src="" alt="zoom" draggable="false"/>
+<div class="zoom-controls">
+<button class="zoom-btn" id="zoom-out" title="Alejar">−</button>
+<button class="zoom-btn" id="zoom-reset" title="Restablecer"><i class="ti ti-maximize" style="font-size:14px"></i></button>
+<button class="zoom-btn" id="zoom-in" title="Acercar">+</button>
+</div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script type="module" src="app-portal-core.js"></script>
+
+<script type="module" src="app-capacitacion.js"></script>
+
+<script src="https://cdn.jsdelivr.net/npm/docx@8.5.0/build/index.umd.min.js"></script>
+<script src="app-herramientas.js"></script>
+<script src="app-tutorial.js"></script>
+
+
+</body></html>
